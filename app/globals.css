@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/* NetChain design tokens                                             */
+/* ------------------------------------------------------------------ */
+:root {
+  --bg: #0c0c0c;
+  --text: #d7e2ea;
+  --accent: #38e1a4;
+  --settled: #38e1a4;
+  --pending: #f5c451;
+  --rejected: #ff5c5c;
+  --privacy: #7fa6c9;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Prevent horizontal bleed from oversized display type / marquees */
+main,
+#netchain-root {
+  overflow-x: clip;
+}
+
+::selection {
+  background: rgba(56, 225, 164, 0.25);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Brand utilities                                                    */
+/* ------------------------------------------------------------------ */
+.brand-heading {
+  background: linear-gradient(180deg, #8b929c 0%, #d7e2ea 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Serif italic accent word inside a headline */
+.accent-word {
+  font-family: var(--font-serif), serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Tiny mono eyebrow label above headings — the "ledger voice" */
+.eyebrow {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(215, 226, 234, 0.5);
+}
+
+/* The single primary action: solid frost pill, ink text. Everything
+   else is a ghost/outline — one loud element per screen, no gradients. */
+.cta-primary {
+  background: #d7e2ea;
+  color: #0c0c0c;
+  box-shadow: 0 8px 28px rgba(215, 226, 234, 0.14);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.cta-primary:hover:not(:disabled) {
+  background: #ffffff;
+  box-shadow: 0 10px 34px rgba(215, 226, 234, 0.22);
+}
+
+/* Monospace figures: amounts, party IDs, hashes */
+.figures {
+  font-family: var(--font-plex-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Glass card used across marquee tiles and app panels */
+.glass-card {
+  background: linear-gradient(
+    145deg,
+    rgba(215, 226, 234, 0.06) 0%,
+    rgba(215, 226, 234, 0.02) 100%
+  );
+  border: 1px solid rgba(215, 226, 234, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+/* Accessible focus ring on dark ground */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin dark scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0c0c0c;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(215, 226, 234, 0.15);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(215, 226, 234, 0.3);
+}
+
+/* ------------------------------------------------------------------ */
+/* Keyframes                                                          */
+/* ------------------------------------------------------------------ */
+@keyframes pulse-node {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion: kill decorative animation, keep content readable   */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
