@@ -8,7 +8,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import StatusPill from "@/components/ui/StatusPill";
-import { getObligationsFor, queryContract } from "@/lib/api";
+import { getObligationsFor, queryContract } from "@/lib/ledger";
 import { shortHash } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { Obligation, PrivacyError } from "@/lib/types";
