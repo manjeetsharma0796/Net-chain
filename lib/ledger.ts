@@ -15,6 +15,13 @@ import { NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "
 
 const LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
+/** Dev-only warning when a LIVE call falls back (network error or non-ok response). */
+function warnFallback(name: string, fellBackTo: "mock" | "null"): void {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(`[ledger] live ${name} fell back to ${fellBackTo}`);
+  }
+}
+
 export type { PolicyVerdict, ExtractedInvoice } from "@/lib/api";
 // Pure/mock-only helpers pass straight through — no ledger equivalent needed.
 export {
@@ -37,6 +44,7 @@ export async function getBalanceLive(party: PartyId): Promise<number | null> {
   } catch {
     /* fall through */
   }
+  warnFallback("getBalanceLive", "null");
   return null;
 }
 
@@ -49,6 +57,7 @@ export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>
   } catch {
     /* fall through */
   }
+  warnFallback("getBalancesLive", "null");
   return null;
 }
 
@@ -70,6 +79,7 @@ export async function getScanLive(): Promise<ScanLive | null> {
   } catch {
     /* fall through */
   }
+  warnFallback("getScanLive", "null");
   return null;
 }
 
@@ -86,6 +96,7 @@ export async function getObligationsFor(
     } catch {
       /* fall through to mock */
     }
+    warnFallback("getObligationsFor", "mock");
   }
   return api.getObligationsFor(party, ledger);
 }
@@ -107,6 +118,7 @@ export async function queryContract(
       if (e instanceof PrivacyError) throw e;
       /* network/other → mock */
     }
+    warnFallback("queryContract", "mock");
   }
   return api.queryContract(party, contractId, ledger);
 }
@@ -122,6 +134,7 @@ export async function getNetPositionFor(
     } catch {
       /* fall through */
     }
+    warnFallback("getNetPositionFor", "mock");
   }
   return api.getNetPositionFor(party, positions);
 }
@@ -139,6 +152,7 @@ export async function getPolicyLive(
   } catch {
     /* fall through */
   }
+  warnFallback("getPolicyLive", "null");
   return null;
 }
 
@@ -163,6 +177,7 @@ export async function checkPolicy(
     } catch {
       /* fall through to mock */
     }
+    warnFallback("checkPolicy", "mock");
   }
   return api.checkPolicy(policy, amount, counterparty);
 }
@@ -184,9 +199,13 @@ export async function createObligationLive(input: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      warnFallback("createObligationLive", "null");
+      return null;
+    }
     return ((await r.json()) as { updateId?: string }).updateId ?? null;
   } catch {
+    warnFallback("createObligationLive", "null");
     return null;
   }
 }
@@ -203,6 +222,7 @@ export async function runCycleLive(): Promise<{
   } catch {
     /* fall through to mock */
   }
+  warnFallback("runCycleLive", "null");
   return null;
 }
 
@@ -214,10 +234,14 @@ export async function settleLive(): Promise<{
   if (!LIVE) return null;
   try {
     const r = await fetch("/api/ledger/settle", { method: "POST" });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      warnFallback("settleLive", "null");
+      return null;
+    }
     const j = (await r.json()) as { updateId?: string; netPositions: NetPosition[] };
     return { updateId: j.updateId ?? null, netPositions: j.netPositions ?? [] };
   } catch {
+    warnFallback("settleLive", "null");
     return null;
   }
 }

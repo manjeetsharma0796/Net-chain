@@ -250,13 +250,15 @@ export async function getAllAccountBalances(): Promise<Partial<Record<PartyId, n
 }
 
 /**
- * Create a NettingCycle on-ledger, exercise ComputeNetPositions, and return
- * the resulting NetPositions. Non-consuming choice — the cycle contract stays
- * active so T29's Settle can use the same contractId.
+ * Shared by computeNetPositionsOnLedger and runAndSettle: build a cycle id,
+ * create a NettingCycle over the current open obligations, find its contract
+ * id via ACS, and exercise ComputeNetPositions. ComputeNetPositions is a
+ * non-consuming choice, so the cycle contract stays active for a subsequent Settle.
  */
-export async function computeNetPositionsOnLedger(): Promise<{
+async function openCycleAndCompute(): Promise<{
+  op: string;
   cycleId: string;
-  netPositions: NetPosition[];
+  cycleCid: string;
 }> {
   const op = ledgerId("operator");
   const parties = (["company-a", "company-b", "company-c"] as PartyId[]).map(ledgerId);
@@ -271,6 +273,20 @@ export async function computeNetPositionsOnLedger(): Promise<{
   if (!cycleCid) throw new LedgerError("netting cycle not found after create");
 
   await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", { cycleId });
+
+  return { op, cycleId, cycleCid };
+}
+
+/**
+ * Create a NettingCycle on-ledger, exercise ComputeNetPositions, and return
+ * the resulting NetPositions. Non-consuming choice — the cycle contract stays
+ * active so T29's Settle can use the same contractId.
+ */
+export async function computeNetPositionsOnLedger(): Promise<{
+  cycleId: string;
+  netPositions: NetPosition[];
+}> {
+  const { op, cycleId } = await openCycleAndCompute();
 
   const npRows = await queryAcs(op, "NetPosition");
   const netPositions = npRows
@@ -335,19 +351,7 @@ export async function runAndSettle(): Promise<{
   updateId?: string;
   netPositions: NetPosition[];
 }> {
-  const op = ledgerId("operator");
-  const parties = (["company-a", "company-b", "company-c"] as PartyId[]).map(ledgerId);
-  const cycleId = `cyc-${Date.now()}`;
-
-  const open = (await queryAcs(op, "Obligation")).filter((c) => c.payload.settled !== true);
-  if (open.length < 2) throw new LedgerError("need at least two open obligations to net");
-  const obligationCids = open.map((c) => c.contractId);
-
-  await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, settled: false });
-  const cycleCid = latestUnsettled(await queryAcs(op, "NettingCycle"));
-  if (!cycleCid) throw new LedgerError("netting cycle not found after create");
-
-  await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", { cycleId });
+  const { op, cycleId, cycleCid } = await openCycleAndCompute();
 
   const npRows = (await queryAcs(op, "NetPosition")).slice(-3);
   const accRows = (await queryAcs(op, "Account")).slice(-3);
