@@ -174,6 +174,8 @@ Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
   → `Settle`, so the *state* is live, not just the package.
 - **Done when:** the netting flow runs on the validator and NetPositions/Accounts are
   queryable via the JSON Ledger API. **Core qualification checkpoint.**
+- 📗 **Runbook + frozen contract signatures (build / test / deploy — read this to continue,
+  frontend included):** [`daml/README.md`](daml/README.md).
 
 ### T10 · P1 · DAML — Mirror source to repo
 - Export the `daml/` folder + `daml.yaml` from Seaport into `Net-chain/daml/` and
