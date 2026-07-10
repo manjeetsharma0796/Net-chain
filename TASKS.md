@@ -4,9 +4,7 @@ Privacy-preserving multilateral netting + atomic settlement on Canton.
 Goal of this file: get NetChain from **mocked frontend** → **live on Canton Devnet**
 before the deadline. Two of us, flat task pool, claim and update as you go.
 
-> **Deadline:** Final submission **Mon 13 Jul 12:59 BST** (banner) — the dashboard
-> countdown showed **~Tue 14 Jul**. ⚠️ CONFIRM the real cutoff in the `#canton`
-> Discord before trusting either. Treat it as **13 Jul**.
+> **Deadline:** Final submission **Mon 13 Jul 12:59 BST**. Working to 13 Jul (set).
 
 ---
 
@@ -73,12 +71,12 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T06 | P0 | DAML | `NettingCycle` + `NetPosition` (real per-party privacy) | Manjeet | ✅ | T05 |
 | T07 | P0 | DAML | `TreasuryPolicy` + atomic `Settle` choice | Manjeet | ✅ | T04,T05,T06 |
 | T08 | P0 | DAML | Daml Script: 4 tests prove the 3 wins (all pass) | Manjeet | ✅ | T04–T07 |
-| T09 | P0 | DAML | Deploy `.dar` to 5N Sandbox + run setup on-ledger | claude | ✅ | T08,T02 |
+| T09 | P0 | DAML | Deploy `.dar` to 5N Sandbox + run setup on-ledger | Jishnu | ✅ | T08,T02 |
 | T10 | P1 | DAML | Mirror `daml/` source into the git repo | Manjeet | ✅ | T03 |
-| T11 | P1 | FE | `lib/ledger.ts` — JSON Ledger API v2 client (server-side token) | claude | ✅ | T01,T02 |
-| T12 | P1 | FE | Per-party identity/switcher → real projections | claude | ✅ | T02,T11 |
-| T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | claude | ✅ | T09,T11 |
-| T14 | P1 | FE | Wire **writes** (create/cycle/allocate/settle/policy) | claude | ✅ | T09,T11 |
+| T11 | P1 | FE | `lib/ledger.ts` JSON Ledger API v2 client (server-side token) | Jishnu | ✅ | T01,T02 |
+| T12 | P1 | FE | Per-party identity/switcher → real projections | Jishnu | ✅ | T02,T11 |
+| T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | Jishnu | ✅ | T09,T11 |
+| T14 | P1 | FE | Wire **writes** (create/cycle/allocate/settle/policy) | Jishnu | ✅ | T09,T11 |
 
 > **DAML-interaction spine (branch `daml-interaction`, 2026-07-10) — LIVE:**
 > `daml/deploy.sh` ran end-to-end on the 5N devnet → settled **A=115k/B=130k/C=55k**,
@@ -88,14 +86,16 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 > `lib/ledger.ts` → `app/api/ledger/*` → `lib/ledger-server.ts` → JSON Ledger API v2.
 > CI in `.github/workflows/daml.yml`. **Note:** the shared M2M user is at its 1000-rights
 > cap, so the demo reuses existing scratch parties (operator=Dave, A=Carol, B=Investor,
-> C=SME) instead of fresh `netchain-*` — see `OPERATOR_TODO.md`. **Push/PR pending a git
-> remote** (none configured in this container).
+> C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
+> (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
 | T15 | P0 | SHIP | Deploy frontend live (Vercel) — the "live link" | | 🔲 | — |
 | T16 | P1 | AI | Real invoice extraction via LLM (Grok/OpenRouter) | | 🔲 | — |
-| T17 | P2 | FE | Fix the 3 conformance mismatches | | 🔲 | T13 (partial) |
+| T17 | P2 | FE | Fix the 3 conformance mismatches | Jishnu | 🟡 | T13 (partial) |
 | T18 | P0 | SHIP | Presentation deck | | 🔲 | — |
 | T19 | P0 | SHIP | 3-min video pitch + demo recording | | 🔲 | spine live |
-| T20 | P0 | SHIP | Repo cleanup + README rewrite | | 🔲 | near end |
+| T20 | P0 | SHIP | Repo cleanup + README rewrite | Jishnu | 🟡 | near end |
+| T21 | P1 | DOCS | End-to-end flow diagram (browser → API → ledger → settle) | Jishnu | 🟡 | T14 |
+| T22 | P1 | DOCS | Contract usage guide (frontend/backend via JSON Ledger API) | Jishnu | 🟡 | T11,T14 |
 
 **Suggested parallelization (day 1):** one person takes **T01 → T02** (unblocks
 everything on-ledger); the other starts **T03** (Daml scaffold, authoring needs no
@@ -251,6 +251,21 @@ Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
   live vs future). Remove "no blockchain / mock only" framing. Clean the repo.
 - **Done when:** a stranger can understand and run it from the README.
 
+### T21 · P1 · DOCS — End-to-end flow diagram
+- One diagram (Mermaid in a Markdown doc) tracing the whole path: party switcher in the
+  browser, `lib/ledger.ts` client shim, `app/api/ledger/[op]` route handlers, server token
+  exchange in `lib/ledger-server.ts`, JSON Ledger API v2 on the 5N validator, and the
+  ComputeNetPositions then Settle flow back to the UI. Show the mock fallback branch too.
+- **Done when:** `docs/ARCHITECTURE.md` renders the flow and matches the live code paths.
+
+### T22 · P1 · DOCS — Contract usage guide (frontend/backend)
+- A developer guide: for each template (`Account`, `Obligation`, `TreasuryPolicy`,
+  `NetPosition`, `NettingCycle`) show how the app reads/writes it via the JSON Ledger API
+  endpoints we actually use (create, exercise, active-contracts), with the exact templateId
+  forms (G1), Decimal-as-string (G2), and actAs rules, keyed to the functions in
+  `lib/ledger-server.ts`. No new SDK; document the endpoints in use.
+- **Done when:** a frontend/backend dev can call any contract from the guide alone.
+
 ---
 
 ## Deferred — explicitly OUT of the must-have cut
@@ -261,6 +276,6 @@ Pull these in only if the whole spine is live with time to spare.
 - **Multi-currency** netting; **tokenized-invoice** financing.
 
 ## Parking lot / open items
-- Confirm the **real deadline** in `#canton` (13 vs 14 Jul).
+- **Deadline set: 13 Jul** (Mon 13 Jul 12:59 BST).
 - Confirm the **OIDC token flow** per party (T02) — biggest frontend unknown.
 - Confirm whether a shared/hosted USDCx test token exists on 5N Sandbox (else Cash token).
