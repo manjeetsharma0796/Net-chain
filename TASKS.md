@@ -164,10 +164,16 @@ Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
 - **Done when:** script runs green in Seaport.
 
 ### T09 · P0 · DAML — Deploy + run on-ledger
-- Deploy the `netchain` `.dar` to 5N Sandbox; execute the setup so the demo state is
-  **live on Devnet**.
-- **Done when:** contracts are queryable on the validator; record contract IDs / a
-  screenshot here. **This is the core qualification checkpoint.**
+- ✅ **Package deployed LIVE on Devnet** (2026-07-10): `dpm build` → uploaded via
+  `POST /v2/packages` (HTTP 200), confirmed present in `GET /v2/packages`.
+  - main package id: `cdd76816c72bba50c880ea7f8d48c9f78ae5d37e48706aa012cfeac80ee655e7`
+  - ✅ **PV35 gate PASSED** — the 5N validator accepts LF 2.3, so the pinned toolchain
+    (SDK 3.5.2 / `--target=2.3`) is validated end-to-end.
+- ⬜ **Remaining (with T02):** allocate parties (operator + A/B/C), then create the demo
+  contract instances on-ledger (accounts, policies, 6 obligations) → `ComputeNetPositions`
+  → `Settle`, so the *state* is live, not just the package.
+- **Done when:** the netting flow runs on the validator and NetPositions/Accounts are
+  queryable via the JSON Ledger API. **Core qualification checkpoint.**
 
 ### T10 · P1 · DAML — Mirror source to repo
 - Export the `daml/` folder + `daml.yaml` from Seaport into `Net-chain/daml/` and
