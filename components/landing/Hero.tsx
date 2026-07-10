@@ -187,7 +187,7 @@ export default function Hero() {
           className="mt-5 max-w-[46ch] text-[clamp(0.95rem,1.5vw,1.2rem)] leading-relaxed text-frost/65 opacity-0 animate-fade-up"
           style={{ animationDelay: "0.5s" }}
         >
-          Receivables minus payables, settled atomically in USDCx.
+          Confidential settlement, atomic in USDCx.
           Counterparties see nothing.
         </p>
 

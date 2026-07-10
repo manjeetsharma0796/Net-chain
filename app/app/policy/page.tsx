@@ -48,7 +48,8 @@ export default function PolicyPage() {
     setPhase("checking");
     const counterparty = policy.allowedCounterparties[0];
     const verdict = await checkPolicy(policy, AGENT_OVERREACH_AMOUNT, counterparty);
-    // The mock amount is chosen to always trip the cycle cap.
+    // The mock amount is chosen to always trip a policy rule, but which
+    // rule fires depends on the active party's own TreasuryPolicy.
     setRuleFired(verdict.ruleFired ?? null);
     setPhase("rejected");
     addPolicyEvent({
@@ -142,9 +143,10 @@ export default function PolicyPage() {
             <p className="text-sm font-light leading-relaxed text-frost/70">
               Make the agent attempt a{" "}
               <MoneyValue amount={AGENT_OVERREACH_AMOUNT} className="text-sm" />{" "}
-              settlement — above {party.shortName}&apos;s cycle cap. The policy
-              is on-ledger, so the rejection is not a UI guardrail: the agent
-              cannot bypass it.
+              settlement, past a threshold in {party.shortName}&apos;s
+              TreasuryPolicy. The policy is on-ledger, so the rejection is not
+              a UI guardrail: the agent cannot bypass it. The exact rule that
+              fires is shown below, live.
             </p>
 
             <div className="mt-5">

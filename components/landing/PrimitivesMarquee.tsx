@@ -111,7 +111,7 @@ export default function PrimitivesMarquee() {
           </div>
         </div>
         <p className="figures text-xs text-frost/40">
-          canton.network · Global Synchronizer mainnet
+          canton.network · Global Synchronizer Devnet
         </p>
       </div>
 
