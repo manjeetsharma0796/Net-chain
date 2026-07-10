@@ -75,10 +75,19 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T08 | P0 | DAML | Daml Script: 4 tests prove the 3 wins (all pass) | Manjeet | ✅ | T04–T07 |
 | T09 | P0 | DAML | Deploy `.dar` to 5N Sandbox + run setup on-ledger | Manjeet | 🟡 | T08,T02 |
 | T10 | P1 | DAML | Mirror `daml/` source into the git repo | Manjeet | ✅ | T03 |
-| T11 | P1 | FE | `lib/ledger.ts` — JSON Ledger API v2 client + OIDC | | 🔲 | T01,T02 |
-| T12 | P1 | FE | Per-party identity/switcher → real projections | | 🔲 | T02,T11 |
-| T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | | 🔲 | T09,T11 |
-| T14 | P1 | FE | Wire **writes** (create/cycle/allocate/settle/policy) | | 🔲 | T09,T11 |
+| T11 | P1 | FE | `lib/ledger.ts` — JSON Ledger API v2 client (server-side token) | claude | ✅ | T01,T02 |
+| T12 | P1 | FE | Per-party identity/switcher → real projections | claude | 🟡 | T02,T11 |
+| T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | claude | 🟡 | T09,T11 |
+| T14 | P1 | FE | Wire **writes** (create/cycle/allocate/settle/policy) | claude | 🟡 | T09,T11 |
+
+> **DAML-interaction spine (branch `daml-interaction`, 2026-07-10):** built and
+> type-checked offline — `daml/deploy.sh` (T09 bring-up), CI (`.github/workflows/daml.yml`),
+> server route handlers `app/api/ledger/*` + `lib/ledger-server.ts` + `lib/ledger-map.ts`,
+> client shim `lib/ledger.ts` (mirrors `lib/api.ts`), pages swapped behind
+> `NEXT_PUBLIC_LEDGER_LIVE`. **Live run pending `CLIENT_SECRET` + a git remote** — see
+> `OPERATOR_TODO.md`. T12: no per-party OIDC — one M2M token; the route queries the
+> selected party's ACS projection. Cycle party-view net position stays on local compute
+> (privacy money-shot is `/app/privacy-check`, which is fully live).
 | T15 | P0 | SHIP | Deploy frontend live (Vercel) — the "live link" | | 🔲 | — |
 | T16 | P1 | AI | Real invoice extraction via LLM (Grok/OpenRouter) | | 🔲 | — |
 | T17 | P2 | FE | Fix the 3 conformance mismatches | | 🔲 | T13 (partial) |

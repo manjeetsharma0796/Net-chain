@@ -50,7 +50,7 @@ This repo already has working scripts: `lib.sh` (bootstrap), `addparty.sh`,
 | **Primary party** | `5nsandbox-devnet-2::1220a14ca128063b8dc9d1ebb0bd22633be9f2168500f4dbc1ecaeb1855b14e5acf8` |
 | **Participant fingerprint** | `1220a14ca128063b8dc9d1ebb0bd22633be9f2168500f4dbc1ecaeb1855b14e5acf8` |
 | **Synchronizer (domain)** | `global-domain::1220be58c29e65de40bf273be1dc2b266d43a9a002ea5b18955aeef7aac881bb471a` |
-| Daml SDK | `3.4.11` (Canton 3.4) |
+| Daml SDK | `3.5.2` (LF 2.3 / PV35) — NetChain's pinned toolchain; the `3.4.11` values elsewhere in this guide are from the earlier counter-app session |
 
 Notes:
 - This is a **shared M2M credential** = one user (`6`) = one primary party.

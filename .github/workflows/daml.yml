@@ -1,0 +1,54 @@
+name: daml
+
+# Authoritative build/test for the NetChain Daml package, on Linux — independent
+# of whatever toolchain (or OS) a contributor has locally. Installs DPM + SDK 3.5.2
+# and runs `dpm build` + `dpm test` against daml/.
+
+on:
+  push:
+    paths:
+      - "daml/**"
+      - ".github/workflows/daml.yml"
+  pull_request:
+    paths:
+      - "daml/**"
+      - ".github/workflows/daml.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: daml
+    steps:
+      - uses: actions/checkout@v4
+
+      # dpm test runs the Daml Script tests on the JVM.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Cache the DPM home (installed SDKs + resolved deps) across runs.
+      - name: Cache DPM
+        uses: actions/cache@v4
+        with:
+          path: ~/.dpm
+          key: dpm-3.5.2-${{ runner.os }}-${{ hashFiles('daml/daml.yaml') }}
+          restore-keys: |
+            dpm-3.5.2-${{ runner.os }}-
+
+      - name: Install DPM + SDK 3.5.2
+        run: |
+          curl -fsSL https://get.digitalasset.com/install/install.sh | sh
+          echo "$HOME/.dpm/bin" >> "$GITHUB_PATH"
+
+      - name: Pin SDK
+        run: dpm install 3.5.2
+
+      - name: Build DAR
+        run: dpm build
+
+      - name: Run Daml Script tests
+        run: dpm test
