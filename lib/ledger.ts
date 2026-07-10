@@ -144,6 +144,21 @@ export async function createObligationLive(input: {
   }
 }
 
+/** Create a NettingCycle + ComputeNetPositions on-ledger. Returns cycleId + positions. */
+export async function runCycleLive(): Promise<{
+  cycleId: string;
+  netPositions: NetPosition[];
+} | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch("/api/ledger/run-cycle", { method: "POST" });
+    if (r.ok) return (await r.json()) as { cycleId: string; netPositions: NetPosition[] };
+  } catch {
+    /* fall through to mock */
+  }
+  return null;
+}
+
 /** Run + Settle the current cycle on-ledger. Returns update id + net positions. */
 export async function settleLive(): Promise<{
   updateId: string | null;

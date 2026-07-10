@@ -11,7 +11,12 @@ import NumberTicker from "@/components/ui/NumberTicker";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { buildSettlementLegs, computeNetPositions } from "@/lib/api";
+import { getNetPositionFor, runCycleLive } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
+import type { NetPosition, PartyId } from "@/lib/types";
+
+const ALL_PARTY_IDS: PartyId[] = ["company-a", "company-b", "company-c"];
+const IS_LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -41,6 +46,7 @@ export default function CyclePage() {
     () => new Set(openObligations.map((o) => o.id)),
   );
   const [view, setView] = useState<"operator" | "party">("operator");
+  const [liveMyPosition, setLiveMyPosition] = useState<NetPosition | null>(null);
 
   const toggle = (id: string) =>
     setSelected((s) => {
@@ -52,26 +58,48 @@ export default function CyclePage() {
 
   const runCycle = async () => {
     const inScope = obligations.filter((o) => selected.has(o.id));
-    if (inScope.length < 2) {
+    if (!IS_LIVE && inScope.length < 2) {
       pushToast("error", "Select at least two obligations to net.");
       return;
     }
     setCycleStatus("computing");
-    await sleep(1400);
-    const positions = computeNetPositions(inScope, cycleId);
+    setLiveMyPosition(null);
+
+    const liveResult = await runCycleLive();
+
+    let positions;
+    let usedCycleId = cycleId;
+    if (liveResult) {
+      positions = liveResult.netPositions;
+      usedCycleId = liveResult.cycleId;
+      // Fetch this party's position directly from the ledger (real per-party privacy).
+      const myPos = await getNetPositionFor(currentPartyId, positions);
+      setLiveMyPosition(myPos);
+    } else {
+      if (inScope.length < 2) {
+        setCycleStatus("open");
+        pushToast("error", "Select at least two obligations to net.");
+        return;
+      }
+      await sleep(1400);
+      positions = computeNetPositions(inScope, cycleId);
+    }
+
     setNetPositions(positions);
     setLegs(buildSettlementLegs(positions));
-    markObligations(
-      inScope.map((o) => o.id),
-      "netted",
-    );
+    markObligations(inScope.map((o) => o.id), "netted");
     setCycleStatus("computed");
     logActivity({
       actor: "operator",
       kind: "cycle",
-      message: `Cycle ${cycleId} computed — ${inScope.length} obligations collapsed to ${positions.filter((p) => p.net !== 0).length} net positions`,
+      message: `Cycle ${usedCycleId} computed${liveResult ? " on-ledger" : ""} — ${positions.filter((p) => p.net !== 0).length} net positions`,
     });
-    pushToast("success", "Netting cycle computed. Each party sees only its own figure.");
+    pushToast(
+      "success",
+      liveResult
+        ? "On-ledger netting complete. Each party reads only their own NetPosition."
+        : "Netting cycle computed. Each party sees only its own figure.",
+    );
   };
 
   const grossTotal = obligations
@@ -276,45 +304,58 @@ export default function CyclePage() {
               to the operator view to run the netting cycle.
             </div>
           ) : (
-            netPositions!.map((p) => {
-              const mine = p.party === currentPartyId;
+            ALL_PARTY_IDS.map((pid) => {
+              const mine = pid === currentPartyId;
+              // In live mode: my position comes from a direct per-party ledger query
+              // (the ledger won't disclose other parties' NetPositions to me at all).
+              // In mock mode: read from the store as before.
+              const myPos = IS_LIVE
+                ? (liveMyPosition ?? netPositions?.find((p) => p.party === pid) ?? null)
+                : (netPositions?.find((p) => p.party === pid) ?? null);
+              const pos = mine ? myPos : null;
+
               return (
                 <div
-                  key={p.party}
+                  key={pid}
                   className={`rounded-xl border p-5 ${
                     mine
                       ? "border-settled/40 bg-settled/[0.05]"
                       : "border-privacy/25 bg-privacy/[0.05]"
                   }`}
                 >
-                  {mine ? (
+                  {mine && pos ? (
                     <>
                       <p className="text-xs font-semibold uppercase tracking-wider text-frost/70">
-                        {partyById(p.party).name} — your position
+                        {partyById(pid).name} — your position
+                        {IS_LIVE && (
+                          <span className="ml-2 text-[10px] text-accent/70">· live</span>
+                        )}
                       </p>
                       <p
                         className={`mt-3 text-2xl ${
-                          p.net > 0
+                          pos.net > 0
                             ? "text-settled"
-                            : p.net < 0
+                            : pos.net < 0
                               ? "text-pending"
                               : "text-frost/60"
                         }`}
                       >
                         <NumberTicker
-                          value={Math.abs(p.net)}
+                          value={Math.abs(pos.net)}
                           decimals={2}
-                          prefix={p.net > 0 ? "+" : p.net < 0 ? "−" : ""}
+                          prefix={pos.net > 0 ? "+" : pos.net < 0 ? "−" : ""}
                         />
                         <span className="figures ml-1.5 text-xs opacity-60">
                           USDCx
                         </span>
                       </p>
                       <p className="mt-1 text-[11px] uppercase tracking-wide text-frost/45">
-                        {p.net > 0 ? "you receive" : p.net < 0 ? "you pay" : "flat"}{" "}
+                        {pos.net > 0 ? "you receive" : pos.net < 0 ? "you pay" : "flat"}{" "}
                         this cycle
                       </p>
                     </>
+                  ) : mine ? (
+                    <p className="text-xs text-frost/40">Loading your position…</p>
                   ) : (
                     <>
                       <div className="flex items-center gap-2">

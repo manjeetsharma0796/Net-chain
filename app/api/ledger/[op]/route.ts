@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   checkPolicy,
+  computeNetPositionsOnLedger,
   createObligation,
   getAccountBalance,
   getContract,
@@ -90,6 +91,8 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
         if (!party) return NextResponse.json({ error: "bad party" }, { status: 400 });
         return NextResponse.json(await checkPolicy(party, Number(body.amount ?? 0)));
       }
+      case "run-cycle":
+        return NextResponse.json(await computeNetPositionsOnLedger());
       case "settle":
         return NextResponse.json(await runAndSettle());
       default:

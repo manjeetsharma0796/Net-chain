@@ -238,6 +238,37 @@ export async function getAccountBalance(party: PartyId): Promise<number | null> 
   return acct?.balance ?? null;
 }
 
+/**
+ * Create a NettingCycle on-ledger, exercise ComputeNetPositions, and return
+ * the resulting NetPositions. Non-consuming choice — the cycle contract stays
+ * active so T29's Settle can use the same contractId.
+ */
+export async function computeNetPositionsOnLedger(): Promise<{
+  cycleId: string;
+  netPositions: NetPosition[];
+}> {
+  const op = ledgerId("operator");
+  const parties = (["company-a", "company-b", "company-c"] as PartyId[]).map(ledgerId);
+  const cycleId = `cyc-${Date.now()}`;
+
+  const open = (await queryAcs(op, "Obligation")).filter((c) => c.payload.settled !== true);
+  if (open.length < 2) throw new LedgerError("need at least two open obligations to net");
+  const obligationCids = open.map((c) => c.contractId);
+
+  await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, settled: false });
+  const cycleCid = latestUnsettled(await queryAcs(op, "NettingCycle"));
+  if (!cycleCid) throw new LedgerError("netting cycle not found after create");
+
+  await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", { cycleId });
+
+  const npRows = await queryAcs(op, "NetPosition");
+  const netPositions = npRows
+    .map((c) => toNetPosition(c, toPartyId))
+    .filter((n): n is NetPosition => n !== null && n.cycleId === cycleId);
+
+  return { cycleId, netPositions };
+}
+
 export async function createObligation(input: {
   obligor: PartyId;
   obligee: PartyId;
