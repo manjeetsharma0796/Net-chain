@@ -92,9 +92,12 @@ builds + tests the DAR on Linux.
 
 ## Contributor tooling
 
-The **ponytail** YAGNI/laziness skill is vendored into `.claude/skills/` (MIT), so every
-Claude Code session in this repo picks it up automatically — no install. Invoke with
-`/ponytail` (levels: lite/full/ultra).
+The **ponytail** YAGNI/laziness skill is vendored into `.claude/skills/` (MIT) and wired
+**always-on**: `CLAUDE.md` mandates the ladder for every code change and a `UserPromptSubmit`
+hook re-states it each turn, so every contributor's session enforces it — no install, no opt-in.
+It fits the pipeline at **authoring** (the ladder gates every change) and **review**
+(`/ponytail-review` on the diff before merge); it does not run in CI. Levels: `/ponytail
+lite|full|ultra`; disable per-session with "stop ponytail".
 
 ## Design system
 
