@@ -203,6 +203,25 @@ function ObligationForm({
 /* Page                                                               */
 /* ------------------------------------------------------------------ */
 
+// Same obligation can otherwise show twice: once from the local store copy
+// added optimistically, once from the live ledger read. Prefer the ledger
+// contractId as the identity; fall back to content when it's missing.
+function obligationKey(o: Obligation): string {
+  return o.contractId || `${o.reference}|${o.obligor}|${o.obligee}|${o.amount}`;
+}
+
+function dedupeObligations(list: Obligation[]): Obligation[] {
+  const seen = new Set<string>();
+  const out: Obligation[] = [];
+  for (const o of list) {
+    const key = obligationKey(o);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(o);
+  }
+  return out;
+}
+
 export default function ObligationsPage() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
   const ledger = useNetChain((s) => s.obligations);
@@ -216,6 +235,9 @@ export default function ObligationsPage() {
     fileName: string;
     confidence: number;
   } | null>(null);
+  // Bumped after a create finishes on-ledger, to force one more refetch
+  // (the ledger write lands after addObligation's optimistic store update).
+  const [refreshTick, setRefreshTick] = useState(0);
 
   // Party-scoped read — the filter happens in lib/api, not here.
   useEffect(() => {
@@ -223,13 +245,13 @@ export default function ObligationsPage() {
     setLoading(true);
     getObligationsFor(currentPartyId, ledger).then((data) => {
       if (!live) return;
-      setRows(data);
+      setRows(dedupeObligations(data));
       setLoading(false);
     });
     return () => {
       live = false;
     };
-  }, [currentPartyId, ledger]);
+  }, [currentPartyId, ledger, refreshTick]);
 
   const onExtracted = useCallback(
     (result: ExtractedInvoice, fileName: string) => {
@@ -338,7 +360,10 @@ export default function ObligationsPage() {
               initial={EMPTY_DRAFT}
               source="manual"
               submitLabel="Create obligation"
-              onDone={() => setManualOpen(false)}
+              onDone={() => {
+                setManualOpen(false);
+                setRefreshTick((t) => t + 1);
+              }}
             />
           </div>
         </FadeIn>
@@ -378,7 +403,10 @@ export default function ObligationsPage() {
             initial={reviewDraft}
             source="agent"
             submitLabel="Create on-ledger obligation"
-            onDone={() => setReviewDraft(null)}
+            onDone={() => {
+              setReviewDraft(null);
+              setRefreshTick((t) => t + 1);
+            }}
           />
         )}
       </Modal>
