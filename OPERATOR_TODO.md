@@ -39,6 +39,18 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 - [x] Push `daml-interaction`, open PR, merge to `main`, delete branch — **done (PR #1)**.
 - [ ] (Later, out of scope) Vercel env for T15 live frontend link.
 
+## Frontend pipeline (activate the new tooling)
+
+- [!] **Restart Claude Code** to connect the new MCP servers (`.mcp.json`: 21st.dev `magic`,
+  `playwright`) and load the vendored `ui-ux-pro-max` skills. They do not activate mid-session.
+- [!] **Export `TWENTYFIRST_API_KEY`** in your shell before launching Claude Code so the `magic`
+  MCP can authenticate (the value is in the untracked `.env`; `.mcp.json` only references it).
+- [ ] **Install Python 3** if you want the `ui-ux-pro-max` search script (it is not on this box).
+  The skill's reference data still reads without it; only the search helper needs Python.
+- Playwright is installed (`@playwright/test` + Chromium). Live audit (2026-07-11): the obligations
+  page shows the real per-party ledger projection (company-a = 4 rows), but the dashboard USDCx
+  balance still renders the mock value (512,400 vs live 115k), which is task **T27**.
+
 ## Machine note (this Windows dev box)
 
 - [!] **Global npm is broken.** `npm install` fails with `SyntaxError: Invalid or unexpected
