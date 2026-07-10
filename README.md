@@ -11,6 +11,24 @@ mock mode, so the demo runs with zero backend when you want it to.
 gate passed). Settled demo cycle on-ledger: A=115k, B=130k, C=55k; net positions +15k / +30k /
 -45k (sum zero). Verified end to end against the live validator.
 
+## Positioning
+
+The netting market splits into two camps (`docs/PRODUCT_RESEARCH.md`): incumbents (Kyriba,
+Coprocess/GTreasury, SAP IHC, Ripple Treasury) that compute net positions then hand off to
+non-atomic bank rails, and DLT settlement players (Partior, Fnality, J.P. Morgan Kinexys) that
+settle atomically but only bilaterally. NetChain's design thesis is the combination neither camp
+has: confidential N-party netting, counterparties blind to each other's positions, plus atomic
+on-ledger settlement of every net leg, on Canton. In Jan 2026 Ripple/GTreasury shipped a "TMS with
+native digital asset capabilities"; per the research, their public materials claim neither privacy
+of net positions nor atomic settlement of the netted legs. This is a thesis demonstrated on a
+hackathon Devnet, not a production claim.
+
+|                | Net positions private from counterparties | Settlement atomic |
+| -------------- | ------------------------------------------- | ------------------ |
+| Netting incumbents (Kyriba, Coprocess/GTreasury, SAP IHC, Ripple Treasury) | No, conventional access control | No, instruction file then a separate execution step |
+| DLT settlement (Partior, Fnality, Kinexys)                                 | No, bilateral/permissioned visibility | Yes, bilaterally |
+| NetChain                                                                   | Yes, Canton per-party projection | Yes, across the full N-party net |
+
 ## Setup
 
 ```bash
