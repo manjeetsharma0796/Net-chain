@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>NetChain — Hackathon Deck</title>
+<title>NetChain, Hackathon Deck</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -278,7 +278,7 @@
     <p class="eyebrow">Canton Hackathon · Jul 2026</p>
     <h1>Settle everything.<br /><span class="accent">Reveal nothing.</span></h1>
     <p class="sub">
-      NetChain is privacy-preserving multilateral netting with atomic settlement —
+      NetChain is privacy-preserving multilateral netting with atomic settlement -
       built on Canton Network, live on 5N Devnet.
     </p>
     <p class="sub mono" style="margin-top:2rem;font-size:0.8rem;color:rgba(215,226,234,0.35);">
@@ -291,7 +291,7 @@
     <p class="eyebrow">The problem</p>
     <h2>B2B netting today is a<br />privacy <span class="rejected-color">nightmare</span>.</h2>
     <p class="sub">
-      Every counterparty in a multilateral net sees the full exposure table —
+      Every counterparty in a multilateral net sees the full exposure table -
       who owes whom, how much, and when. That's your trade data, your credit
       risk, your negotiating position. All of it, visible to your competitors.
     </p>
@@ -307,7 +307,7 @@
         <p class="eyebrow" style="margin-bottom:0.5rem;">NetChain</p>
         <h3 class="accent">Confidential settlement</h3>
         <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
-          A cannot read B's obligations. The ledger enforces this — not the UI.
+          A cannot read B's obligations. The ledger enforces this, not the UI.
           One operator, known and authorised. No MPC needed.
         </p>
       </div>
@@ -320,7 +320,7 @@
     <h2>C cannot see A↔B.<br /><span class="accent">The ledger says so.</span></h2>
     <p class="sub">
       The A→B Obligation has <span class="mono">signatory obligor, observer obligee + operator</span>.
-      C is not listed — so the node won't even acknowledge the contract exists.
+      C is not listed, so the node won't even acknowledge the contract exists.
     </p>
     <div class="code-block">
       <span class="dim"># Party C queries A→B contract directly:</span><br />
@@ -342,7 +342,7 @@
     <p class="sub">
       The treasury agent reads the image with <strong>NVIDIA NIM vision</strong>
       (<span class="mono">llama-3.2-11b-vision-instruct</span>), extracts amount, counterparty,
-      due date and reference — then creates an on-ledger Obligation tagged
+      due date and reference, then creates an on-ledger Obligation tagged
       <span class="mono accent">source: agent</span>. Manual entry is always the fallback.
     </p>
     <div class="code-block">
@@ -365,7 +365,7 @@
     <p class="sub">
       A single <span class="mono">Settle</span> choice moves every Account balance
       inside one Canton transaction. No partial fills. No timing risk.
-      If any assertion fails, the whole thing aborts — no funds move.
+      If any assertion fails, the whole thing aborts, no funds move.
     </p>
     <div class="cards" style="margin-top:1.5rem;">
       <div class="card">
@@ -397,7 +397,7 @@
     <p class="sub">
       Each party holds a <span class="mono">TreasuryPolicy</span> with a
       <span class="mono">maxSettlementPerCycle</span> cap. The <span class="mono">CheckSettlement</span>
-      choice asserts it — an over-cap attempt is rejected inside the Canton transaction.
+      choice asserts it, an over-cap attempt is rejected inside the Canton transaction.
       An agent cannot route around it.
     </p>
     <div class="code-block">
@@ -411,13 +411,13 @@
 
   <!-- 6 · PRIVACY MODEL (honest) -->
   <section class="slide" id="s6">
-    <p class="eyebrow">Privacy model — the honest version</p>
+    <p class="eyebrow">Privacy model, the honest version</p>
     <h2>Counterparties are blind.<br />Operator is <span class="privacy-color">known + authorised</span>.</h2>
     <div class="cards" style="margin-top:1.5rem;">
       <div class="card">
         <h3>What's private</h3>
         <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
-          A↔B obligations are invisible to C — enforced at the <em>ledger node</em>,
+          A↔B obligations are invisible to C, enforced at the <em>ledger node</em>,
           not the UI. Each party reads only its own <span class="mono">NetPosition</span>.
           No counterparty can access another's net figure.
         </p>
@@ -427,13 +427,13 @@
         <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
           The netting operator (signatory on <span class="mono">NettingCycle</span>)
           sees all obligations in-scope for the cycle. This is the settlement bank
-          model — a known, regulated coordinator, not a hidden intermediary.
+          model, a known, regulated coordinator, not a hidden intermediary.
         </p>
       </div>
       <div class="card">
         <h3>Future: MPC / ZK</h3>
         <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
-          A blind operator is possible with MPC or ZK proofs of netting correctness —
+          A blind operator is possible with MPC or ZK proofs of netting correctness -
           explicitly deferred. The architecture makes this a future layer, not a rework.
         </p>
       </div>
@@ -506,7 +506,7 @@
         <h3 class="privacy-color">Sub-transaction privacy</h3>
         <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
           Parties receive only the sub-transactions they're a stakeholder in.
-          Privacy is enforced at the node — not the application layer.
+          Privacy is enforced at the node, not the application layer.
         </p>
       </div>
       <div class="card">

@@ -11,8 +11,8 @@ export interface Slide {
 
 /**
  * The landing scroll system (ported from the inspo deck):
- * a full-viewport snap container — every slide is exactly one screen
- * and scrolling snaps between them — plus a right-side dot nav and a
+ * a full-viewport snap container, every slide is exactly one screen
+ * and scrolling snaps between them, plus a right-side dot nav and a
  * spring-smoothed progress bar across the top.
  */
 export default function LandingShell({

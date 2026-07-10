@@ -23,7 +23,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /**
  * Operator console + party-scoped result. The view toggle is the demo
  * device: as operator you see every net position; as the logged-in
- * party you see exactly one figure — your own.
+ * party you see exactly one figure, your own.
  */
 export default function CyclePage() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
@@ -92,7 +92,7 @@ export default function CyclePage() {
     logActivity({
       actor: "operator",
       kind: "cycle",
-      message: `Cycle ${usedCycleId} computed${liveResult ? " on-ledger" : ""} — ${positions.filter((p) => p.net !== 0).length} net positions`,
+      message: `Cycle ${usedCycleId} computed${liveResult ? " on-ledger" : ""}, ${positions.filter((p) => p.net !== 0).length} net positions`,
     });
     pushToast(
       "success",
@@ -129,7 +129,7 @@ export default function CyclePage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Netting Cycle"
-        subtitle={`${cycleId} — the operator observes in-scope obligations, computes each party's single net position, and never needs anything more.`}
+        subtitle={`${cycleId}, the operator observes in-scope obligations, computes each party's single net position, and never needs anything more.`}
         actions={
           <div
             role="group"
@@ -185,7 +185,7 @@ export default function CyclePage() {
 
               {openObligations.length === 0 && !computed && (
                 <p className="py-6 text-center text-sm text-frost/50">
-                  No open obligations — this cycle has already been netted.
+                  No open obligations, this cycle has already been netted.
                 </p>
               )}
 
@@ -234,7 +234,7 @@ export default function CyclePage() {
                 <div className="mb-5 flex items-center gap-2.5">
                   <Sigma size={18} className="text-settled" aria-hidden="true" />
                   <h2 className="text-sm font-semibold uppercase tracking-widest">
-                    Net positions — operator output
+                    Net positions, operator output
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -314,7 +314,7 @@ export default function CyclePage() {
           >
           {!computed ? (
             <div className="glass-card col-span-full rounded-2xl p-10 text-center text-sm text-frost/50">
-              Cycle not yet computed — the operator hasn&apos;t run it. Switch
+              Cycle not yet computed, the operator hasn&apos;t run it. Switch
               to the operator view to run the netting cycle.
             </div>
           ) : (
@@ -340,7 +340,7 @@ export default function CyclePage() {
                   {mine && pos ? (
                     <>
                       <p className="text-xs font-semibold uppercase tracking-wider text-frost/70">
-                        {partyById(pid).name} — your position
+                        {partyById(pid).name}, your position
                         {IS_LIVE && (
                           <span className="ml-2 text-[10px] text-accent/70">· live</span>
                         )}

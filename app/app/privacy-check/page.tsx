@@ -131,7 +131,7 @@ export default function PrivacyCheckPage() {
                           />
                           <span
                             className="h-2.5 flex-1 rounded bg-frost/15"
-                            aria-label="Contract not in your projection — parties and amount are not disclosed"
+                            aria-label="Contract not in your projection, parties and amount are not disclosed"
                           />
                           <StatusPill status="private" label="Not disclosed" />
                         </>
@@ -143,7 +143,7 @@ export default function PrivacyCheckPage() {
 
             <p className="mt-5 text-xs font-light leading-relaxed text-frost/50">
               Locked rows exist only because this demo page juxtaposes the full
-              cycle scope for teaching purposes — the ledger API never returns
+              cycle scope for teaching purposes, the ledger API never returns
               them to {party.shortName} at all, as the query on the right
               proves.
             </p>
@@ -164,8 +164,8 @@ export default function PrivacyCheckPage() {
             </div>
 
             <p className="text-sm font-light leading-relaxed text-frost/70">
-              Ask the ledger for a contract between the other two parties —
-              by exact contract ID — while authenticated as{" "}
+              Ask the ledger for a contract between the other two parties -
+              by exact contract ID, while authenticated as{" "}
               <span className="figures text-xs">{shortHash(party.ledgerId, 14, 4)}</span>.
             </p>
 
@@ -219,7 +219,7 @@ export default function PrivacyCheckPage() {
                     </p>
                     <p className="mt-4 text-xs font-light leading-relaxed text-frost/55">
                       The ledger does not even confirm the contract exists.
-                      This is Canton&apos;s per-party projection — enforced at
+                      This is Canton&apos;s per-party projection, enforced at
                       the data layer, not hidden by the UI.
                     </p>
                   </motion.div>
@@ -235,7 +235,7 @@ export default function PrivacyCheckPage() {
               />
               <p className="text-xs font-light leading-relaxed text-frost/70">
                 Net positions are scoped the same way: on the Netting Cycle
-                screen, {party.shortName} sees exactly one figure — its own.
+                screen, {party.shortName} sees exactly one figure, its own.
               </p>
             </div>
           </section>

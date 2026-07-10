@@ -4,7 +4,7 @@
  * Every read is PARTY-SCOPED: functions take the requesting party and
  * filter server-side (here: shim-side), so privacy is enforced in the
  * data layer, not the UI. Swapping this file for real Canton Ledger
- * API / Scan API calls is the intended integration path — the function
+ * API / Scan API calls is the intended integration path, the function
  * signatures are the contract.
  */
 
@@ -48,7 +48,7 @@ export async function getObligationsFor(
 }
 
 /**
- * Direct contract lookup. Non-stakeholders get CONTRACT_NOT_FOUND —
+ * Direct contract lookup. Non-stakeholders get CONTRACT_NOT_FOUND -
  * the ledger does not even acknowledge the contract exists.
  */
 export async function queryContract(
@@ -146,7 +146,7 @@ export interface PolicyVerdict {
 
 /**
  * On-ledger policy check. In the real system this is a Daml assertion
- * inside the settlement choice — the agent cannot route around it.
+ * inside the settlement choice, the agent cannot route around it.
  */
 export async function checkPolicy(
   policy: TreasuryPolicy,
@@ -169,7 +169,7 @@ export async function checkPolicy(
   if (amount > policy.requiresHumanApprovalAbove) {
     return {
       verdict: "rejected",
-      ruleFired: `requiresHumanApprovalAbove: ${amount.toLocaleString()} > ${policy.requiresHumanApprovalAbove.toLocaleString()} USDCx — human approval missing`,
+      ruleFired: `requiresHumanApprovalAbove: ${amount.toLocaleString()} > ${policy.requiresHumanApprovalAbove.toLocaleString()} USDCx, human approval missing`,
     };
   }
   return { verdict: "approved" };

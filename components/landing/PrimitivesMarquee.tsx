@@ -12,7 +12,7 @@ import { useReducedMotion } from "framer-motion";
 
 interface Primitive {
   name: string;
-  /** Real brand mark, only where one exists — no placeholder icons. */
+  /** Real brand mark, only where one exists, no placeholder icons. */
   logoSrc?: string;
   logoAlt?: string;
 }
@@ -61,7 +61,7 @@ export default function PrimitivesMarquee() {
   const reduceMotion = useReducedMotion();
 
   // Scroll-linked translation written straight to the DOM inside a
-  // rAF — no React state, so scrolling never re-renders the tiles.
+  // rAF, no React state, so scrolling never re-renders the tiles.
   useEffect(() => {
     if (reduceMotion) return;
     let frame = 0;

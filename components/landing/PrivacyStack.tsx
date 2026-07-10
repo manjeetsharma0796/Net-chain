@@ -6,7 +6,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import { StickyStackCard } from "@/components/motion/StickyStack";
 
 /* ------------------------------------------------------------------ */
-/* Mini diagram panels (pure CSS/SVG — no external imagery)           */
+/* Mini diagram panels (pure CSS/SVG, no external imagery)           */
 /* ------------------------------------------------------------------ */
 
 function Panel({
@@ -85,7 +85,7 @@ const CARDS = [
   },
   {
     title: "A known, authorized coordinator",
-    body: "The operator sees just enough to compute the net — atomic, auditable, policy-bounded.",
+    body: "The operator sees just enough to compute the net, atomic, auditable, policy-bounded.",
     Icon: Landmark,
     visuals: (
       <>

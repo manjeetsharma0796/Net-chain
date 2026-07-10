@@ -9,7 +9,7 @@ interface GhostButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
 }
 
-/** Outline pill — the secondary action everywhere. */
+/** Outline pill, the secondary action everywhere. */
 export default function GhostButton({
   children,
   href,

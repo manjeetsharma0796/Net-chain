@@ -12,7 +12,7 @@ interface PrimaryCTAButtonProps
 }
 
 /**
- * The single vibrant gradient CTA. One per screen — everything else
+ * The single vibrant gradient CTA. One per screen, everything else
  * uses GhostButton.
  */
 export default function PrimaryCTAButton({

@@ -26,7 +26,7 @@ type AttemptPhase = "idle" | "proposing" | "checking" | "rejected";
 
 /**
  * The non-bypassable policy demo: the agent proposes an over-threshold
- * settlement and the on-ledger TreasuryPolicy rejects it — a live,
+ * settlement and the on-ledger TreasuryPolicy rejects it, a live,
  * visible failure state with the exact rule that fired.
  */
 export default function PolicyPage() {
@@ -113,7 +113,7 @@ export default function PolicyPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Treasury Policy"
-        subtitle={`${party.name}'s TreasuryPolicy lives on the ledger. The agent operates through it — never around it.`}
+        subtitle={`${party.name}'s TreasuryPolicy lives on the ledger. The agent operates through it, never around it.`}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -147,9 +147,9 @@ export default function PolicyPage() {
             <p className="mt-4 text-xs font-light leading-relaxed text-frost/50">
               maxSettlementPerCycle is read live from the deployed
               TreasuryPolicy contract. Fields marked illustrative are
-              product-config, not yet on-ledger — extending the contract is
+              product-config, not yet on-ledger, extending the contract is
               future work. In the real system these are assertions inside the
-              Daml settlement choice — the transaction fails validation
+              Daml settlement choice, the transaction fails validation
               before it ever reaches the ledger if any rule is violated.
             </p>
           </section>

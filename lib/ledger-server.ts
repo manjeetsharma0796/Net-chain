@@ -213,7 +213,7 @@ export async function listObligations(party: PartyId): Promise<Obligation[]> {
   return rows.map((c) => toObligation(c, toPartyId)).filter((o): o is Obligation => o !== null);
 }
 
-/** Direct lookup — returns null if `party` isn't a stakeholder (real not-found). */
+/** Direct lookup, returns null if `party` isn't a stakeholder (real not-found). */
 export async function getContract(
   party: PartyId,
   contractId: string,
@@ -279,7 +279,7 @@ async function openCycleAndCompute(): Promise<{
 
 /**
  * Create a NettingCycle on-ledger, exercise ComputeNetPositions, and return
- * the resulting NetPositions. Non-consuming choice — the cycle contract stays
+ * the resulting NetPositions. Non-consuming choice, the cycle contract stays
  * active so T29's Settle can use the same contractId.
  */
 export async function computeNetPositionsOnLedger(): Promise<{
@@ -323,7 +323,7 @@ export async function getPolicy(
   return pol ? { maxSettlementPerCycle: Number(pol.payload.maxSettlementPerCycle ?? 0) } : null;
 }
 
-/** Exercise CheckSettlement on `party`'s policy — the non-bypassable gate. */
+/** Exercise CheckSettlement on `party`'s policy, the non-bypassable gate. */
 export async function checkPolicy(
   party: PartyId,
   amount: number,

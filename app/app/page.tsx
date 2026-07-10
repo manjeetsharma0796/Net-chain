@@ -100,7 +100,7 @@ export default function DashboardPage() {
           <StatCard
             label="Validators"
             Icon={Network}
-            value={scan ? <NumberTicker value={scan.validators} /> : "—"}
+            value={scan ? <NumberTicker value={scan.validators} /> : "-"}
             hint={scan ? `${scan.superValidators} super validators` : "loading…"}
           />
           <StatCard
@@ -108,7 +108,7 @@ export default function DashboardPage() {
             Icon={Vote}
             value={
               <span className="text-lg md:text-xl">
-                {scan ? scan.governanceState : "—"}
+                {scan ? scan.governanceState : "-"}
               </span>
             }
           />
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                   decimals={4}
                 />
               ) : (
-                "—"
+                "-"
               )
             }
             hint={
@@ -137,7 +137,7 @@ export default function DashboardPage() {
           <StatCard
             label="Rounds / day"
             Icon={RefreshCcw}
-            value={scan ? <NumberTicker value={scan.roundsPerDay} /> : "—"}
+            value={scan ? <NumberTicker value={scan.roundsPerDay} /> : "-"}
           />
         </div>
       </FadeIn>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             </div>
             <p className="figures mt-3 text-3xl">{myObligations.length}</p>
             <p className="mt-1 text-xs text-frost/45">
-              visible to {party.shortName} — other parties&apos; contracts are
+              visible to {party.shortName}, other parties&apos; contracts are
               not in your projection
             </p>
           </div>

@@ -1,4 +1,4 @@
-/** Formatting helpers — every figure in the UI goes through these. */
+/** Formatting helpers, every figure in the UI goes through these. */
 
 export function formatUSDCx(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -37,7 +37,7 @@ export function shortHash(hash: string, head = 6, tail = 4): string {
 
 /**
  * Deterministic pseudo-hash for mock contract ids / tx hashes.
- * Not cryptographic — just stable, hex-looking output for the demo.
+ * Not cryptographic, just stable, hex-looking output for the demo.
  */
 export function mockHash(seed: string, length = 40): string {
   let h = 0x811c9dc5;

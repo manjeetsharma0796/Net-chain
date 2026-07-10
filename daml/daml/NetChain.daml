@@ -1,4 +1,4 @@
--- NetChain — core Daml model.
+-- NetChain, core Daml model.
 -- Privacy-preserving multilateral netting + atomic settlement, bounded by an
 -- on-ledger treasury policy. Keyless (LF 2.3 / SDK 3.5.2). Single-operator
 -- settlement model: the netting operator is the settlement bank that holds
@@ -8,7 +8,7 @@ module NetChain where
 import DA.List (find)
 import DA.Foldable (forA_)
 
--- 1. Account — operator-issued balance holding. The operator (netting bank)
+-- 1. Account, operator-issued balance holding. The operator (netting bank)
 --    is the sole signatory; each owner only observes its own account, so
 --    `query @Account partyA` returns only A's account.
 template Account
@@ -21,7 +21,7 @@ template Account
     observer owner
     ensure balance >= 0.0
 
--- 2. Obligation — "obligor owes obligee". Signed by the obligor; only the
+-- 2. Obligation, "obligor owes obligee". Signed by the obligor; only the
 --    obligee and the operator observe it. No third counterparty can see it.
 template Obligation
   with
@@ -36,7 +36,7 @@ template Obligation
     signatory obligor
     observer obligee, operator
 
--- 3. TreasuryPolicy — the on-ledger guardrail. `CheckSettlement` is the
+-- 3. TreasuryPolicy, the on-ledger guardrail. `CheckSettlement` is the
 --    non-bypassable gate an agent hits: an over-cap attempt fails inside the
 --    ledger, not in the UI.
 template TreasuryPolicy
@@ -57,7 +57,7 @@ template TreasuryPolicy
           ("TreasuryPolicy breach: " <> show amount <> " > cap " <> show maxSettlementPerCycle)
           (amount <= maxSettlementPerCycle)
 
--- 4. NetPosition — one party's single net figure for a cycle. Observed only
+-- 4. NetPosition, one party's single net figure for a cycle. Observed only
 --    by that party, so A cannot read B's net from the ledger.
 template NetPosition
   with
@@ -69,7 +69,7 @@ template NetPosition
     signatory operator
     observer party
 
--- 5. NettingCycle — the operator's scope + the atomic `Settle`.
+-- 5. NettingCycle, the operator's scope + the atomic `Settle`.
 template NettingCycle
   with
     operator : Party
@@ -133,7 +133,7 @@ template NettingCycle
           create (NetPosition with operator, party = p, cycleId, net = receivable - payable)
 
     -- Atomic settlement: assert every net is within policy, then move every
-    -- account balance — all in ONE transaction. Any failed assertion rolls
+    -- account balance, all in ONE transaction. Any failed assertion rolls
     -- back the whole commit, so nothing moves (all-or-nothing DvP).
     choice Settle : ContractId NettingCycle
       with

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Odometer-style rolling counter — adapted from 21st.dev
+ * Odometer-style rolling counter, adapted from 21st.dev
  * (YadHakim/number-ticker) and restyled to the NetChain system:
  * mono `figures` face, reduced-motion fallback, frost palette.
  * Each digit rolls independently on a spring; higher-order digits

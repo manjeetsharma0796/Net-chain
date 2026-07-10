@@ -34,7 +34,7 @@ const LEG_PILL = {
 /**
  * Allocation → atomic settlement. Every leg flips to Settled in the
  * same commit; with failure injection enabled, the commit aborts and
- * every leg reverts — there is no partial state to show because none
+ * every leg reverts, there is no partial state to show because none
  * ever exists.
  */
 export default function SettlementPage() {
@@ -90,7 +90,7 @@ export default function SettlementPage() {
     setBusy(true);
     setAborted(false);
     setCycleStatus("settling");
-    await sleep(1600); // the commit window — legs pulse while pending
+    await sleep(1600); // the commit window, legs pulse while pending
 
     if (forceFail) {
       // Atomic abort: nothing settled, everything reverts together.
@@ -102,9 +102,9 @@ export default function SettlementPage() {
       logActivity({
         actor: "operator",
         kind: "settlement",
-        message: `Settlement for ${cycleId} ABORTED — injected leg failure; all legs reverted, no funds moved`,
+        message: `Settlement for ${cycleId} ABORTED, injected leg failure; all legs reverted, no funds moved`,
       });
-      pushToast("error", "Commit aborted — all legs reverted. Nothing moved.");
+      pushToast("error", "Commit aborted, all legs reverted. Nothing moved.");
     } else {
       // Live path: run + Settle the cycle on-ledger for a real update id
       // (null when the flag is off / ledger unconfigured → mock hash).
@@ -128,7 +128,7 @@ export default function SettlementPage() {
       logActivity({
         actor: "operator",
         kind: "settlement",
-        message: `Cycle ${cycleId} settled atomically — ${legs.length} legs in one DvP transaction`,
+        message: `Cycle ${cycleId} settled atomically, ${legs.length} legs in one DvP transaction`,
       });
       pushToast("success", "Settled. Every leg cleared in one transaction.");
     }
@@ -142,7 +142,7 @@ export default function SettlementPage() {
         <div className="glass-card rounded-2xl p-12 text-center">
           <Landmark size={30} className="mx-auto text-frost/40" aria-hidden="true" />
           <p className="mt-4 text-sm text-frost/60">
-            No settlement legs yet — run the netting cycle first.
+            No settlement legs yet, run the netting cycle first.
           </p>
           <div className="mt-6 flex justify-center">
             <GhostButton href="/app/cycle">Go to Netting Cycle</GhostButton>
@@ -156,7 +156,7 @@ export default function SettlementPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Settlement"
-        subtitle={`${cycleId} — net obligors allocate USDCx, then every leg clears in one all-or-nothing DvP transaction.`}
+        subtitle={`${cycleId}, net obligors allocate USDCx, then every leg clears in one all-or-nothing DvP transaction.`}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
@@ -230,7 +230,7 @@ export default function SettlementPage() {
                       Transaction aborted.
                     </span>{" "}
                     One leg failed during the commit, so the ledger rejected
-                    the whole transaction — every leg reverted, no funds
+                    the whole transaction, every leg reverted, no funds
                     moved. All-or-nothing is the only mode.
                   </p>
                 </motion.div>

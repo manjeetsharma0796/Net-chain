@@ -4,7 +4,7 @@ import TopBar from "@/components/app/TopBar";
 import Toaster from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
-  title: "NetChain — Demo App",
+  title: "NetChain, Demo App",
 };
 
 /**

@@ -1,4 +1,4 @@
-# NetChain — Operator TODO
+# NetChain, Operator TODO
 
 Human-only actions and decisions for the DAML-interaction spine (T09 + T11–T14).
 Everything an agent **cannot** do itself lives here. Check items off as you go.
@@ -17,11 +17,11 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 - [x] **Shipped from a local checkout (2026-07-10).** The cloud container had no `origin`; the
   branch was delivered as a git bundle, fetched into the local clone (which has the GitHub
   remote), verified, pushed, and merged. **PR #1 merged to `main`; branch deleted.** CI
-  (`daml.yml`) went green on Linux — `dpm build` + `dpm test` = 4 Script tests pass.
+  (`daml.yml`) went green on Linux, `dpm build` + `dpm test` = 4 Script tests pass.
 
 ## Decisions (resolved)
 
-- [x] **Party allocation:** fresh `netchain-*` parties could **not** be authorized — the shared
+- [x] **Party allocation:** fresh `netchain-*` parties could **not** be authorized, the shared
   M2M user (6) is at its **1000 user-rights cap** (`TOO_MANY_USER_RIGHTS`), so no new `CanActAs`
   grants are possible. Per your approval, the demo **reuses existing scratch parties** user 6
   already controls, all on the primary participant fingerprint: operator=`Dave`, A=`Carol`,
@@ -29,14 +29,14 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
   A dedicated OAuth client from Five North would let you switch back to named `netchain-*` parties.
 - [x] **Duplicate contracts archived (2026-07-10).** Archived the 6 duplicate `Obligation`s
   (kept one per pair → 6) and the 3 stale @100k `Account`s (kept the settled 115k/130k/55k), so
-  the live obligations table is clean. The 3 duplicate `TreasuryPolicy`s were left — invisible and
+  the live obligations table is clean. The 3 duplicate `TreasuryPolicy`s were left, invisible and
   harmless (`checkPolicy` uses `.find`, which returns the first). `deploy.sh` is idempotent so
   this won't recur.
 - [ ] Confirm the **real deadline** (13 vs 14 Jul) in `#canton`.
 
 ## Ship
 
-- [x] Push `daml-interaction`, open PR, merge to `main`, delete branch — **done (PR #1)**.
+- [x] Push `daml-interaction`, open PR, merge to `main`, delete branch, **done (PR #1)**.
 - [ ] (Later, out of scope) Vercel env for T15 live frontend link.
 
 ## Frontend pipeline (activate the new tooling)
@@ -66,7 +66,7 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 ## Machine note (this Windows dev box)
 
 - [!] **Global npm is broken.** `npm install` fails with `SyntaxError: Invalid or unexpected
-  token` — npm's own bundled `tar` module (`C:\Program Files\nodejs\node_modules\npm\node_modules\tar\dist\commonjs\pack.js`)
+  token`, npm's own bundled `tar` module (`C:\Program Files\nodejs\node_modules\npm\node_modules\tar\dist\commonjs\pack.js`)
   is corrupted (overwritten with hex data). Workaround used here: install deps via
   `corepack pnpm install` (npm's script runner still works, so `npm run build`/`dev` are fine
   once `node_modules` exists). **Fix:** reinstall Node.js/npm to repair the corrupted file.
@@ -76,7 +76,7 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 - Run the deploy: `cd daml && source ../.env && ./deploy.sh` (needs `CLIENT_SECRET` set first).
 - Run the live frontend: set `NEXT_PUBLIC_LEDGER_LIVE=1` (client flag) **and** the server-side
   `.env` values (`CLIENT_SECRET`, party ids, `NETCHAIN_PKG_ID`), then `npm run dev`. With the
-  flag unset, the app runs the original mock demo — nothing hard-breaks.
-- Local DPM install in this container was **not** attempted as the source of truth — CI
+  flag unset, the app runs the original mock demo, nothing hard-breaks.
+- Local DPM install in this container was **not** attempted as the source of truth, CI
   (`.github/workflows/daml.yml`) builds and tests the DAR on Linux. Install locally only if you
   want `dpm test` on your own machine.

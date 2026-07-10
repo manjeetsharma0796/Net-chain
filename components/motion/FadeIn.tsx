@@ -8,7 +8,7 @@ interface FadeInProps {
   /** Seconds to wait before animating in. */
   delay?: number;
   duration?: number;
-  /** Initial offset — element slides from (x, y) to rest. */
+  /** Initial offset, element slides from (x, y) to rest. */
   x?: number;
   y?: number;
   className?: string;

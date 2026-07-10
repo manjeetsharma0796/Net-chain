@@ -6,7 +6,7 @@ import { CheckCircle2, Lock } from "lucide-react";
 
 /**
  * The hero's signature element: a settlement instruction rendered as
- * the document a treasurer would actually recognize — a clearing
+ * the document a treasurer would actually recognize, a clearing
  * confirmation. Rows you are party to are legible; counterparty rows
  * are redaction bars. The card loops the product's whole story:
  * six gross obligations collapse to two net legs and settle atomically.
@@ -33,7 +33,7 @@ function RedactedRow() {
   return (
     <div
       className="flex items-center gap-3 px-4 py-[9px]"
-      aria-label="Redacted obligation — you are not a party to this contract"
+      aria-label="Redacted obligation, you are not a party to this contract"
     >
       <Lock size={11} className="shrink-0 text-privacy/70" aria-hidden="true" />
       <span className="h-2 w-24 rounded-sm bg-frost/[0.13]" />
@@ -76,7 +76,7 @@ export default function SettlementCard({
         <span className="text-[10px] text-frost/35">cycle-2026-07-A</span>
       </div>
 
-      {/* viewer line — explains the redactions */}
+      {/* viewer line, explains the redactions */}
       <div className="flex items-center justify-between border-b border-frost/[0.08] px-4 py-2 text-[10px] text-frost/40">
         <span>viewer: aurora::1220f8a2…</span>
         <span className="text-privacy/80">2 of 6 rows not disclosed</span>
@@ -118,7 +118,7 @@ export default function SettlementCard({
               className="px-4 py-3"
             >
               <p className="pb-2 text-[10px] tracking-[0.18em] text-frost/40">
-                NETTED — 6 OBLIGATIONS → 2 LEGS
+                NETTED, 6 OBLIGATIONS → 2 LEGS
               </p>
               <div className="divide-y divide-frost/[0.05] rounded-lg border border-frost/[0.09]">
                 {NET_ROWS.map((leg) => (
@@ -152,7 +152,7 @@ export default function SettlementCard({
         </AnimatePresence>
       </div>
 
-      {/* document footer — the arithmetic that makes the pitch */}
+      {/* document footer, the arithmetic that makes the pitch */}
       <div className="flex items-center justify-between border-t border-frost/[0.08] px-4 py-3 text-[10px] text-frost/40">
         <span>gross 460,000.00</span>
         <span>net 45,000.00</span>

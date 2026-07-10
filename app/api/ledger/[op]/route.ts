@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
   const blocked = guard();
   if (blocked) return blocked;
 
-  // /api/ledger/balances needs no party param — queries as operator.
+  // /api/ledger/balances needs no party param, queries as operator.
   if (params.op === "balances") {
     try {
       return NextResponse.json(await getAllAccountBalances());

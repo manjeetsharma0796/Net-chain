@@ -1,4 +1,4 @@
-# Canton Devnet — End-to-End Agent Guide
+# Canton Devnet, End-to-End Agent Guide
 
 > ⚠️ **Secret redacted for the public repo.** The M2M `CLIENT_SECRET` is NOT in this
 > file. Put it in an untracked `.env` (see `.env.example`) and `source` it. All other
@@ -6,9 +6,9 @@
 
 Everything needed to build, upload, and interact with Daml contracts on the
 Five North (fivenorth) devnet validator via the **JSON Ledger API v2**.
-Written from a full working session — every command here was run and verified.
+Written from a full working session, every command here was run and verified.
 
-> Read the **Gotchas** section first — it's where the time gets lost.
+> Read the **Gotchas** section first, it's where the time gets lost.
 
 ---
 
@@ -16,7 +16,7 @@ Written from a full working session — every command here was run and verified.
 
 ```bash
 export BASE="https://ledger-api.validator.devnet.sandbox.fivenorth.io"
-# CLIENT_SECRET comes from your untracked .env (see .env.example) — NEVER commit it.
+# CLIENT_SECRET comes from your untracked .env (see .env.example), NEVER commit it.
 export CLIENT_SECRET="${CLIENT_SECRET:?set CLIENT_SECRET in your .env}"
 
 # 1. token (expires every 8h)
@@ -42,7 +42,7 @@ This repo already has working scripts: `lib.sh` (bootstrap), `addparty.sh`,
 | WebSocket base | `wss://ledger-api.validator.devnet.sandbox.fivenorth.io` |
 | Token endpoint | `https://auth.sandbox.fivenorth.io/application/o/token/` |
 | Client ID | `validator-devnet-m2m` |
-| Client Secret | `*redacted — see `.env.example` / 5N access doc*` |
+| Client Secret | `*redacted, see `.env.example` / 5N access doc*` |
 | Grant type | `client_credentials` |
 | Audience | `validator-devnet-m2m` |
 | Scope | `daml_ledger_api` |
@@ -50,7 +50,7 @@ This repo already has working scripts: `lib.sh` (bootstrap), `addparty.sh`,
 | **Primary party** | `5nsandbox-devnet-2::1220a14ca128063b8dc9d1ebb0bd22633be9f2168500f4dbc1ecaeb1855b14e5acf8` |
 | **Participant fingerprint** | `1220a14ca128063b8dc9d1ebb0bd22633be9f2168500f4dbc1ecaeb1855b14e5acf8` |
 | **Synchronizer (domain)** | `global-domain::1220be58c29e65de40bf273be1dc2b266d43a9a002ea5b18955aeef7aac881bb471a` |
-| Daml SDK | `3.5.2` (LF 2.3 / PV35) — NetChain's pinned toolchain; the `3.4.11` values elsewhere in this guide are from the earlier counter-app session |
+| Daml SDK | `3.5.2` (LF 2.3 / PV35), NetChain's pinned toolchain; the `3.4.11` values elsewhere in this guide are from the earlier counter-app session |
 
 Notes:
 - This is a **shared M2M credential** = one user (`6`) = one primary party.
@@ -66,7 +66,7 @@ Notes:
 
 These are the things that cost real time. Internalize them.
 
-### G1. Package-ID form vs `#package-name` form — different per call type
+### G1. Package-ID form vs `#package-name` form, different per call type
 - **Commands** (`CreateCommand`, `ExerciseCommand`) use the **package-ID**:
   `templateId = "<pkgId>:Module:Template"`
 - **Filters** (ACS, updates) use the **`#package-name`**:
@@ -76,7 +76,7 @@ These are the things that cost real time. Internalize them.
 - Example: command `b5a9...:Counter:Counter`; filter `#counter:Counter:Counter`.
 
 ### G2. `Int` and `Decimal` must be JSON **strings**
-- `"count":"0"` ✅  — `"count":0` ❌ -> `LEDGER_API_INTERNAL_ERROR: Expected ujson.Str`
+- `"count":"0"` ✅ , `"count":0` ❌ -> `LEDGER_API_INTERNAL_ERROR: Expected ujson.Str`
 - `Decimal` likewise: `"amount":"999.99"`.
 
 ### G3. `submit-and-wait` does NOT return the contractId
@@ -88,7 +88,7 @@ These are the things that cost real time. Internalize them.
 ### G4. ACS is "active only"; archived contracts live in the history
 - `POST /v2/state/active-contracts` = currently-active contracts only.
 - A **consuming choice archives the old contract and creates a new one with a
-  new contractId** — the count/state "changes" by producing a successor.
+  new contractId**, the count/state "changes" by producing a successor.
 - Read archived state via `POST /v2/events/events-by-contract-id`
   (returns both `created` (full payload) and `archived` events) or via
   `POST /v2/updates/flats`. Readable until the participant **prunes**.
@@ -102,8 +102,8 @@ These are the things that cost real time. Internalize them.
 ### G6. Two authorization layers, both required to act as a party
 1. **User right:** user must have `CanActAs <party>` (grant via
    `POST /v2/users/{id}/rights`).
-2. **Template auth:** the party must be a required authorizer (signatory) —
-   or the choice's controller — for that specific action.
+2. **Template auth:** the party must be a required authorizer (signatory) -
+   or the choice's controller, for that specific action.
 
 ### G7. Party allocation works with this token
 - `POST /v2/parties {"partyIdHint":"Bob"}` returns
@@ -115,7 +115,7 @@ These are the things that cost real time. Internalize them.
   with `.contractId`, `.templateId`, `.createArgument`.
 - Updates: `u["update"]["Transaction"]["value"]["events"][*]` where each event
   is `{"CreatedEvent":{...}}` or `{"ArchivedEvent":{...}}`.
-- Errors come back as `{"code":..., "cause":...}` with HTTP 4xx/5xx — check for
+- Errors come back as `{"code":..., "cause":...}` with HTTP 4xx/5xx, check for
   `.code` before assuming success (a naive `len(json)` will count an error
   object as "1 result").
 
@@ -228,7 +228,7 @@ curl -sS -X POST "$BASE/v2/state/active-contracts" \
   \"verbose\": true, \"activeAtOffset\": $OFFSET
 }"
 ```
-Note `#mypkg:...` (package-name form) in the filter — see G1.
+Note `#mypkg:...` (package-name form) in the filter, see G1.
 Wildcard filter (`WildcardFilter`) returns ALL of a party's contracts but 413s
 past ~200 elements; prefer a `TemplateFilter`.
 
@@ -320,13 +320,13 @@ and `<5b9a…>:Counter:SharedCounter` (Bump).
 |---|---|
 | `.env` | central config; auto-detects USER_ID + PRIMARY_PARTY from the token |
 | `lib.sh` | bootstrap: loads `.env`, gets token, exposes `api_post` / `ledger_end` |
-| `addparty.sh` | `./addparty.sh <name|partyId>` — create party + grant CanActAs |
+| `addparty.sh` | `./addparty.sh <name|partyId>`, create party + grant CanActAs |
 | `shared.sh` | `create "p1,p2"` / `show` / `bump` / `history` for SharedCounter; `AS=<party>` to act as another party |
 | `counter/counter.sh` | single-party Counter CLI: `show`/`create`/`inc`/`incby`/`history` |
 | `counter/daml/Counter.daml` | both templates |
 
 To reuse the scripts: only `CLIENT_ID` / `CLIENT_SECRET` in `.env` need changing
-for a different credential — the rest is auto-detected.
+for a different credential, the rest is auto-detected.
 
 ---
 

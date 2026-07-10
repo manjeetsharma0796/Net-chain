@@ -39,7 +39,7 @@ export const PARTIES: Party[] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Obligations — a solvable netting graph                             */
+/* Obligations, a solvable netting graph                             */
 /*                                                                    */
 /*   gross flows        net positions (receivable - payable)          */
 /*   A→B 120,000        A: -160,000 + 175,000 = +15,000 (receiver)    */
@@ -171,7 +171,7 @@ export const POLICIES: TreasuryPolicy[] = [
   },
 ];
 
-/** The amount the rogue-agent demo attempts — above A's cycle cap. */
+/** The amount the rogue-agent demo attempts, above A's cycle cap. */
 export const AGENT_OVERREACH_AMOUNT = 250_000;
 
 /* ------------------------------------------------------------------ */
@@ -194,7 +194,7 @@ export const SEED_ACTIVITY: ActivityEvent[] = [
     id: "ev-001",
     at: "2026-07-08T00:00:00Z",
     actor: "operator",
-    message: "Netting cycle cycle-2026-07-A opened — 6 obligations in scope",
+    message: "Netting cycle cycle-2026-07-A opened, 6 obligations in scope",
     kind: "cycle",
   },
   {
@@ -209,7 +209,7 @@ export const SEED_ACTIVITY: ActivityEvent[] = [
     id: "ev-003",
     at: "2026-07-06T13:20:00Z",
     actor: "company-b",
-    message: "Manual obligation CR-2026-077 recorded — 25,000.00 USDCx (B → A)",
+    message: "Manual obligation CR-2026-077 recorded, 25,000.00 USDCx (B → A)",
     kind: "obligation",
   },
   {

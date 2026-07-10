@@ -11,7 +11,7 @@ const KIND_STYLES = {
 } as const;
 
 /**
- * Global toast outlet — mount once in the app layout. aria-live so
+ * Global toast outlet, mount once in the app layout. aria-live so
  * screen readers announce without stealing focus.
  */
 export default function Toaster() {

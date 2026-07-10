@@ -79,7 +79,7 @@ export default function PartySwitcher({
                     if (p.id !== currentPartyId) {
                       pushToast(
                         "info",
-                        `Now viewing the ledger as ${p.name} — all reads re-scoped.`,
+                        `Now viewing the ledger as ${p.name}, all reads re-scoped.`,
                       );
                     }
                   }}

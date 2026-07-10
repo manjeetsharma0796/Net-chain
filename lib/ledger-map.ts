@@ -1,12 +1,12 @@
 /**
  * Pure adapters between the JSON Ledger API payloads and NetChain's frontend
- * types. No secrets, no process.env, no fetch — safe to import anywhere. The
+ * types. No secrets, no process.env, no fetch, safe to import anywhere. The
  * server module (lib/ledger-server.ts) supplies the party-id lookups; this file
  * only shapes data.
  *
  * Field gaps (the ledger carries less than the UI): on-ledger `Obligation` has
  * no source/createdAt/currency, `NetPosition` has no gross figures. We fill
- * sensible defaults — the operator view still computes gross locally via
+ * sensible defaults, the operator view still computes gross locally via
  * lib/api.ts, and gross is not shown in the party-scoped views.
  */
 
@@ -17,7 +17,7 @@ export interface AccountBalance {
   balance: number;
 }
 
-/** Frontend party order — index 0..2 == company-a/b/c. */
+/** Frontend party order, index 0..2 == company-a/b/c. */
 export const PARTY_IDS: PartyId[] = ["company-a", "company-b", "company-c"];
 
 /** A created contract as returned in an ACS entry. */

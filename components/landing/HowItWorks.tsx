@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     name: "Ingest obligations",
-    description: "Drop an invoice — the agent puts it on-ledger.",
+    description: "Drop an invoice, the agent puts it on-ledger.",
   },
   {
     name: "Run a netting cycle",

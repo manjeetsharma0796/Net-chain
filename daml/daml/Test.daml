@@ -1,4 +1,4 @@
--- NetChain — Daml Script tests (the 3 on-ledger wins).
+-- NetChain, Daml Script tests (the 3 on-ledger wins).
 -- Written test-first: these define the behaviour NetChain.daml must satisfy.
 module Test where
 
@@ -45,7 +45,7 @@ seedCycle Setup{operator, a, b, c} capA capB capC = do
     operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], settled = False
   pure (cyc, [accA, accB, accC], [polA, polB, polC])
 
--- WIN 1 — counterparty privacy: C is not a stakeholder on A→B, so the ledger
+-- WIN 1, counterparty privacy: C is not a stakeholder on A→B, so the ledger
 -- never returns it to C. A (obligor) does see it.
 test_counterparty_privacy : Script ()
 test_counterparty_privacy = do
@@ -56,7 +56,7 @@ test_counterparty_privacy = do
   aObls <- query @Obligation a
   length aObls === 1
 
--- WIN 3a — atomic settlement moves every balance in one commit.
+-- WIN 3a, atomic settlement moves every balance in one commit.
 test_atomic_settlement : Script ()
 test_atomic_settlement = do
   s@Setup{operator, a, b, c} <- parties
@@ -71,7 +71,7 @@ test_atomic_settlement = do
   [(_, accC)] <- query @Account c
   accC.balance === 55000.0
 
--- WIN 3b — all-or-nothing: C's cap (10k) is below its net (45k), so Settle
+-- WIN 3b, all-or-nothing: C's cap (10k) is below its net (45k), so Settle
 -- aborts and NOT ONE balance moves.
 test_settlement_atomic_abort : Script ()
 test_settlement_atomic_abort = do
@@ -85,7 +85,7 @@ test_settlement_atomic_abort = do
   [(_, accC)] <- query @Account c
   accC.balance === 100000.0
 
--- WIN 4 — the on-ledger policy the agent cannot bypass: 250k > 200k cap fails
+-- WIN 4, the on-ledger policy the agent cannot bypass: 250k > 200k cap fails
 -- on-ledger; a within-cap amount succeeds.
 test_policy_rejects_over_threshold : Script ()
 test_policy_rejects_over_threshold = do
@@ -95,7 +95,7 @@ test_policy_rejects_over_threshold = do
   submitMustFail operator $ exerciseCmd polA CheckSettlement with amount = 250000.0
   submit operator $ exerciseCmd polA CheckSettlement with amount = 150000.0
 
--- WIN 5 (T23) — pre-cycle funding check flags an underfunded net payer BEFORE
+-- WIN 5 (T23), pre-cycle funding check flags an underfunded net payer BEFORE
 -- Settle. Same 460k graph, but C is funded only 10k while its net is -45k, so
 -- CheckFunding returns [C]. A (net +15k) and B (net +30k) are not flagged.
 test_prefunding_check : Script ()
@@ -118,7 +118,7 @@ test_prefunding_check = do
     netPositionCids = nps, accountCids = [accA, accB, accC]
   under === [c]
 
--- WIN 6 (T24) — drop-and-re-net: exclude the underfunded C and settle the
+-- WIN 6 (T24), drop-and-re-net: exclude the underfunded C and settle the
 -- survivors A and B over only the obligations that do not involve C
 -- (AB 120k, BA 25k). A nets -95k, B nets +95k, so A -> 5k, B -> 195k. C's
 -- obligations stay open. Never unwind a settled batch.
@@ -146,7 +146,7 @@ test_drop_and_renet = do
   [(_, bAcc)] <- query @Account b
   bAcc.balance === 195000.0
 
--- WIN 7 (T25) — partial settlement / largest solvent subset: TWO net payers
+-- WIN 7 (T25), partial settlement / largest solvent subset: TWO net payers
 -- (B, C) are underfunded at once, A is the sole solvent net receiver. Graph is
 -- just B->A 50k and C->A 60k, so nets are A +110k, B -50k, C -60k (sum 0).
 -- B's account holds 20k (< 50k owed) and C's holds 15k (< 60k owed), so

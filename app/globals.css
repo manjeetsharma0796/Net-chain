@@ -59,7 +59,7 @@ main,
   letter-spacing: -0.01em;
 }
 
-/* Tiny mono eyebrow label above headings — the "ledger voice" */
+/* Tiny mono eyebrow label above headings, the "ledger voice" */
 .eyebrow {
   font-family: var(--font-plex-mono), monospace;
   font-size: 0.7rem;
@@ -69,7 +69,7 @@ main,
 }
 
 /* The single primary action: solid frost pill, ink text. Everything
-   else is a ghost/outline — one loud element per screen, no gradients. */
+   else is a ghost/outline, one loud element per screen, no gradients. */
 .cta-primary {
   background: #d7e2ea;
   color: #0c0c0c;

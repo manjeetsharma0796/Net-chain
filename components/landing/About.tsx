@@ -7,7 +7,7 @@ import SettlementCard from "@/components/landing/SettlementCard";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 
 const THESIS =
-  "Multilateral netting is decades old. NetChain runs it where books stay private, settlement is atomic, and an AI agent does the paperwork — inside a policy it cannot bypass.";
+  "Multilateral netting is decades old. NetChain runs it where books stay private, settlement is atomic, and an AI agent does the paperwork, inside a policy it cannot bypass.";
 
 export default function About() {
   return (
@@ -31,7 +31,7 @@ export default function About() {
           </FadeIn>
         </div>
 
-        {/* the settlement instruction — the product story as a document */}
+        {/* the settlement instruction, the product story as a document */}
         <FadeIn delay={0.25} x={24} y={0} className="justify-self-center lg:justify-self-end">
           <Magnet padding={90} strength={16}>
             <SettlementCard />

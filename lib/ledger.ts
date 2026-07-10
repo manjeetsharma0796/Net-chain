@@ -2,10 +2,10 @@
  * Client shim for the real Canton ledger. Mirrors the lib/api.ts signatures
  * exactly, so a page switches from mock → live by changing only its import
  * (and setting NEXT_PUBLIC_LEDGER_LIVE=1). The trailing `ledger`/`positions`
- * arguments are vestigial here — they are used only for the mock fallback.
+ * arguments are vestigial here, they are used only for the mock fallback.
  *
  * Every call degrades to the mock (lib/api.ts) when the flag is off, the route
- * returns 503 (ledger not configured), or the network fails — the demo never
+ * returns 503 (ledger not configured), or the network fails, the demo never
  * hard-breaks. A real per-party projection miss (HTTP 404) is the one case we
  * do NOT swallow: it becomes the genuine PrivacyError.
  */
@@ -23,7 +23,7 @@ function warnFallback(name: string, fellBackTo: "mock" | "null"): void {
 }
 
 export type { PolicyVerdict, ExtractedInvoice } from "@/lib/api";
-// Pure/mock-only helpers pass straight through — no ledger equivalent needed.
+// Pure/mock-only helpers pass straight through, no ledger equivalent needed.
 export {
   computeNetPositions,
   buildSettlementLegs,
@@ -112,7 +112,7 @@ export async function queryContract(
         `/api/ledger/contract?party=${party}&contractId=${encodeURIComponent(contractId)}`,
       );
       if (r.ok) return (await r.json()) as Obligation;
-      // 404 = the node won't confirm the contract to this party — real privacy.
+      // 404 = the node won't confirm the contract to this party, real privacy.
       if (r.status === 404) throw new PrivacyError(contractId, party);
     } catch (e) {
       if (e instanceof PrivacyError) throw e;
@@ -139,7 +139,7 @@ export async function getNetPositionFor(
   return api.getNetPositionFor(party, positions);
 }
 
-/* ---- policy (T14) — real on-ledger CheckSettlement ----------------------- */
+/* ---- policy (T14), real on-ledger CheckSettlement ----------------------- */
 
 /** On-ledger TreasuryPolicy cap for `party`, or null when not live / unconfigured. */
 export async function getPolicyLive(
@@ -182,7 +182,7 @@ export async function checkPolicy(
   return api.checkPolicy(policy, amount, counterparty);
 }
 
-/* ---- writes (T14) — return the real update id, or null when not live ----- */
+/* ---- writes (T14), return the real update id, or null when not live ----- */
 
 /** Create an Obligation on-ledger. Returns the update id, or null if not live. */
 export async function createObligationLive(input: {

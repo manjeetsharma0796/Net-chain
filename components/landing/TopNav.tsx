@@ -13,7 +13,7 @@ const LINKS = [
 ];
 
 /**
- * Fixed nav floating over the hero's 3D scene — transparent at the top
+ * Fixed nav floating over the hero's 3D scene, transparent at the top
  * of the page, solid ink once the user scrolls into the content.
  */
 export default function TopNav() {

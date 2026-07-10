@@ -19,7 +19,7 @@ import { Obligation, PartyId } from "@/lib/types";
 import { PARTIES } from "@/lib/mock/data";
 
 /* ------------------------------------------------------------------ */
-/* Obligation entry form — used for both agent review and manual entry */
+/* Obligation entry form, used for both agent review and manual entry */
 /* ------------------------------------------------------------------ */
 
 interface DraftFields {
@@ -90,7 +90,7 @@ function ObligationForm({
       message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${created.amount.toLocaleString()} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
     });
     // Live path: also create the Obligation on-ledger (null when the flag is
-    // off / ledger unconfigured — the local demo obligation still stands).
+    // off / ledger unconfigured, the local demo obligation still stands).
     const updateId = await createObligationLive({
       obligor,
       obligee,
@@ -239,7 +239,7 @@ export default function ObligationsPage() {
   // (the ledger write lands after addObligation's optimistic store update).
   const [refreshTick, setRefreshTick] = useState(0);
 
-  // Party-scoped read — the filter happens in lib/api, not here.
+  // Party-scoped read, the filter happens in lib/api, not here.
   useEffect(() => {
     let live = true;
     setLoading(true);
@@ -337,7 +337,7 @@ export default function ObligationsPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Obligations"
-        subtitle={`Contracts where ${party.name} is obligor or obligee — nothing else exists in your projection.`}
+        subtitle={`Contracts where ${party.name} is obligor or obligee, nothing else exists in your projection.`}
         actions={
           <GhostButton onClick={() => setManualOpen((v) => !v)}>
             <PenLine size={14} aria-hidden="true" />
@@ -354,7 +354,7 @@ export default function ObligationsPage() {
         <FadeIn className="mt-6">
           <div className="glass-card rounded-2xl p-6">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-frost/60">
-              Manual entry — the always-works fallback
+              Manual entry, the always-works fallback
             </h2>
             <ObligationForm
               initial={EMPTY_DRAFT}
@@ -376,7 +376,7 @@ export default function ObligationsPage() {
           rowKey={(o) => o.id}
           loading={loading}
           caption={`Obligations visible to ${party.name}`}
-          emptyMessage="No obligations in your view — drop an invoice above."
+          emptyMessage="No obligations in your view, drop an invoice above."
         />
       </FadeIn>
 
@@ -384,7 +384,7 @@ export default function ObligationsPage() {
       <Modal
         open={reviewDraft !== null}
         onClose={() => setReviewDraft(null)}
-        title="Agent extraction — review"
+        title="Agent extraction, review"
       >
         {reviewMeta && (
           <div className="mb-5 flex items-center gap-3 rounded-xl border border-privacy/30 bg-privacy/10 px-4 py-3">

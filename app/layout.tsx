@@ -4,9 +4,9 @@ import "./globals.css";
 
 /**
  * Type system:
- *  - Schibsted Grotesk — display + body. Newsy, characterful, sentence case.
- *  - Newsreader italic — the single serif accent word in each headline.
- *  - IBM Plex Mono — every figure, party ID, hash, and eyebrow label.
+ *  - Schibsted Grotesk, display + body. Newsy, characterful, sentence case.
+ *  - Newsreader italic, the single serif accent word in each headline.
+ *  - IBM Plex Mono, every figure, party ID, hash, and eyebrow label.
  */
 const sans = Schibsted_Grotesk({
   subsets: ["latin"],
@@ -35,7 +35,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NetChain — Confidential Treasury Settlement",
+  title: "NetChain, Confidential Treasury Settlement",
   description:
     "Multilateral netting and atomic on-ledger settlement in USDCx on the Canton Network. Counterparties stay blind to each other.",
 };

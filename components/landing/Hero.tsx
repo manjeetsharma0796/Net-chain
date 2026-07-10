@@ -7,19 +7,19 @@ import GhostButton from "@/components/ui/GhostButton";
 
 /**
  * Full-screen hero, content bottom-left, staggered blur fade-ups.
- * The background is a fine ledger-grid — and a cursor-following
+ * The background is a fine ledger-grid, and a cursor-following
  * spotlight that reveals the cleartext ledger hidden underneath.
  * The privacy story as an interaction: everything is there, you just
  * can't see it without standing in the right place.
  *
  * Performance: the spotlight is a CSS radial-gradient mask whose
- * position is written straight to the DOM inside a lerped rAF loop —
+ * position is written straight to the DOM inside a lerped rAF loop -
  * no canvas, no per-frame data URLs, no React re-renders.
  */
 
 const SPOTLIGHT_R = 260;
 
-// Cleartext rows the spotlight uncovers — the demo ledger, repeated.
+// Cleartext rows the spotlight uncovers, the demo ledger, repeated.
 const CLEAR_ROWS = [
   { ref: "INV-2026-0341", flow: "A → B", amount: "120,000.00", settled: false },
   { ref: "INV-2026-1187", flow: "B → C", amount: "95,000.00", settled: true },
@@ -42,7 +42,7 @@ export default function Hero() {
     const section = sectionRef.current;
     const reveal = revealRef.current;
     if (!section || !reveal || reduceMotion) return;
-    // Spotlight is a hover effect — skip entirely on touch devices.
+    // Spotlight is a hover effect, skip entirely on touch devices.
     if (!window.matchMedia("(hover: hover)").matches) return;
 
     const onMove = (e: MouseEvent) => {
@@ -90,7 +90,7 @@ export default function Hero() {
       id="overview"
       className="relative flex min-h-[100dvh] items-end overflow-hidden bg-ink"
     >
-      {/* ledger grid — hairlines every 56px, faded out toward the top right */}
+      {/* ledger grid, hairlines every 56px, faded out toward the top right */}
       <div
         aria-hidden="true"
         className="absolute inset-0"
@@ -104,7 +104,7 @@ export default function Hero() {
             "radial-gradient(ellipse 90% 80% at 30% 75%, black 35%, transparent 100%)",
         }}
       />
-      {/* one quiet mint breath behind the copy — static, no animation */}
+      {/* one quiet mint breath behind the copy, static, no animation */}
       <div
         aria-hidden="true"
         className="absolute bottom-[-20%] left-[-10%] h-[70%] w-[60%] rounded-full opacity-[0.07]"
@@ -140,7 +140,7 @@ export default function Hero() {
             backgroundSize: "56px 56px",
           }}
         />
-        {/* the cleartext book — confined to the hero's empty right half
+        {/* the cleartext book, confined to the hero's empty right half
             so revealed rows never collide with the headline */}
         <div className="figures absolute inset-y-0 right-0 hidden w-[42%] flex-col justify-evenly pl-8 pr-12 text-xs lg:flex xl:pr-20">
           {Array.from({ length: 2 }).flatMap((_, block) =>
@@ -165,7 +165,7 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* content — bottom-left */}
+      {/* content, bottom-left */}
       <div className="relative z-10 w-full max-w-[90%] px-6 pb-14 pt-32 sm:max-w-xl md:px-10 lg:max-w-2xl">
         <p
           className="eyebrow opacity-0 animate-fade-up"

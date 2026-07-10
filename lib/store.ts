@@ -36,7 +36,7 @@ interface NetChainState {
   currentPartyId: PartyId;
   setParty: (id: PartyId) => void;
 
-  /* balances (party id → USDCx) — mutated by settlement */
+  /* balances (party id → USDCx), mutated by settlement */
   balances: Record<PartyId, number>;
   setBalances: (b: Partial<Record<PartyId, number>>) => void;
 
