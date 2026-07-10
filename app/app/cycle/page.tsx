@@ -102,9 +102,20 @@ export default function CyclePage() {
     );
   };
 
-  const grossTotal = obligations
-    .filter((o) => selected.has(o.id))
-    .reduce((sum, o) => sum + o.amount, 0);
+  const inScopeObligations = obligations.filter((o) => selected.has(o.id));
+  const grossTotal = inScopeObligations.reduce((sum, o) => sum + o.amount, 0);
+  // Live NetPosition contracts carry no gross fields (mapped to 0 in
+  // lib/ledger-map.ts), so gross out/in is derived here from the same
+  // in-scope obligations used for grossTotal and computeNetPositions.
+  const grossFor = (party: PartyId) =>
+    inScopeObligations.reduce(
+      (acc, o) => {
+        if (o.obligor === party) acc.payable += o.amount;
+        if (o.obligee === party) acc.receivable += o.amount;
+        return acc;
+      },
+      { payable: 0, receivable: 0 },
+    );
   const netTotal = netPositions
     ? netPositions.reduce((sum, p) => sum + Math.max(0, p.net), 0)
     : null;
@@ -227,7 +238,9 @@ export default function CyclePage() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  {netPositions!.map((p, i) => (
+                  {netPositions!.map((p, i) => {
+                    const { payable, receivable } = grossFor(p.party);
+                    return (
                     <motion.div
                       key={p.party}
                       initial={{ opacity: 0, y: 16 }}
@@ -268,11 +281,12 @@ export default function CyclePage() {
                         {p.net > 0 ? "net receiver" : p.net < 0 ? "net payer" : "flat"}
                       </p>
                       <p className="figures mt-3 text-[11px] text-frost/40">
-                        gross out {p.grossPayable.toLocaleString()} · gross in{" "}
-                        {p.grossReceivable.toLocaleString()}
+                        gross out {payable.toLocaleString()} · gross in{" "}
+                        {receivable.toLocaleString()}
                       </p>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <p className="figures mt-5 text-xs text-frost/55">
                   Σ nets = {sumOfNets?.toLocaleString()} (zero by construction) ·

@@ -78,7 +78,9 @@ export default function PolicyPage() {
     pushToast("error", "On-ledger policy rejected the agent's settlement.");
   };
 
-  const rows: { label: string; value: React.ReactNode }[] = [
+  // Only maxSettlementPerCycle exists on the deployed TreasuryPolicy template.
+  // The other fields are product-config illustrations, not on-ledger yet.
+  const rows: { label: string; value: React.ReactNode; illustrative?: boolean }[] = [
     {
       label: "maxSettlementPerCycle",
       value: <MoneyValue amount={maxSettlementPerCycle} />,
@@ -93,14 +95,17 @@ export default function PolicyPage() {
             .join(", ")}
         </span>
       ),
+      illustrative: true,
     },
     {
       label: "allowedInstrument",
       value: <span className="figures">{policy.allowedInstrument}</span>,
+      illustrative: true,
     },
     {
       label: "requiresHumanApprovalAbove",
       value: <MoneyValue amount={policy.requiresHumanApprovalAbove} />,
+      illustrative: true,
     },
   ];
 
@@ -127,15 +132,25 @@ export default function PolicyPage() {
                   key={r.label}
                   className="flex flex-wrap items-center justify-between gap-2 py-3.5"
                 >
-                  <dt className="figures text-xs text-frost/55">{r.label}</dt>
+                  <dt className="figures text-xs text-frost/55">
+                    {r.label}
+                    {r.illustrative && (
+                      <span className="ml-2 text-[10px] text-frost/40">
+                        · illustrative
+                      </span>
+                    )}
+                  </dt>
                   <dd className="text-sm">{r.value}</dd>
                 </div>
               ))}
             </dl>
             <p className="mt-4 text-xs font-light leading-relaxed text-frost/50">
-              In the real system these are assertions inside the Daml
-              settlement choice — the transaction fails validation before it
-              ever reaches the ledger if any rule is violated.
+              maxSettlementPerCycle is read live from the deployed
+              TreasuryPolicy contract. Fields marked illustrative are
+              product-config, not yet on-ledger — extending the contract is
+              future work. In the real system these are assertions inside the
+              Daml settlement choice — the transaction fails validation
+              before it ever reaches the ledger if any rule is violated.
             </p>
           </section>
         </FadeIn>
