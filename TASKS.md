@@ -105,8 +105,9 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T29 | P1 | FE | Settlement: live legs + real post-settle balances (keep real tx id) | Jishnu | ✅ | T28 |
 | T30 | P2 | FE | Obligations list ledger-sourced (dedupe store vs ledger) | Jishnu | ✅ | T13 |
 | T31 | P2 | FE | Policy page: read live `TreasuryPolicy` caps | Jishnu | ✅ | T14 |
-| T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | Jishnu | 🟡 | — |
+| T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | Jishnu | ✅ | — |
 | T33 | P1 | DAML | USDCx settlement via CIP-56 Allocation API (spike first) | Jishnu | 🟡 | T09 |
+| T35 | P2 | FE | TopBar USDCx balance still mock (512,400) — wire to `getBalanceLive` | | 🔲 | T11 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | 🔲 | T09 |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
