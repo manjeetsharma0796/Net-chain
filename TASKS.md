@@ -28,11 +28,24 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 
 ## Ground truth — deploy path
 
-- **Seaport IDE:** `https://app.devnet.seaport.to` — write Daml, **Build Project**
-  → `.dar`, **Deploy → Deploy to Validator**.
-- **Validator:** `5N Sandbox (development)` · Provider `Generic OIDC` ·
+- **Toolchain (PINNED):** DPM (Daml Package Manager). Install
+  `curl https://get.digitalasset.com/install/install.sh | sh` → `dpm install 3.5.2`.
+  Build locally with **`dpm build`** → `.daml/dist/netchain-1.0.0.dar`.
+- **Daml (PINNED):** SDK **3.5.2**, `build-options: [--target=2.3]` (LF 2.3); deps
+  `daml-prim`, `daml-stdlib`, `daml-script`.
+  ```yaml
+  sdk-version: 3.5.2
+  build-options: [--target=2.3]
+  ```
+- **Deploy:** upload via **`POST /v2/packages`** (`--data-binary @<dar>` + M2M Bearer
+  token — verified working). Source lives in **this repo** (local authoring); the
+  Seaport browser IDE is optional, for viewing only.
+- **Validator:** `5N Sandbox (development)` · Generic OIDC ·
   API `https://ledger-api.validator.devnet.sandbox.fivenorth.io`
-- **Daml:** SDK `3.4.9`; deps `daml-prim`, `daml-stdlib`, `daml-script`.
+- ⚠️ **PV35 GATE (the one risk with this pin):** LF 2.3 requires the validator to accept
+  **Canton Protocol Version 35**. **T01 must verify this by uploading a trivial
+  `--target=2.3` DAR before we build the real contracts** — if `/v2/packages` rejects it on
+  protocol/LF grounds, escalate in `#canton` / fall back to 3.4.x.
 - **Frontend seam:** all reads/writes already funnel through `lib/api.ts` +
   `lib/store.ts`. Real integration = replace those with JSON Ledger API v2 calls;
   **keep the function signatures identical** so pages don't change.
@@ -83,14 +96,17 @@ independent and can run the whole time.
 
 ## Task details
 
-### T01 · P0 · SETUP — Seaport access + trivial deploy spike
-De-risk the entire deployment before writing real logic.
-- Create Seaport account(s); confirm **both** teammates can open the same project
-  (Collaborators).
-- Recreate the `testdemo` project from the guide, **Build Project**, then
-  **Deploy → Deploy to Validator → 5N Sandbox (development)**.
-- **Done when:** a trivial `.dar` is deployed and visible on-ledger on the 5N Sandbox
-  validator, and both of us have access. Paste the project URL + validator endpoint here.
+### T01 · P0 · SETUP — Toolchain + trivial DAR upload (PV35 gate)
+De-risk deployment before writing real logic. Auth is already **proven** (token
+exchange + `GET /v2/state/ledger-end` → `{"offset":N}` both work).
+- Install DPM + SDK 3.5.2: `curl https://get.digitalasset.com/install/install.sh | sh`
+  then `dpm install 3.5.2`.
+- Scaffold a trivial 1-template package, `dpm build` (with `--target=2.3`), upload via
+  `POST /v2/packages` (`--data-binary @<dar>` + Bearer token), and confirm the package id
+  appears in `GET /v2/packages`.
+- **Done when:** a `--target=2.3` DAR is **accepted (HTTP 200)** on the 5N Sandbox
+  validator. ⚠️ If rejected on protocol/LF grounds the validator isn't PV35 → escalate /
+  fall back to 3.4.x **before** building the real contracts.
 
 ### T02 · P0 · SETUP — Provision demo parties + tokens
 - Allocate/identify Daml parties for **Company A, Company B, Company C, and the
@@ -102,7 +118,9 @@ De-risk the entire deployment before writing real logic.
 
 ### T03 · P0 · DAML — Scaffold project + agree shared types
 The coordination task that makes the rest independent.
-- New Seaport project `netchain`; `daml.yaml` (sdk `3.4.9`, deps prim/stdlib/script).
+- Local `netchain` DPM project. `daml.yaml`: `sdk-version: 3.5.2` ·
+  `build-options: [--target=2.3]` · deps prim/stdlib/script. Build with `dpm build`.
+  (Run the T01 PV35 trivial-DAR check FIRST.)
 - 30-min sync: freeze the **template + choice signatures and the party model**
   (who is signatory vs observer on each contract) so T04–T07 can be built in separate
   files without churn. Mirror `lib/types.ts` shapes.
