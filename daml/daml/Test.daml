@@ -145,3 +145,42 @@ test_drop_and_renet = do
   aAcc.balance === 5000.0
   [(_, bAcc)] <- query @Account b
   bAcc.balance === 195000.0
+
+-- WIN 7 (T25) — partial settlement / largest solvent subset: TWO net payers
+-- (B, C) are underfunded at once, A is the sole solvent net receiver. Graph is
+-- just B->A 50k and C->A 60k, so nets are A +110k, B -50k, C -60k (sum 0).
+-- B's account holds 20k (< 50k owed) and C's holds 15k (< 60k owed), so
+-- CheckFunding flags both. Excluding both leaves A as the only survivor; since
+-- every obligation touches B or C, A's re-netted position is 0, so Settle is a
+-- no-op on A's balance, but it proves the composition (CheckFunding ->
+-- ComputeNetPositionsExcluding -> Settle) excludes every underfunded payer at
+-- once and settles the solvent remainder atomically. B and C's obligations
+-- are never archived, so they stay open for a later cycle.
+test_partial_settlement : Script ()
+test_partial_settlement = do
+  Setup{operator, a, b, c} <- parties
+  accA <- submit operator $ createCmd Account with operator, owner = a, balance = 100000.0
+  accB <- submit operator $ createCmd Account with operator, owner = b, balance = 20000.0
+  accC <- submit operator $ createCmd Account with operator, owner = c, balance = 15000.0
+  polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = 500000.0
+  polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = 500000.0
+  polC <- submit c $ createCmd TreasuryPolicy with operator, party = c, maxSettlementPerCycle = 500000.0
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False
+  o1 <- ob b a 50000.0 "BA"
+  o2 <- ob c a 60000.0 "CA"
+  cyc <- submit operator $ createCmd NettingCycle with
+    operator, participants = [a, b, c], obligationCids = [o1, o2], settled = False
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-partial"
+  under <- submit operator $ exerciseCmd cyc CheckFunding with
+    netPositionCids = nps, accountCids = [accA, accB, accC]
+  under === [b, c]
+  survivorNps <- submit operator $ exerciseCmd cyc ComputeNetPositionsExcluding with
+    cycleId = "cyc-partial", excluded = under
+  _ <- submit operator $ exerciseCmd cyc Settle with
+    cycleId = "cyc-partial", netPositionCids = survivorNps, accountCids = [accA], policyCids = [polA]
+  [(_, aAcc)] <- query @Account a
+  aAcc.balance === 100000.0
+  [(_, bObl)] <- query @Obligation b
+  bObl.settled === False
+  [(_, cObl)] <- query @Obligation c
+  cObl.settled === False
