@@ -27,10 +27,11 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
   already controls, all on the primary participant fingerprint: operator=`Dave`, A=`Carol`,
   B=`Investor`, C=`SME`. These are written into the untracked `.env` (`NETCHAIN_OPERATOR` etc.).
   A dedicated OAuth client from Five North would let you switch back to named `netchain-*` parties.
-- [ ] **Cosmetic — duplicate contracts:** one buggy re-seed created a 2× set (settlement still
-  landed correctly; privacy holds). `deploy.sh` is now idempotent, but the ACS still holds the
-  duplicates, so the live obligations table shows each row twice. Options: leave it (functionally
-  fine), archive the extras, or run the pixel-perfect demo on the mock (`NEXT_PUBLIC_LEDGER_LIVE=0`).
+- [x] **Duplicate contracts archived (2026-07-10).** Archived the 6 duplicate `Obligation`s
+  (kept one per pair → 6) and the 3 stale @100k `Account`s (kept the settled 115k/130k/55k), so
+  the live obligations table is clean. The 3 duplicate `TreasuryPolicy`s were left — invisible and
+  harmless (`checkPolicy` uses `.find`, which returns the first). `deploy.sh` is idempotent so
+  this won't recur.
 - [ ] Confirm the **real deadline** (13 vs 14 Jul) in `#canton`.
 
 ## Ship
