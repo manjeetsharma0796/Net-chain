@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ClipboardList,
   FileText,
   GitMerge,
   LayoutDashboard,
@@ -17,6 +18,7 @@ const NAV = [
   { href: "/app/privacy-check", label: "Privacy Check", Icon: ShieldCheck },
   { href: "/app/cycle", label: "Netting Cycle", Icon: GitMerge },
   { href: "/app/settlement", label: "Settlement", Icon: Zap },
+  { href: "/app/audit", label: "Audit", Icon: ClipboardList },
   { href: "/app/policy", label: "Policy", Icon: Scale },
 ];
 
