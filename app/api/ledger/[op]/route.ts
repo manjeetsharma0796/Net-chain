@@ -12,14 +12,14 @@ import {
   listObligations,
   runAndSettle,
 } from "@/lib/ledger-server";
+import { PARTY_IDS } from "@/lib/ledger-map";
 import { PartyId } from "@/lib/types";
 
 // The ledger client hits the live validator per request; never cache.
 export const dynamic = "force-dynamic";
 
-const PARTIES: PartyId[] = ["company-a", "company-b", "company-c"];
 const asParty = (v: string | null): PartyId | null =>
-  PARTIES.includes(v as PartyId) ? (v as PartyId) : null;
+  PARTY_IDS.includes(v as PartyId) ? (v as PartyId) : null;
 
 function guard(): NextResponse | null {
   // 503 → the client shim falls back to the mock (lib/api.ts).

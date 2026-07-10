@@ -11,7 +11,7 @@ import "server-only";
  * back to the mock. Mirrors the proven flow in daml/deploy.sh.
  */
 
-import { LedgerContract, toAccount, toNetPosition, toObligation } from "@/lib/ledger-map";
+import { LedgerContract, PARTY_IDS, toAccount, toNetPosition, toObligation } from "@/lib/ledger-map";
 import { NetPosition, Obligation, PartyId } from "@/lib/types";
 
 const env = process.env;
@@ -261,7 +261,7 @@ async function openCycleAndCompute(): Promise<{
   cycleCid: string;
 }> {
   const op = ledgerId("operator");
-  const parties = (["company-a", "company-b", "company-c"] as PartyId[]).map(ledgerId);
+  const parties = PARTY_IDS.map(ledgerId);
   const cycleId = `cyc-${Date.now()}`;
 
   const open = (await queryAcs(op, "Obligation")).filter((c) => c.payload.settled !== true);

@@ -12,10 +12,10 @@ import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { buildSettlementLegs, computeNetPositions } from "@/lib/api";
 import { getNetPositionFor, runCycleLive } from "@/lib/ledger";
+import { PARTY_IDS as ALL_PARTY_IDS } from "@/lib/ledger-map";
 import { partyById, useNetChain } from "@/lib/store";
 import type { NetPosition, PartyId } from "@/lib/types";
 
-const ALL_PARTY_IDS: PartyId[] = ["company-a", "company-b", "company-c"];
 const IS_LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
