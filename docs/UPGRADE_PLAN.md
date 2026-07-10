@@ -11,24 +11,36 @@ fails, fall back to the mock so the demo never hard-breaks, but make the fallbac
 
 ## Audit: what is real vs mock today (measured)
 
-Live calls exist on only four pages, and 39 store mutations drive what the user sees. Findings:
+Live calls now reach every page below; the remaining gaps are specific fields and a couple of
+UI-only simulation steps, not whole-page mocks. Findings:
 
-- **Dashboard (`app/app/page.tsx`)**: fully mock. Scan stats and Canton Coin price come from
-  `getScanSnapshot` (mock); USDCx balance comes from the Zustand store. Zero ledger calls.
-- **Cycle (`app/app/cycle/page.tsx`)**: fully mock and this is the biggest gap. "Run netting cycle"
-  calls `computeNetPositions` in the browser over store obligations and sets store state. It never
-  creates a `NettingCycle` or exercises `ComputeNetPositions` on-ledger. The party-view privacy is
-  a CSS blur, not a ledger-enforced read. The flagship netting and privacy moment touches no ledger.
-- **Settlement (`app/app/settlement/page.tsx`)**: mostly mock. `settleLive()` does fire and its real
-  `updateId` is used as the tx hash, but the legs, the post-settle balances (`applySettlementBalances`,
-  store math), and the abort path are all mock.
-- **Obligations (`app/app/obligations/page.tsx`)**: partly real. `getObligationsFor` (read) and
-  `createObligationLive` (write) are live, but `addObligation` also writes the store, so the list
-  mixes store and ledger and can double-count after a create.
+- **Dashboard (`app/app/page.tsx`)**: Canton Coin price and market cap are live via the `/api/scan`
+  CoinGecko proxy, and the USDCx wallet balance is a live `Account` read (T27). Validators,
+  governance, and round counts are still mock (`getScanSnapshot`); wiring them to the real Scan API
+  is deferred. The "your obligations" and "current cycle" summary tiles still read from the
+  session Zustand store rather than the ledger, an open gap.
+- **Cycle (`app/app/cycle/page.tsx`)**: "Run netting cycle" creates the `NettingCycle` and exercises
+  `ComputeNetPositions` on-ledger (operator), then reads the live per-party `NetPosition` (T28). The
+  operator-view gross figures are now computed client-side from the live net positions (T37). The
+  compute animation, net-position cards, and operator-vs-party toggle are unchanged.
+- **Settlement (`app/app/settlement/page.tsx`)**: legs derive from the live `NetPosition`s,
+  `settleLive()` fires the real exercise and its `updateId` is used as the tx hash, and the
+  post-settle `Account` balances are re-read live after settlement (T29). The allocate step and the
+  inject-failure abort path remain intentional UI simulation, not ledger calls.
+- **Obligations (`app/app/obligations/page.tsx`)**: `getObligationsFor` (read) and
+  `createObligationLive` (write) are live, and the list re-fetches from the ledger after a create so
+  it no longer double-counts (T30). The agent-vs-manual source badge is lost on a live re-fetch
+  because `toObligation` hardcodes `source=manual`; fixing it needs a source field on the
+  `Obligation` template (T40, open).
 - **Privacy-check (`app/app/privacy-check/page.tsx`)**: the most real page. `getObligationsFor` and
   `queryContract` are live; the 404 is a genuine per-party projection miss.
-- **Policy (`app/app/policy/page.tsx`)**: the `CheckSettlement` exercise is live and `ruleFired` is
-  real; the displayed caps come from mock `TreasuryPolicy` data.
+- **Policy (`app/app/policy/page.tsx`)**: the `CheckSettlement` exercise is live, `ruleFired` is
+  real, and the displayed cap is a live `TreasuryPolicy` read (T31). The other three fields
+  (counterparties, instrument, approval-above) are illustrative only, not on the deployed contract
+  (T38).
+- **TopBar balance**: the USDCx balance shown in the top bar is now a live `getBalanceLive` read
+  (T35). The LIVE badge is gated behind a build flag rather than reacting to actual live-vs-fallback
+  status at runtime; making it fail loud on a real fallback is T39, still open.
 
 ## UI wiring tasks (keep visuals identical)
 
