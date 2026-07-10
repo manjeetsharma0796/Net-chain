@@ -88,7 +88,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 > cap, so the demo reuses existing scratch parties (operator=Dave, A=Carol, B=Investor,
 > C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
 > (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
-| T15 | P0 | SHIP | Deploy frontend live (Vercel) — the "live link" | Manjeet | 🟡 | — |
+| T15 | P0 | SHIP | Deploy frontend live (Vercel): https://netchain.vercel.app | Manjeet/Jishnu | ✅ | — |
 | T16 | P1 | AI | Real invoice extraction via LLM (NVIDIA NIM vision) | Jishnu | ✅ | — |
 | T17 | P2 | FE | Fix the 3 conformance mismatches | Jishnu | ✅ | T13 (partial) |
 | T18 | P0 | SHIP | Presentation deck | | 🔲 | — |
@@ -217,20 +217,18 @@ Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
   state; a real tx id shows on the settlement screen.
 
 ### T15 · P0 · SHIP — Deploy frontend live
-- ✅ **Prod build verified green** (`npm run build` — 11 routes incl. `/api/extract`,
-  `/api/ledger/[op]`). App **degrades to the mock demo** if env is unset, so a deploy
-  works with or without live config. `.env` is gitignored + `.vercelignore` excludes
-  `.env*`, so the secret never uploads.
-- ⬜ **Deploy step (needs a human — outward-facing, auto-mode blocks it):** safest =
-  **Vercel GitHub integration** — import `manjeetsharma0796/Net-chain` at vercel.com/new
-  (builds from git, no local `.env`). Or `vercel --prod` from the repo (authed as
-  `akakak0796-5103`).
-- **Env vars to set in the Vercel dashboard** (omit all → working mock demo):
-  - live ledger: `NEXT_PUBLIC_LEDGER_LIVE=1`, `BASE`, `TOKEN_ENDPOINT`, `CLIENT_ID`,
-    `CLIENT_SECRET`, `AUDIENCE`, `SCOPE`, `NETCHAIN_PKG_ID`,
-    `NETCHAIN_OPERATOR` / `NETCHAIN_COMPANY_A` / `_B` / `_C` (values in local `.env`)
-  - real AI extraction: `NIM_API_KEY`, `NIM_BASE`, `NIM_VISION_MODEL`
-- **Done when:** public URL is live; linked here.
+- ✅ **Live: https://netchain.vercel.app** (Vercel project `netchain`, account `akakak0796-5103`).
+  Deployed with full production env, all secrets server-side. Verified live: obligations read
+  returns the real per-party projection (company-a sees 4), the extract route is configured.
+  (Manjeet prepped the build + env list; deploy completed this session.)
+- **Env set in Vercel (production):** live ledger (`NEXT_PUBLIC_LEDGER_LIVE=1`, `BASE`,
+  `TOKEN_ENDPOINT`, `CLIENT_ID`, `CLIENT_SECRET`, `AUDIENCE`, `SCOPE`, `USER_ID`,
+  `NETCHAIN_PKG_ID`, `NETCHAIN_OPERATOR`/`_COMPANY_A`/`_B`/`_C`) and AI extraction
+  (`NIM_API_KEY`, `NIM_BASE`, `NIM_VISION_MODEL`). App degrades to the mock demo if env is unset.
+- ⚠️ Live mode is on, so the public URL can WRITE to the shared Devnet (create obligation,
+  settle); a visitor can change the clean demo numbers. To freeze the public demo, set
+  `NEXT_PUBLIC_LEDGER_LIVE=0` in Vercel and redeploy (then reads/writes use the deterministic mock).
+- **Done when:** public URL is live; linked here. ✅
 
 ### T16 · P1 · AI — Real invoice extraction
 - Replace mock `extractInvoice` with an LLM call (Grok **or** OpenRouter) that reads a
