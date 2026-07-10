@@ -93,7 +93,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T17 | P2 | FE | Fix the 3 conformance mismatches | Jishnu | ✅ | T13 (partial) |
 | T18 | P0 | SHIP | Presentation deck | | 🔲 | — |
 | T19 | P0 | SHIP | 3-min video pitch + demo recording | | 🔲 | spine live |
-| T20 | P0 | SHIP | Repo cleanup + README rewrite | Jishnu | 🟡 | near end |
+| T20 | P0 | SHIP | Repo cleanup + README rewrite | Jishnu | ✅ | near end |
 | T21 | P1 | DOCS | End-to-end flow diagram (browser → API → ledger → settle) | Jishnu | ✅ | T14 |
 | T22 | P1 | DOCS | Contract usage guide (frontend/backend via JSON Ledger API) | Jishnu | ✅ | T11,T14 |
 
