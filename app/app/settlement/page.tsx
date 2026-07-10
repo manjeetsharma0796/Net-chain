@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   CheckCircle2,
+  Download,
   FlaskConical,
   Landmark,
   Undo2,
@@ -16,6 +17,7 @@ import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
+import { downloadCsv, toSettledLegsCsv } from "@/lib/export";
 import { getBalancesLive, newTxHash, settleLive } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
 import { PartyId } from "@/lib/types";
@@ -77,6 +79,11 @@ export default function SettlementPage() {
     }
     setBusy(false);
     pushToast("success", "All net obligors have allocated USDCx.");
+  };
+
+  const exportCsv = () => {
+    const csv = toSettledLegsCsv(legs, { cycleId, txHash: txHash ?? "" });
+    downloadCsv(`${cycleId}-settled-legs.csv`, csv);
   };
 
   const settle = async () => {
@@ -235,13 +242,22 @@ export default function SettlementPage() {
                   className="mt-5 flex items-start gap-3 rounded-xl border border-settled/40 bg-settled/[0.07] px-4 py-3.5"
                 >
                   <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-settled" aria-hidden="true" />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-settled">
                       Settled atomically
                     </p>
                     <p className="figures mt-1 break-all text-xs text-frost/60">
                       tx {txHash}
                     </p>
+                    <div className="mt-3">
+                      <GhostButton
+                        onClick={exportCsv}
+                        className="!min-h-[34px] !px-3.5 !text-xs"
+                      >
+                        <Download size={13} aria-hidden="true" />
+                        Export CSV
+                      </GhostButton>
+                    </div>
                   </div>
                 </motion.div>
               )}
