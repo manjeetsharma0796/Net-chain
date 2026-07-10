@@ -21,6 +21,19 @@ and the secret never leaves the server (route handlers under `app/api/ledger/*`
 are the only thing that ever calls the ledger; the browser never sees
 `CLIENT_SECRET`).
 
+Runnable token exchange (a standard OAuth2 `client_credentials` POST, form-encoded):
+
+```bash
+TOKEN=$(curl -s -X POST "$TOKEN_ENDPOINT" \
+  -d grant_type=client_credentials -d client_id="$CLIENT_ID" \
+  --data-urlencode "client_secret=$CLIENT_SECRET" \
+  -d audience="$AUDIENCE" -d scope="$SCOPE" \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).access_token))')
+```
+
+The response is `{"access_token": "...", "token_type": "Bearer", "expires_in": 28800, ...}`
+(an 8h token). Every call below sends `-H "Authorization: Bearer $TOKEN"`.
+
 **Base URL.** `BASE` from `.env` (`https://ledger-api.validator.devnet.sandbox.fivenorth.io`
 on the current devnet). All paths below are relative to `$BASE`.
 
@@ -107,7 +120,8 @@ You will still query them, actAs the operator (or the owner, for their own
 account) and use the filter form of the templateId:
 
 ```bash
-OFFSET=$(curl -s "$BASE/v2/state/ledger-end" -H "Authorization: Bearer $TOKEN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["offset"])')
+# offset extraction is tool-agnostic; node shown here since python3 may be absent:
+OFFSET=$(curl -s "$BASE/v2/state/ledger-end" -H "Authorization: Bearer $TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).offset))')
 
 curl -s -X POST "$BASE/v2/state/active-contracts" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{
@@ -150,6 +164,25 @@ curl -s -X POST "$BASE/v2/commands/submit-and-wait" \
       "dueDate": "2026-08-01",
       "settled": false
     }
+  } }]
+}'
+```
+
+**Archive** (every template has an implicit `Archive` choice; actAs the
+signatory, here the `obligor`). Use it to retract a mistaken obligation. A
+consuming choice like `Settle` already archives contracts for you, so you rarely
+call this directly:
+
+```bash
+curl -s -X POST "$BASE/v2/commands/submit-and-wait" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{
+  "actAs": ["'"$COMPANY_A"'"], "readAs": [], "userId": "6",
+  "commandId": "nc-arch-1", "deduplicationPeriod": { "Empty": {} },
+  "commands": [{ "ExerciseCommand": {
+    "templateId": "$NETCHAIN_PKG_ID:NetChain:Obligation",
+    "contractId": "<OBLIGATION_CID>",
+    "choice": "Archive",
+    "choiceArgument": {}
   } }]
 }'
 ```
