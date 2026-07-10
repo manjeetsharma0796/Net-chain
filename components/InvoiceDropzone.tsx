@@ -48,9 +48,9 @@ async function extractInvoiceFor(
 }
 
 /**
- * The agent's front door: drop an invoice (PDF/image) and a mocked
- * extraction runs — fake OCR delay with a scanline animation — then the
- * parsed fields are handed to the review form.
+ * The agent's front door: drop an invoice (PDF/image), the agent extracts it
+ * (a NIM vision call for images, the mock for PDFs or when unconfigured) behind
+ * the scanline animation, then the parsed fields are handed to the review form.
  */
 export default function InvoiceDropzone({ onExtracted }: InvoiceDropzoneProps) {
   const [dragOver, setDragOver] = useState(false);
