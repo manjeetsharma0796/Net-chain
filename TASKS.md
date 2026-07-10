@@ -96,6 +96,10 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T20 | P0 | SHIP | Repo cleanup + README rewrite | Jishnu | ✅ | near end |
 | T21 | P1 | DOCS | End-to-end flow diagram (browser → API → ledger → settle) | Jishnu | ✅ | T14 |
 | T22 | P1 | DOCS | Contract usage guide (frontend/backend via JSON Ledger API) | Jishnu | ✅ | T11,T14 |
+| T23 | P1 | DAML | Pre-cycle funding check (fail-fast, defaulter-pays) + Script test | | 🔲 | T09 |
+| T24 | P1 | DAML | Auto drop-and-re-net survivors on an underfunded payer + test | | 🔲 | T23 |
+| T25 | P2 | DAML | Partial settlement / gridlock resolution (largest solvent subset) | | 🔲 | T24 |
+| T26 | P1 | DOCS | Settlement design (research-grounded): `docs/SETTLEMENT_DESIGN.md` | Jishnu | ✅ | — |
 
 **Suggested parallelization (day 1):** one person takes **T01 → T02** (unblocks
 everything on-ledger); the other starts **T03** (Daml scaffold, authoring needs no
@@ -274,6 +278,36 @@ Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
   forms (G1), Decimal-as-string (G2), and actAs rules, keyed to the functions in
   `lib/ledger-server.ts`. No new SDK; document the endpoints in use.
 - **Done when:** a frontend/backend dev can call any contract from the guide alone.
+
+### T23 · P1 · DAML — Pre-cycle funding check (defaulter pays)
+Real-world basis: CLS pay-in-before-settle and the CCP defaulter-pays principle (see
+`docs/SETTLEMENT_DESIGN.md` §1). Today `Account.ensure balance >= 0` only catches an underfunded
+payer at `Settle`. Add a check that refuses to open or settle a cycle until every projected net
+payer's account covers its net, so it fails fast before committing.
+- **Done when:** a Script shows an underfunded payer is rejected before `Settle`, with a clear reason,
+  and a funded set still settles.
+
+### T24 · P1 · DAML — Auto drop-and-re-net survivors
+Real-world basis: CLS rescinds a failed member and re-nets survivors; Lamfalussy Standard IV
+(`docs/SETTLEMENT_DESIGN.md` §2). `NettingCycle` already takes explicit `participants` and
+`obligationCids`, so re-netting a solvent subset is a new cycle. Automate: exclude the underfunded
+payer, recompute nets over the remainder, settle the survivors; the defaulter's obligations stay open.
+**Never unwind a settled batch** (finality; §3).
+- **Done when:** a Script shows one underfunded payer excluded and the remaining parties settle
+  cleanly, with the excluded party's obligations still open.
+
+### T25 · P2 · DAML — Partial settlement / gridlock resolution
+Real-world basis: CHIPS balanced-release and multilateral offsetting (`docs/SETTLEMENT_DESIGN.md` §4).
+When the full set cannot clear, settle the largest solvent subset instead of failing everyone. Keep
+all-or-nothing atomicity per settled subset.
+- **Done when:** a Script shows a partial (subset) settlement completing atomically when the full
+  set cannot.
+
+### T26 · P1 · DOCS — Settlement design (research-grounded)
+- ✅ `docs/SETTLEMENT_DESIGN.md`: the market-accepted hybrid (netting + atomic finality +
+  defaulter-pays prefunding + drop-and-re-net + legal finality), each decision tied to a cited
+  precedent (BIS, CLS, CPMI-IOSCO, CHIPS, Canton, Fnality). Sets the honest positioning (Cash token
+  is a placeholder; operator-blind MPC/ZK and legal finality are named as future, not claimed).
 
 ---
 
