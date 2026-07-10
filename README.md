@@ -124,7 +124,8 @@ CI: `.github/workflows/daml.yml` installs DPM + SDK 3.5.2 on Linux and runs `dpm
 
 ## Out of scope and future work
 
-No bridge, order book, or matching engine. Invoice extraction is a mock today; real LLM
-extraction is future work (see T16 in `TASKS.md`). The Canton Scan dashboard stats are mocked.
-Fully operator-blind netting (MPC/ZK) is a named roadmap item, not a current claim: today the
-operator is a known, authorized coordinator.
+No bridge, order book, or matching engine. Invoice extraction is live for images via NVIDIA NIM
+vision (the mock is only the fallback for PDFs or when no key is set). Canton network-topology
+stats (validators, governance, rounds) are still mocked; the Canton Coin price and market cap are
+live via CoinGecko. Fully operator-blind netting (MPC/ZK) is a named roadmap item, not a current
+claim: today the operator is a known, authorized coordinator.
