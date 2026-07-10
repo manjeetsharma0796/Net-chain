@@ -112,15 +112,15 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T37 | P1 | FE | Cycle operator cards gross 0/0 in live mode: compute client-side | Jishnu | ✅ | T28 |
 | T38 | P1 | FE | Policy page: cap is live; off-ledger fields (counterparties, instrument, approval-above) marked illustrative (not on the deployed `TreasuryPolicy`) | Jishnu | ✅ | T31 |
 | T39 | P1 | FE | Fail-loud: `lib/ledger.ts` should tag live-vs-fallback and drive the LIVE badge + a dev warn (badge is build-flag-only today) | Jishnu | ✅ | T32 |
-| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual; needs an `Obligation` source field to fix live) | | 🔲 | T30 |
+| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual; needs an `Obligation` source field to fix live) | | ⛔ | T30 (redeploy) |
 | T41 | P2 | FE | Dedupe the 3-party-id literal to `PARTY_IDS` (copied in 5 places; `lib/ledger-map.ts` export unused) | Jishnu | ✅ | - |
 | T42 | P2 | FE | Extract shared cycle-open-and-compute helper in `lib/ledger-server.ts` (dup in `computeNetPositionsOnLedger`/`runAndSettle`) | Jishnu | ✅ | - |
 | T43 | P2 | DOCS | Em-dash sweep across tracked docs/source (per-line reword, not blind replace) | Jishnu | ✅ | - |
 | T44 | P2 | DOCS | Refresh `docs/UPGRADE_PLAN.md` real-vs-mock audit table to current status (T28-T35 done) | Jishnu | ✅ | - |
 | T45 | P1 | FE | ISO 20022 / CSV export of settled legs (feed an existing TMS/GL; #1 adoption blocker per `docs/PRODUCT_RESEARCH.md`) | Jishnu | ✅ | T14 |
 | T46 | P1 | FE | Audit/reporting view mapping settled net legs back to underlying obligations (BEPS transfer-pricing; AFP top driver) | Jishnu | ✅ | T14 |
-| T47 | P2 | SHIP | Positioning: explicitly vs Ripple/GTreasury (confidential N-party netting + atomicity), fold into deck/README | Jishnu | 🟡 | - |
-| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | 🔲 | T09 |
+| T47 | P2 | SHIP | Positioning: explicitly vs Ripple/GTreasury (confidential N-party netting + atomicity), fold into deck/README | Jishnu | ✅ | - |
+| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | ⛔ | T09 (redeploy) |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
 > [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md). Rule for every FE task: same visuals, real data, mock
