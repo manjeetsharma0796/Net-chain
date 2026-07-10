@@ -96,8 +96,8 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T20 | P0 | SHIP | Repo cleanup + README rewrite | Jishnu | ✅ | near end |
 | T21 | P1 | DOCS | End-to-end flow diagram (browser → API → ledger → settle) | Jishnu | ✅ | T14 |
 | T22 | P1 | DOCS | Contract usage guide (frontend/backend via JSON Ledger API) | Jishnu | ✅ | T11,T14 |
-| T23 | P1 | DAML | Pre-cycle funding check (fail-fast, defaulter-pays) + Script test | | 🔲 | T09 |
-| T24 | P1 | DAML | Auto drop-and-re-net survivors on an underfunded payer + test | | 🔲 | T23 |
+| T23 | P1 | DAML | Pre-cycle funding check (fail-fast, defaulter-pays) + Script test | Jishnu | 🟡 | T09 |
+| T24 | P1 | DAML | Auto drop-and-re-net survivors on an underfunded payer + test | Jishnu | 🟡 | T23 |
 | T25 | P2 | DAML | Partial settlement / gridlock resolution (largest solvent subset) | | 🔲 | T24 |
 | T26 | P1 | DOCS | Settlement design (research-grounded): `docs/SETTLEMENT_DESIGN.md` | Jishnu | ✅ | — |
 | T27 | P1 | FE | Dashboard live data (CoinGecko **via proxy** + server cache; live USDCx balance) | Jishnu | 🟡 | T09 |
