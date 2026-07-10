@@ -4,6 +4,7 @@ import {
   computeNetPositionsOnLedger,
   createObligation,
   getAccountBalance,
+  getAllAccountBalances,
   getContract,
   getNetPosition,
   isLive,
@@ -36,6 +37,16 @@ function fail(e: unknown) {
 export async function GET(req: NextRequest, { params }: { params: { op: string } }) {
   const blocked = guard();
   if (blocked) return blocked;
+
+  // /api/ledger/balances needs no party param — queries as operator.
+  if (params.op === "balances") {
+    try {
+      return NextResponse.json(await getAllAccountBalances());
+    } catch (e) {
+      return fail(e);
+    }
+  }
+
   const q = req.nextUrl.searchParams;
   const party = asParty(q.get("party"));
   if (!party) return NextResponse.json({ error: "bad party" }, { status: 400 });
@@ -48,6 +59,8 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
         return NextResponse.json(await getNetPosition(party));
       case "balance":
         return NextResponse.json({ balance: await getAccountBalance(party) });
+      case "balances":
+        return NextResponse.json(await getAllAccountBalances());
       case "contract": {
         const cid = q.get("contractId") ?? "";
         const c = await getContract(party, cid);

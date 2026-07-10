@@ -16,7 +16,7 @@ import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
-import { newTxHash, settleLive } from "@/lib/ledger";
+import { getBalancesLive, newTxHash, settleLive } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
 import { PartyId } from "@/lib/types";
 
@@ -44,6 +44,7 @@ export default function SettlementPage() {
   const setCycleStatus = useNetChain((s) => s.setCycleStatus);
   const setTxHash = useNetChain((s) => s.setTxHash);
   const applySettlementBalances = useNetChain((s) => s.applySettlementBalances);
+  const setBalances = useNetChain((s) => s.setBalances);
   const markObligations = useNetChain((s) => s.markObligations);
   const obligations = useNetChain((s) => s.obligations);
   const logActivity = useNetChain((s) => s.logActivity);
@@ -103,7 +104,13 @@ export default function SettlementPage() {
       const live = await settleLive();
       // Atomic commit: every leg flips in the same instant.
       setLegStatus("all", "settled");
-      applySettlementBalances();
+      // Re-read real Account balances from the ledger; fall back to store math.
+      const liveBalances = await getBalancesLive();
+      if (liveBalances) {
+        setBalances(liveBalances);
+      } else {
+        applySettlementBalances();
+      }
       markObligations(
         obligations.filter((o) => o.status === "netted").map((o) => o.id),
         "settled",

@@ -102,7 +102,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T26 | P1 | DOCS | Settlement design (research-grounded): `docs/SETTLEMENT_DESIGN.md` | Jishnu | ✅ | — |
 | T27 | P1 | FE | Dashboard live data (CoinGecko **via proxy** + server cache; live USDCx balance) | Jishnu | 🟡 | T09 |
 | T28 | P1 | FE | Cycle page: live `ComputeNetPositions` + per-party `NetPosition` read | Jishnu | ✅ | T09 |
-| T29 | P1 | FE | Settlement: live legs + real post-settle balances (keep real tx id) | | 🔲 | T28 |
+| T29 | P1 | FE | Settlement: live legs + real post-settle balances (keep real tx id) | Jishnu | ✅ | T28 |
 | T30 | P2 | FE | Obligations list ledger-sourced (dedupe store vs ledger) | | 🔲 | T13 |
 | T31 | P2 | FE | Policy page: read live `TreasuryPolicy` caps | | 🔲 | T14 |
 | T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | | 🔲 | — |

@@ -40,6 +40,18 @@ export async function getBalanceLive(party: PartyId): Promise<number | null> {
   return null;
 }
 
+/** All three on-ledger Account balances in one call (operator-scoped ACS). */
+export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>> | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch("/api/ledger/balances");
+    if (r.ok) return (await r.json()) as Partial<Record<PartyId, number>>;
+  } catch {
+    /* fall through */
+  }
+  return null;
+}
+
 /* ---- reads (T13) --------------------------------------------------------- */
 
 export async function getObligationsFor(

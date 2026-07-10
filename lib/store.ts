@@ -38,6 +38,7 @@ interface NetChainState {
 
   /* balances (party id → USDCx) — mutated by settlement */
   balances: Record<PartyId, number>;
+  setBalances: (b: Partial<Record<PartyId, number>>) => void;
 
   /* ledger */
   obligations: Obligation[];
@@ -87,6 +88,7 @@ export const useNetChain = create<NetChainState>((set, get) => ({
   balances: Object.fromEntries(
     PARTIES.map((p) => [p.id, p.balance]),
   ) as Record<PartyId, number>,
+  setBalances: (b) => set((s) => ({ balances: { ...s.balances, ...b } })),
 
   obligations: OBLIGATIONS,
   addObligation: (draft) => {

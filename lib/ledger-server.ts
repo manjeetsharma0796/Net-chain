@@ -238,6 +238,17 @@ export async function getAccountBalance(party: PartyId): Promise<number | null> 
   return acct?.balance ?? null;
 }
 
+/** All three Account balances in one operator-scoped ACS call (operator is signatory). */
+export async function getAllAccountBalances(): Promise<Partial<Record<PartyId, number>>> {
+  const rows = await queryAcs(ledgerId("operator"), "Account");
+  const result: Partial<Record<PartyId, number>> = {};
+  for (const c of rows) {
+    const acct = toAccount(c, toPartyId);
+    if (acct) result[acct.party] = acct.balance;
+  }
+  return result;
+}
+
 /**
  * Create a NettingCycle on-ledger, exercise ComputeNetPositions, and return
  * the resulting NetPositions. Non-consuming choice — the cycle contract stays
