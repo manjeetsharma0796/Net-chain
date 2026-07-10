@@ -119,7 +119,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T44 | P2 | DOCS | Refresh `docs/UPGRADE_PLAN.md` real-vs-mock audit table to current status (T28-T35 done) | Jishnu | ✅ | - |
 | T45 | P1 | FE | ISO 20022 / CSV export of settled legs (feed an existing TMS/GL; #1 adoption blocker per `docs/PRODUCT_RESEARCH.md`) | Jishnu | ✅ | T14 |
 | T46 | P1 | FE | Audit/reporting view mapping settled net legs back to underlying obligations (BEPS transfer-pricing; AFP top driver) | Jishnu | ✅ | T14 |
-| T47 | P2 | SHIP | Positioning: explicitly vs Ripple/GTreasury (confidential N-party netting + atomicity), fold into deck/README | | 🔲 | - |
+| T47 | P2 | SHIP | Positioning: explicitly vs Ripple/GTreasury (confidential N-party netting + atomicity), fold into deck/README | Jishnu | 🟡 | - |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | 🔲 | T09 |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
