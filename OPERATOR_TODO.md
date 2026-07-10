@@ -14,10 +14,10 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
       `NEXT_PUBLIC_LEDGER_LIVE=1`): privacy (C gets 404 on the A→B contract, A gets 200),
       per-party net position, and the on-ledger policy gate (250k → `AssertionFailed`, 150k → ok).
 
-- [!] **Configure a git remote.** This clone has **no `origin`** (`git remote -v` is empty),
-  so the branch `daml-interaction` cannot be pushed and no PR can be opened from here. Add
-  the GitHub remote (`git remote add origin <url>`) or push from a checkout that has one.
-  All work is committed locally on `daml-interaction` and is ready to push once a remote exists.
+- [x] **Shipped from a local checkout (2026-07-10).** The cloud container had no `origin`; the
+  branch was delivered as a git bundle, fetched into the local clone (which has the GitHub
+  remote), verified, pushed, and merged. **PR #1 merged to `main`; branch deleted.** CI
+  (`daml.yml`) went green on Linux — `dpm build` + `dpm test` = 4 Script tests pass.
 
 ## Decisions (resolved)
 
@@ -35,8 +35,16 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 
 ## Ship
 
-- [ ] Once a remote exists: push `daml-interaction`, review the **draft PR**, merge, delete branch.
+- [x] Push `daml-interaction`, open PR, merge to `main`, delete branch — **done (PR #1)**.
 - [ ] (Later, out of scope) Vercel env for T15 live frontend link.
+
+## Machine note (this Windows dev box)
+
+- [!] **Global npm is broken.** `npm install` fails with `SyntaxError: Invalid or unexpected
+  token` — npm's own bundled `tar` module (`C:\Program Files\nodejs\node_modules\npm\node_modules\tar\dist\commonjs\pack.js`)
+  is corrupted (overwritten with hex data). Workaround used here: install deps via
+  `corepack pnpm install` (npm's script runner still works, so `npm run build`/`dev` are fine
+  once `node_modules` exists). **Fix:** reinstall Node.js/npm to repair the corrupted file.
 
 ## Environment notes (for whoever runs the live path)
 
