@@ -7,6 +7,7 @@ import {
   getAllAccountBalances,
   getContract,
   getNetPosition,
+  getPolicy,
   isLive,
   listObligations,
   runAndSettle,
@@ -61,6 +62,8 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
         return NextResponse.json({ balance: await getAccountBalance(party) });
       case "balances":
         return NextResponse.json(await getAllAccountBalances());
+      case "policy":
+        return NextResponse.json(await getPolicy(party));
       case "contract": {
         const cid = q.get("contractId") ?? "";
         const c = await getContract(party, cid);

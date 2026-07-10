@@ -128,6 +128,20 @@ export async function getNetPositionFor(
 
 /* ---- policy (T14) — real on-ledger CheckSettlement ----------------------- */
 
+/** On-ledger TreasuryPolicy cap for `party`, or null when not live / unconfigured. */
+export async function getPolicyLive(
+  party: PartyId,
+): Promise<{ maxSettlementPerCycle: number } | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch(`/api/ledger/policy?party=${party}`);
+    if (r.ok) return (await r.json()) as { maxSettlementPerCycle: number } | null;
+  } catch {
+    /* fall through */
+  }
+  return null;
+}
+
 export async function checkPolicy(
   policy: TreasuryPolicy,
   amount: number,

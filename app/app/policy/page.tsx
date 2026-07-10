@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bot,
@@ -15,7 +15,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
-import { checkPolicy } from "@/lib/ledger";
+import { checkPolicy, getPolicyLive } from "@/lib/ledger";
 import { formatTime } from "@/lib/format";
 import { AGENT_OVERREACH_AMOUNT, POLICIES } from "@/lib/mock/data";
 import { partyById, useNetChain } from "@/lib/store";
@@ -40,6 +40,19 @@ export default function PolicyPage() {
 
   const [phase, setPhase] = useState<AttemptPhase>("idle");
   const [ruleFired, setRuleFired] = useState<string | null>(null);
+  const [liveCap, setLiveCap] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPolicyLive(currentPartyId).then((p) => {
+      if (!cancelled) setLiveCap(p?.maxSettlementPerCycle ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPartyId]);
+
+  const maxSettlementPerCycle = liveCap ?? policy.maxSettlementPerCycle;
 
   const runAttempt = async () => {
     setPhase("proposing");
@@ -68,7 +81,7 @@ export default function PolicyPage() {
   const rows: { label: string; value: React.ReactNode }[] = [
     {
       label: "maxSettlementPerCycle",
-      value: <MoneyValue amount={policy.maxSettlementPerCycle} />,
+      value: <MoneyValue amount={maxSettlementPerCycle} />,
     },
     {
       label: "allowedCounterparties",

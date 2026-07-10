@@ -298,6 +298,15 @@ export async function createObligation(input: {
   });
 }
 
+/** The on-ledger TreasuryPolicy cap for `party` (operator-scoped ACS), or null if absent. */
+export async function getPolicy(
+  party: PartyId,
+): Promise<{ maxSettlementPerCycle: number } | null> {
+  const pols = await queryAcs(ledgerId("operator"), "TreasuryPolicy");
+  const pol = pols.find((c) => c.payload.party === ledgerId(party));
+  return pol ? { maxSettlementPerCycle: Number(pol.payload.maxSettlementPerCycle ?? 0) } : null;
+}
+
 /** Exercise CheckSettlement on `party`'s policy — the non-bypassable gate. */
 export async function checkPolicy(
   party: PartyId,
