@@ -100,12 +100,20 @@ grant_actas() { # let user 6 act as <party> (G6) — ignore "already exists"
   }" >/dev/null 2>&1 || true
 }
 
-say "Allocating parties (operator + company-a/b/c)"
-OP=$(ensure_party netchain-operator);   [ -n "$OP" ] || die "operator alloc failed"
-CA=$(ensure_party netchain-company-a);  [ -n "$CA" ] || die "company-a alloc failed"
-CB=$(ensure_party netchain-company-b);  [ -n "$CB" ] || die "company-b alloc failed"
-CC=$(ensure_party netchain-company-c);  [ -n "$CC" ] || die "company-c alloc failed"
-for p in "$OP" "$CA" "$CB" "$CC"; do grant_actas "$p"; done
+# Reuse caller-provided party ids (NETCHAIN_* already in .env) when set; else
+# allocate a fresh party + grant CanActAs. Reuse is required on the shared devnet
+# participant, where user 6 is at its user-rights cap (TOO_MANY_USER_RIGHTS) and
+# cannot be granted CanActAs for newly-allocated parties — so we point at
+# existing scratch parties user 6 already controls (all on the same participant
+# fingerprint as the primary party).
+say "Resolving parties (operator + company-a/b/c)"
+resolve() { # resolve <preset-value> <hint>
+  if [ -n "$1" ]; then echo "$1"; else local p; p=$(ensure_party "$2"); grant_actas "$p"; echo "$p"; fi
+}
+OP=$(resolve "${NETCHAIN_OPERATOR:-}"  netchain-operator);  [ -n "$OP" ] || die "operator resolve failed"
+CA=$(resolve "${NETCHAIN_COMPANY_A:-}" netchain-company-a); [ -n "$CA" ] || die "company-a resolve failed"
+CB=$(resolve "${NETCHAIN_COMPANY_B:-}" netchain-company-b); [ -n "$CB" ] || die "company-b resolve failed"
+CC=$(resolve "${NETCHAIN_COMPANY_C:-}" netchain-company-c); [ -n "$CC" ] || die "company-c resolve failed"
 printf 'operator  = %s\ncompany-a = %s\ncompany-b = %s\ncompany-c = %s\n' "$OP" "$CA" "$CB" "$CC"
 
 # Persist party ids back into ../.env (upsert each KEY=value line).
@@ -142,31 +150,10 @@ create() { # create <actAs-party> <Template> <createArguments-json>
   }" >/dev/null
 }
 
-say "Seeding 3 Accounts (100k each, actAs operator)"
-for owner in "$CA" "$CB" "$CC"; do
-  create "$OP" Account "{\"operator\":\"$OP\",\"owner\":\"$owner\",\"balance\":\"100000.0\"}"
-done
-
-say "Seeding 3 TreasuryPolicies (caps A=200k B=500k C=350k)"
-create "$CA" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CA\",\"maxSettlementPerCycle\":\"200000.0\"}"
-create "$CB" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CB\",\"maxSettlementPerCycle\":\"500000.0\"}"
-create "$CC" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CC\",\"maxSettlementPerCycle\":\"350000.0\"}"
-
-say "Seeding 6 Obligations (gross 460k → net 45k)"
-# obligor obligee amount ref  (actAs = obligor, the signatory)
-obl() { create "$1" Obligation \
-  "{\"operator\":\"$OP\",\"obligor\":\"$1\",\"obligee\":\"$2\",\"amount\":\"$3\",\"reference\":\"$4\",\"dueDate\":\"2026-07-20\",\"settled\":false}"; }
-obl "$CA" "$CB" 120000.0 "AB"
-obl "$CB" "$CC"  95000.0 "BC"
-obl "$CC" "$CA" 150000.0 "CA"
-obl "$CA" "$CC"  40000.0 "AC"
-obl "$CB" "$CA"  25000.0 "BA"
-obl "$CC" "$CB"  30000.0 "CB"
-
-# --- collect cids from the ACS (G3: don't guess the tx response shape) -------
+# --- ACS helpers (defined before seeding so the idempotency guards can use them) ---
 # Query as operator (signatory on Account/NetPosition/Cycle, observer on
-# Obligation/Policy) → operator sees every contract we just made.
-acs() { # acs <Template>  -> prints "cid<TAB>createArgumentJSON" lines (this run only)
+# Obligation/Policy) → operator sees every contract we make.
+acs() { # acs <Template>  -> prints "cid<TAB>createArgumentJSON" (compact) per contract
   local tmpl="$1" off; off=$(ledger_end)
   curl -sS -X POST "$BASE/v2/state/active-contracts" "${AUTH[@]}" "${JSON[@]}" -d "{
     \"filter\":{\"filtersByParty\":{\"$OP\":{\"cumulative\":[
@@ -189,22 +176,61 @@ for e in entries:
     if not isinstance(e,dict): continue
     ce=(e.get("contractEntry",{}) or {}).get("JsActiveContract",{}).get("createdEvent",{})
     if not ce: continue
-    print(ce.get("contractId","")+"\t"+json.dumps(ce.get("createArgument",{})))'
+    print(ce.get("contractId","")+"\t"+json.dumps(ce.get("createArgument",{}),separators=(",",":")))'
 }
+newest() { tail -n "$1"; }                    # ACS returns oldest→newest ordering
+count() { acs "$1" | grep -c . || true; }     # active-contract count for a template
 
-# The ACS is cumulative across runs; take the newest N of each to scope to this run.
-newest() { tail -n "$1"; }   # ACS returns oldest→newest per participant ordering
+# Idempotent seeding: only create if the ACS doesn't already hold a full set,
+# so a re-run reuses what a prior (possibly partial) run created rather than
+# piling up duplicate contracts.
+if [ "$(count Account)" -ge 3 ]; then
+  say "Accounts already present ($(count Account)) — skipping seed"
+else
+  say "Seeding 3 Accounts (100k each, actAs operator)"
+  for owner in "$CA" "$CB" "$CC"; do
+    create "$OP" Account "{\"operator\":\"$OP\",\"owner\":\"$owner\",\"balance\":\"100000.0\"}"
+  done
+fi
+
+if [ "$(count TreasuryPolicy)" -ge 3 ]; then
+  say "TreasuryPolicies already present ($(count TreasuryPolicy)) — skipping seed"
+else
+  say "Seeding 3 TreasuryPolicies (caps A=200k B=500k C=350k)"
+  create "$CA" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CA\",\"maxSettlementPerCycle\":\"200000.0\"}"
+  create "$CB" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CB\",\"maxSettlementPerCycle\":\"500000.0\"}"
+  create "$CC" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CC\",\"maxSettlementPerCycle\":\"350000.0\"}"
+fi
+
+if [ "$(count Obligation)" -ge 6 ]; then
+  say "Obligations already present ($(count Obligation)) — skipping seed"
+else
+  say "Seeding 6 Obligations (gross 460k → net 45k)"
+  # obligor obligee amount ref  (actAs = obligor, the signatory)
+  obl() { create "$1" Obligation \
+    "{\"operator\":\"$OP\",\"obligor\":\"$1\",\"obligee\":\"$2\",\"amount\":\"$3\",\"reference\":\"$4\",\"dueDate\":\"2026-07-20\",\"settled\":false}"; }
+  obl "$CA" "$CB" 120000.0 "AB"
+  obl "$CB" "$CC"  95000.0 "BC"
+  obl "$CC" "$CA" 150000.0 "CA"
+  obl "$CA" "$CC"  40000.0 "AC"
+  obl "$CB" "$CA"  25000.0 "BA"
+  obl "$CC" "$CB"  30000.0 "CB"
+fi
 
 say "Collecting obligation contract ids"
 OBL_CIDS=$(acs Obligation | newest 6 | cut -f1 | tr '\n' ' ')
 [ -n "$OBL_CIDS" ] || die "no obligations found in ACS"
 OBL_JSON=$(python3 -c 'import sys,json;print(json.dumps(sys.argv[1].split()))' "$OBL_CIDS")
 
-say "Creating NettingCycle over the 6 obligations"
-create "$OP" NettingCycle \
-  "{\"operator\":\"$OP\",\"participants\":[\"$CA\",\"$CB\",\"$CC\"],\"obligationCids\":$OBL_JSON,\"settled\":false}"
-
 CYC_CID=$(acs NettingCycle | grep '"settled":false' | tail -n1 | cut -f1)
+if [ -n "$CYC_CID" ]; then
+  say "Reusing existing unsettled NettingCycle"
+else
+  say "Creating NettingCycle over the 6 obligations"
+  create "$OP" NettingCycle \
+    "{\"operator\":\"$OP\",\"participants\":[\"$CA\",\"$CB\",\"$CC\"],\"obligationCids\":$OBL_JSON,\"settled\":false}"
+  CYC_CID=$(acs NettingCycle | grep '"settled":false' | tail -n1 | cut -f1)
+fi
 [ -n "$CYC_CID" ] || die "netting cycle cid not found"
 
 exercise() { # exercise <actAs> <Template> <cid> <choice> <arg-json>
