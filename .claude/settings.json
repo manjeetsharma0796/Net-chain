@@ -8,7 +8,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo Ponytail is ON (full): before writing code, apply the YAGNI ladder in .claude/skills/ponytail - reuse before rewrite, stdlib/native before a dependency, shortest working diff. Run /ponytail-review before merging."
+            "command": "echo 'Ponytail is ON (full): before writing code, apply the YAGNI ladder in .claude/skills/ponytail - reuse before rewrite, stdlib/native before a dependency, shortest working diff. Run /ponytail-review before merging.'"
           }
         ]
       }
