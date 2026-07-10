@@ -33,10 +33,13 @@ Live calls exist on only four pages, and 39 store mutations drive what the user 
 ## UI wiring tasks (keep visuals identical)
 
 - **T27 Dashboard live data.** Server route `/api/scan` that fetches Canton Coin (CoinGecko id
-  `canton-network`, verified: CC ~$0.133, mcap ~$5.2B) and USDCx (`xreserve-bridged-usdc-canton`)
-  with a short cache and a proxy fallback chain (try direct, then one or two proxies) so a timeout
-  never blanks the tile. Wire the USDCx wallet balance to a live `Account` read per party. Keep the
-  `NumberTicker` and stat-tile visuals exactly.
+  `canton-network`, verified: CC ~$0.133, mcap ~$5.2B) and USDCx (`xreserve-bridged-usdc-canton`).
+  **CoinGecko's free tier is not licensed for production and blocks cloud IPs, so go through a proxy
+  service, not direct**: a proxy is the primary path with a multi-proxy fallback chain, plus a
+  server-side cache (long TTL, roughly 60s) so we make very few upstream calls and a timeout never
+  blanks the tile. Pick a working proxy at implementation time (direct from a Vercel IP is likely to
+  be rate-limited or blocked). Wire the USDCx wallet balance to a live `Account` read per party. Keep
+  the `NumberTicker` and stat-tile visuals exactly.
 - **T28 Cycle page live netting (highest impact).** "Run netting cycle" posts to a route that creates
   the `NettingCycle` and exercises `ComputeNetPositions` on-ledger (operator), then reads the live
   `NetPosition` for the current party via `getNetPositionFor`. The party view then shows one figure
