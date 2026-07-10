@@ -5,35 +5,32 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 
 > Status legend: `[ ]` open · `[x]` done · `[!]` **blocking** the live path.
 
-## Blocking the live run (do these to unblock W2)
+## Live status (2026-07-10)
 
-- [!] **Provide `CLIENT_SECRET` to this environment.** The remote container has **no**
-  `.env` secret and no `CLIENT_SECRET` env var. Without it, `daml/deploy.sh` and the live
-  frontend cannot authenticate. Two ways:
-  1. Set `CLIENT_SECRET` as an environment secret/variable on the Claude-Code-on-web
-     environment (preferred — never touches git), **or**
-  2. Paste it into the untracked `.env` at the repo root (already git-ignored):
-     `CLIENT_SECRET=<paste>` then it will be picked up by `source .env`.
-  Devnet reachability from the container is **confirmed** (`auth` → 405 on GET,
-  `ledger-api` → 401 — both mean "reachable, needs a POST/token"). So the secret is the
-  only missing piece for the live run.
+- [x] **`CLIENT_SECRET` provided and working.** Token exchange + authenticated calls succeed.
+- [x] **T09 is LIVE.** `deploy.sh` ran end-to-end: settled balances **A=115k, B=130k, C=55k**
+      and NetPositions **A +15k, B +30k, C −45k (sum 0)**, read back from the ACS.
+- [x] **All four wins verified live** through the Next.js route handlers (with
+      `NEXT_PUBLIC_LEDGER_LIVE=1`): privacy (C gets 404 on the A→B contract, A gets 200),
+      per-party net position, and the on-ledger policy gate (250k → `AssertionFailed`, 150k → ok).
 
 - [!] **Configure a git remote.** This clone has **no `origin`** (`git remote -v` is empty),
   so the branch `daml-interaction` cannot be pushed and no PR can be opened from here. Add
   the GitHub remote (`git remote add origin <url>`) or push from a checkout that has one.
   All work is committed locally on `daml-interaction` and is ready to push once a remote exists.
 
-## Decisions
+## Decisions (resolved)
 
-- [x] `CLIENT_SECRET` will be provided (per plan, 2026-07-10). ⚠️ Not yet present in this
-  container — see the blocking item above.
-- [ ] OK to allocate `netchain-operator` + `netchain-company-a/b/c` on the shared M2M
-  participant (user 6)? `deploy.sh` is idempotent and will reuse existing party ids if the
-  hints already resolve.
-- [ ] Allocated party ids: `deploy.sh` writes them into untracked `.env` and (optionally)
-  `.env.example`. They are public devnet identifiers of the same class as the already-committed
-  `PRIMARY_PARTY`, so committing them to `.env.example` is safe — leave the placeholder lines
-  in `.env.example` if you'd rather keep them local.
+- [x] **Party allocation:** fresh `netchain-*` parties could **not** be authorized — the shared
+  M2M user (6) is at its **1000 user-rights cap** (`TOO_MANY_USER_RIGHTS`), so no new `CanActAs`
+  grants are possible. Per your approval, the demo **reuses existing scratch parties** user 6
+  already controls, all on the primary participant fingerprint: operator=`Dave`, A=`Carol`,
+  B=`Investor`, C=`SME`. These are written into the untracked `.env` (`NETCHAIN_OPERATOR` etc.).
+  A dedicated OAuth client from Five North would let you switch back to named `netchain-*` parties.
+- [ ] **Cosmetic — duplicate contracts:** one buggy re-seed created a 2× set (settlement still
+  landed correctly; privacy holds). `deploy.sh` is now idempotent, but the ACS still holds the
+  duplicates, so the live obligations table shows each row twice. Options: leave it (functionally
+  fine), archive the extras, or run the pixel-perfect demo on the mock (`NEXT_PUBLIC_LEDGER_LIVE=0`).
 - [ ] Confirm the **real deadline** (13 vs 14 Jul) in `#canton`.
 
 ## Ship
