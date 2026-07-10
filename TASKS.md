@@ -67,14 +67,14 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 |----|-----|-------|------|-------|--------|------------|
 | T01 | P0 | SETUP | Seaport access + trivial deploy spike | | 🔲 | — |
 | T02 | P0 | SETUP | Provision demo parties (A/B/C + operator) + tokens | | 🔲 | T01 |
-| T03 | P0 | DAML | Scaffold `netchain` Daml project + agree shared types | Manjeet | 🟡 | T01 |
-| T04 | P0 | DAML | `Account` balance template (operator-issued) | Manjeet | 🟡 | T03 |
-| T05 | P0 | DAML | `Obligation` template (party-scoped) | Manjeet | 🟡 | T03 |
-| T06 | P0 | DAML | `NettingCycle` + `NetPosition` (real per-party privacy) | Manjeet | 🟡 | T05 |
-| T07 | P0 | DAML | `TreasuryPolicy` + atomic `Settle` choice | Manjeet | 🟡 | T04,T05,T06 |
-| T08 | P0 | DAML | Daml Script: seed demo + prove the 3 wins | Manjeet | 🟡 | T04–T07 |
-| T09 | P0 | DAML | Deploy `.dar` to 5N Sandbox + run setup on-ledger | Manjeet | 🔲 | T08,T02 |
-| T10 | P1 | DAML | Mirror `daml/` source into the git repo | | 🔲 | T03 |
+| T03 | P0 | DAML | Scaffold `netchain` Daml project + agree shared types | Manjeet | ✅ | T01 |
+| T04 | P0 | DAML | `Account` balance template (operator-issued) | Manjeet | ✅ | T03 |
+| T05 | P0 | DAML | `Obligation` template (party-scoped) | Manjeet | ✅ | T03 |
+| T06 | P0 | DAML | `NettingCycle` + `NetPosition` (real per-party privacy) | Manjeet | ✅ | T05 |
+| T07 | P0 | DAML | `TreasuryPolicy` + atomic `Settle` choice | Manjeet | ✅ | T04,T05,T06 |
+| T08 | P0 | DAML | Daml Script: 4 tests prove the 3 wins (all pass) | Manjeet | ✅ | T04–T07 |
+| T09 | P0 | DAML | Deploy `.dar` to 5N Sandbox + run setup on-ledger | Manjeet | 🟡 | T08,T02 |
+| T10 | P1 | DAML | Mirror `daml/` source into the git repo | Manjeet | ✅ | T03 |
 | T11 | P1 | FE | `lib/ledger.ts` — JSON Ledger API v2 client + OIDC | | 🔲 | T01,T02 |
 | T12 | P1 | FE | Per-party identity/switcher → real projections | | 🔲 | T02,T11 |
 | T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | | 🔲 | T09,T11 |

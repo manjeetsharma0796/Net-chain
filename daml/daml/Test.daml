@@ -1,0 +1,96 @@
+-- NetChain — Daml Script tests (the 3 on-ledger wins).
+-- Written test-first: these define the behaviour NetChain.daml must satisfy.
+module Test where
+
+import Daml.Script
+import DA.Assert ((===))
+import NetChain
+
+-- Shared demo cast: the netting operator (settlement bank) + 3 companies.
+data Setup = Setup with
+  operator : Party
+  a : Party
+  b : Party
+  c : Party
+
+parties : Script Setup
+parties = do
+  operator <- allocateParty "operator"
+  a <- allocateParty "CompanyA"
+  b <- allocateParty "CompanyB"
+  c <- allocateParty "CompanyC"
+  pure Setup with operator, a, b, c
+
+-- The canonical netting graph → nets: A +15k, B +30k, C -45k (sum 0).
+-- Accounts seeded at 100k each; policy caps are parameters so a test can
+-- deliberately trip one.
+seedCycle :
+  Setup -> Decimal -> Decimal -> Decimal
+  -> Script (ContractId NettingCycle, [ContractId Account], [ContractId TreasuryPolicy])
+seedCycle Setup{operator, a, b, c} capA capB capC = do
+  accA <- submit operator $ createCmd Account with operator, owner = a, balance = 100000.0
+  accB <- submit operator $ createCmd Account with operator, owner = b, balance = 100000.0
+  accC <- submit operator $ createCmd Account with operator, owner = c, balance = 100000.0
+  polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = capA
+  polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = capB
+  polC <- submit c $ createCmd TreasuryPolicy with operator, party = c, maxSettlementPerCycle = capC
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False
+  o1 <- ob a b 120000.0 "AB"
+  o2 <- ob b c 95000.0 "BC"
+  o3 <- ob c a 150000.0 "CA"
+  o4 <- ob a c 40000.0 "AC"
+  o5 <- ob b a 25000.0 "BA"
+  o6 <- ob c b 30000.0 "CB"
+  cyc <- submit operator $ createCmd NettingCycle with
+    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], settled = False
+  pure (cyc, [accA, accB, accC], [polA, polB, polC])
+
+-- WIN 1 — counterparty privacy: C is not a stakeholder on A→B, so the ledger
+-- never returns it to C. A (obligor) does see it.
+test_counterparty_privacy : Script ()
+test_counterparty_privacy = do
+  Setup{operator, a, b, c} <- parties
+  _ <- submit a $ createCmd Obligation with operator, obligor = a, obligee = b, amount = 120000.0, reference = "INV-1", dueDate = "2026-07-20", settled = False
+  cObls <- query @Obligation c
+  length cObls === 0
+  aObls <- query @Obligation a
+  length aObls === 1
+
+-- WIN 3a — atomic settlement moves every balance in one commit.
+test_atomic_settlement : Script ()
+test_atomic_settlement = do
+  s@Setup{operator, a, b, c} <- parties
+  (cyc, accs, pols) <- seedCycle s 200000.0 500000.0 350000.0
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-1"
+  _ <- submit operator $ exerciseCmd cyc Settle with
+    cycleId = "cyc-1", netPositionCids = nps, accountCids = accs, policyCids = pols
+  [(_, accA)] <- query @Account a
+  accA.balance === 115000.0
+  [(_, accB)] <- query @Account b
+  accB.balance === 130000.0
+  [(_, accC)] <- query @Account c
+  accC.balance === 55000.0
+
+-- WIN 3b — all-or-nothing: C's cap (10k) is below its net (45k), so Settle
+-- aborts and NOT ONE balance moves.
+test_settlement_atomic_abort : Script ()
+test_settlement_atomic_abort = do
+  s@Setup{operator, a, b, c} <- parties
+  (cyc, accs, pols) <- seedCycle s 200000.0 500000.0 10000.0
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-2"
+  submitMustFail operator $ exerciseCmd cyc Settle with
+    cycleId = "cyc-2", netPositionCids = nps, accountCids = accs, policyCids = pols
+  [(_, accA)] <- query @Account a
+  accA.balance === 100000.0
+  [(_, accC)] <- query @Account c
+  accC.balance === 100000.0
+
+-- WIN 4 — the on-ledger policy the agent cannot bypass: 250k > 200k cap fails
+-- on-ledger; a within-cap amount succeeds.
+test_policy_rejects_over_threshold : Script ()
+test_policy_rejects_over_threshold = do
+  Setup{operator, a} <- parties
+  polA <- submit a $ createCmd TreasuryPolicy with
+    operator, party = a, maxSettlementPerCycle = 200000.0
+  submitMustFail operator $ exerciseCmd polA CheckSettlement with amount = 250000.0
+  submit operator $ exerciseCmd polA CheckSettlement with amount = 150000.0
