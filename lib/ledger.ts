@@ -52,6 +52,27 @@ export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>
   return null;
 }
 
+/* ---- market data (T27, CoinGecko via /api/scan) -------------------------- */
+
+export interface ScanLive {
+  ccPriceUsd: number | null;
+  ccMarketCapUsd: number | null;
+  cc24hChange: number | null;
+  usdcxPriceUsd: number | null;
+}
+
+/** Live Canton Coin market data via /api/scan (server-side cache + proxy). Not
+ *  gated by the ledger flag: it is real market data regardless of live mode. */
+export async function getScanLive(): Promise<ScanLive | null> {
+  try {
+    const r = await fetch("/api/scan");
+    if (r.ok) return (await r.json()) as ScanLive;
+  } catch {
+    /* fall through */
+  }
+  return null;
+}
+
 /* ---- reads (T13) --------------------------------------------------------- */
 
 export async function getObligationsFor(

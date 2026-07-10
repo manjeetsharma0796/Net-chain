@@ -43,3 +43,6 @@ next-env.d.ts
 # reference / scratch material (not part of the product)
 /inspo
 .env*
+
+# playwright mcp scratch
+.playwright-mcp/

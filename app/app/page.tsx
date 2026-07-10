@@ -16,7 +16,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import NumberTicker from "@/components/ui/NumberTicker";
 import StatusPill from "@/components/ui/StatusPill";
 import { getScanSnapshot } from "@/lib/api";
-import { getBalanceLive } from "@/lib/ledger";
+import { getBalanceLive, getScanLive, type ScanLive } from "@/lib/ledger";
 import { formatCompact, formatDate, formatTime } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { ScanSnapshot } from "@/lib/types";
@@ -58,11 +58,13 @@ export default function DashboardPage() {
   const party = partyById(currentPartyId);
 
   const [scan, setScan] = useState<ScanSnapshot | null>(null);
+  const [ccLive, setCcLive] = useState<ScanLive | null>(null);
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
 
   useEffect(() => {
     let live = true;
     getScanSnapshot().then((s) => live && setScan(s));
+    getScanLive().then((c) => live && c && setCcLive(c));
     return () => { live = false; };
   }, []);
 
@@ -89,7 +91,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Dashboard"
-        subtitle={`Canton network overview and ${party.name}'s treasury position. Network figures via the Scan API (mocked).`}
+        subtitle={`Canton network overview and ${party.name}'s treasury position. CC price live via CoinGecko; network topology via the Scan API (mocked).`}
       />
 
       {/* network stats */}
@@ -114,14 +116,22 @@ export default function DashboardPage() {
             label="CC → USD"
             Icon={Flame}
             value={
-              scan ? (
-                <NumberTicker value={scan.ccPriceUsd} prefix="$" decimals={4} />
+              (ccLive?.ccPriceUsd ?? scan?.ccPriceUsd) != null ? (
+                <NumberTicker
+                  value={(ccLive?.ccPriceUsd ?? scan?.ccPriceUsd) as number}
+                  prefix="$"
+                  decimals={4}
+                />
               ) : (
                 "—"
               )
             }
             hint={
-              scan ? `${formatCompact(scan.totalAmuletBurnt)} CC burnt` : undefined
+              ccLive?.ccMarketCapUsd != null
+                ? `$${formatCompact(ccLive.ccMarketCapUsd)} market cap · live`
+                : scan
+                  ? `${formatCompact(scan.totalAmuletBurnt)} CC burnt`
+                  : undefined
             }
           />
           <StatCard
