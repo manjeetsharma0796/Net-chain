@@ -1,0 +1,12 @@
+sdk-version: 3.5.2
+name: netchain
+source: daml
+version: 1.0.0
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+# --target=2.3 selects Daml-LF 2.3, which is required for contract keys.
+# Requires Canton Protocol Version 35 on the target domain/validator.
+build-options:
+  - --target=2.3
