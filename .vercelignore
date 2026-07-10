@@ -1,0 +1,5 @@
+# Keep local secrets and Daml build cache out of any `vercel` CLI upload.
+# (GitHub-integration deploys build from git, which already excludes these.)
+# Vercel env vars come from the dashboard, never from these files.
+.env*
+.daml

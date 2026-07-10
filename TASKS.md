@@ -217,8 +217,19 @@ Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
   state; a real tx id shows on the settlement screen.
 
 ### T15 · P0 · SHIP — Deploy frontend live
-- Deploy the existing Next.js app to Vercel now (works with the mock); re-point to the
-  ledger once T13/T14 land. Gives us the required **live product link** early.
+- ✅ **Prod build verified green** (`npm run build` — 11 routes incl. `/api/extract`,
+  `/api/ledger/[op]`). App **degrades to the mock demo** if env is unset, so a deploy
+  works with or without live config. `.env` is gitignored + `.vercelignore` excludes
+  `.env*`, so the secret never uploads.
+- ⬜ **Deploy step (needs a human — outward-facing, auto-mode blocks it):** safest =
+  **Vercel GitHub integration** — import `manjeetsharma0796/Net-chain` at vercel.com/new
+  (builds from git, no local `.env`). Or `vercel --prod` from the repo (authed as
+  `akakak0796-5103`).
+- **Env vars to set in the Vercel dashboard** (omit all → working mock demo):
+  - live ledger: `NEXT_PUBLIC_LEDGER_LIVE=1`, `BASE`, `TOKEN_ENDPOINT`, `CLIENT_ID`,
+    `CLIENT_SECRET`, `AUDIENCE`, `SCOPE`, `NETCHAIN_PKG_ID`,
+    `NETCHAIN_OPERATOR` / `NETCHAIN_COMPANY_A` / `_B` / `_C` (values in local `.env`)
+  - real AI extraction: `NIM_API_KEY`, `NIM_BASE`, `NIM_VISION_MODEL`
 - **Done when:** public URL is live; linked here.
 
 ### T16 · P1 · AI — Real invoice extraction
