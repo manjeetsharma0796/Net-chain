@@ -1,0 +1,229 @@
+# NetChain — Build Tasks
+
+Privacy-preserving multilateral netting + atomic settlement on Canton.
+Goal of this file: get NetChain from **mocked frontend** → **live on Canton Devnet**
+before the deadline. Two of us, flat task pool, claim and update as you go.
+
+> **Deadline:** Final submission **Mon 13 Jul 12:59 BST** (banner) — the dashboard
+> countdown showed **~Tue 14 Jul**. ⚠️ CONFIRM the real cutoff in the `#canton`
+> Discord before trusting either. Treat it as **13 Jul**.
+
+---
+
+## How this task system works
+
+1. **Claim** a task by putting your name in **Owner** and setting **Status → 🟡**.
+2. **Only start a task whose dependencies are ✅.** Grab the highest-priority
+   unblocked task you can.
+3. **Update this file** when you claim, finish, or get blocked. Commit it often and
+   small so the other person always sees current state.
+4. Prefer tasks in a **different track** from your partner so you don't collide.
+
+**Status:** 🔲 Todo · 🟡 In progress · ✅ Done · ⛔ Blocked
+**Priority:** **P0** = must exist to qualify · **P1** = makes the live product real ·
+**P2** = polish
+**Tracks:** `SETUP` · `DAML` · `FE` (frontend) · `AI` · `SHIP` (submission)
+
+---
+
+## Ground truth — deploy path
+
+- **Seaport IDE:** `https://app.devnet.seaport.to` — write Daml, **Build Project**
+  → `.dar`, **Deploy → Deploy to Validator**.
+- **Validator:** `5N Sandbox (development)` · Provider `Generic OIDC` ·
+  API `https://ledger-api.validator.devnet.sandbox.fivenorth.io`
+- **Daml:** SDK `3.4.9`; deps `daml-prim`, `daml-stdlib`, `daml-script`.
+- **Frontend seam:** all reads/writes already funnel through `lib/api.ts` +
+  `lib/store.ts`. Real integration = replace those with JSON Ledger API v2 calls;
+  **keep the function signatures identical** so pages don't change.
+- Docs: JSON Ledger API — https://docs.digitalasset.com/build/3.5/tutorials/json-api/canton_and_the_json_ledger_api.html
+
+## Definition of Done (the qualification bar)
+
+- [ ] Daml contracts **deployed live on Devnet** via Seaport (not LocalNet/sandbox).
+- [ ] The 4 demo wins reproducible: **counterparty privacy**, **AI-created
+      obligation**, **atomic settlement (with abort)**, **on-ledger policy rejection**.
+- [ ] **Public repo** (clean, documented) · **deck** · **3-min video w/ demo** ·
+      **link to live product**.
+
+---
+
+## Task pool
+
+| ID | Pri | Track | Task | Owner | Status | Depends on |
+|----|-----|-------|------|-------|--------|------------|
+| T01 | P0 | SETUP | Seaport access + trivial deploy spike | | 🔲 | — |
+| T02 | P0 | SETUP | Provision demo parties (A/B/C + operator) + tokens | | 🔲 | T01 |
+| T03 | P0 | DAML | Scaffold `netchain` Daml project + agree shared types | | 🔲 | T01 |
+| T04 | P0 | DAML | `Cash` token template (mint + atomic transfer) | | 🔲 | T03 |
+| T05 | P0 | DAML | `Obligation` template (party-scoped) | | 🔲 | T03 |
+| T06 | P0 | DAML | `NettingCycle` + `NetPosition` (real per-party privacy) | | 🔲 | T05 |
+| T07 | P0 | DAML | `TreasuryPolicy` + atomic `Settle` choice | | 🔲 | T04,T05,T06 |
+| T08 | P0 | DAML | Daml Script: seed demo + prove the 3 wins | | 🔲 | T04–T07 |
+| T09 | P0 | DAML | Deploy `.dar` to 5N Sandbox + run setup on-ledger | | 🔲 | T08,T02 |
+| T10 | P1 | DAML | Mirror `daml/` source into the git repo | | 🔲 | T03 |
+| T11 | P1 | FE | `lib/ledger.ts` — JSON Ledger API v2 client + OIDC | | 🔲 | T01,T02 |
+| T12 | P1 | FE | Per-party identity/switcher → real projections | | 🔲 | T02,T11 |
+| T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | | 🔲 | T09,T11 |
+| T14 | P1 | FE | Wire **writes** (create/cycle/allocate/settle/policy) | | 🔲 | T09,T11 |
+| T15 | P0 | SHIP | Deploy frontend live (Vercel) — the "live link" | | 🔲 | — |
+| T16 | P1 | AI | Real invoice extraction via LLM (Grok/OpenRouter) | | 🔲 | — |
+| T17 | P2 | FE | Fix the 3 conformance mismatches | | 🔲 | T13 (partial) |
+| T18 | P0 | SHIP | Presentation deck | | 🔲 | — |
+| T19 | P0 | SHIP | 3-min video pitch + demo recording | | 🔲 | spine live |
+| T20 | P0 | SHIP | Repo cleanup + README rewrite | | 🔲 | near end |
+
+**Suggested parallelization (day 1):** one person takes **T01 → T02** (unblocks
+everything on-ledger); the other starts **T03** (Daml scaffold, authoring needs no
+deploy) and **T15/T18** in the gaps. After T01, the Daml templates (T04/T05) split
+cleanly between two files; **T11** (ledger client) and **T16** (LLM) are fully
+independent and can run the whole time.
+
+---
+
+## Task details
+
+### T01 · P0 · SETUP — Seaport access + trivial deploy spike
+De-risk the entire deployment before writing real logic.
+- Create Seaport account(s); confirm **both** teammates can open the same project
+  (Collaborators).
+- Recreate the `testdemo` project from the guide, **Build Project**, then
+  **Deploy → Deploy to Validator → 5N Sandbox (development)**.
+- **Done when:** a trivial `.dar` is deployed and visible on-ledger on the 5N Sandbox
+  validator, and both of us have access. Paste the project URL + validator endpoint here.
+
+### T02 · P0 · SETUP — Provision demo parties + tokens
+- Allocate/identify Daml parties for **Company A, Company B, Company C, and the
+  netting operator** on the validator; record their party IDs here.
+- Work out how the frontend obtains an **OIDC token per party** for the JSON Ledger
+  API (Generic OIDC) — document the token flow, or the app-provider-token + `actAs`
+  approach if per-user OIDC is too heavy. (Open item — confirm from Seaport docs / `#canton`.)
+- **Done when:** party IDs listed + a documented way to authenticate as each party.
+
+### T03 · P0 · DAML — Scaffold project + agree shared types
+The coordination task that makes the rest independent.
+- New Seaport project `netchain`; `daml.yaml` (sdk `3.4.9`, deps prim/stdlib/script).
+- 30-min sync: freeze the **template + choice signatures and the party model**
+  (who is signatory vs observer on each contract) so T04–T07 can be built in separate
+  files without churn. Mirror `lib/types.ts` shapes.
+- **Done when:** project builds empty + a short type/signature contract is written
+  below this line and both agree.
+
+### T04 · P0 · DAML — `Cash` token template
+Simple settlement instrument (own token; USDCx is the deck/"production" story).
+- `Cash` with `issuer`, `owner`, `amount`. Owner-authorized `Transfer`/`Split`;
+  issuer can `Mint`. Enough for atomic multi-leg settlement inside one transaction.
+- **Done when:** can mint Cash to a party and transfer it in a Daml Script.
+
+### T05 · P0 · DAML — `Obligation` template
+- Fields: `obligor`, `obligee`, `amount`, `reference`, `dueDate`, `status`.
+  **Signatories = obligor + obligee only** (propose/accept to create) → third parties
+  can't see it. Add the operator as **observer** only when pulled into a cycle.
+- **Done when:** A↔B obligation is invisible to C in a Daml Script (privacy proven).
+
+### T06 · P0 · DAML — `NettingCycle` + `NetPosition`
+Makes privacy **real at the data layer** (fixes the current UI-only shortcut).
+- `NettingCycle` (operator + participants, references in-scope obligations).
+- Operator computes each party's net; writes a `NetPosition` whose **only observer is
+  that party** — so A cannot read B's net from the ledger, not just the UI.
+- **Done when:** in a Script, each party can fetch exactly its own `NetPosition` and
+  nets sum to zero (demo set: A +15k, B +30k, C −45k).
+
+### T07 · P0 · DAML — `TreasuryPolicy` + atomic `Settle`
+- `TreasuryPolicy` per party: `maxSettlementPerCycle`, `allowedCounterparties`,
+  `allowedInstrument`, `requiresHumanApprovalAbove`.
+- Allocation step (each net payer commits Cash to the cycle), then a single `Settle`
+  choice that **transfers every leg in one transaction** (atomic by construction),
+  **asserting the policy** — an over-threshold attempt fails on-ledger.
+- **Done when:** a Script shows (a) all legs settle in one commit, (b) an over-cap
+  attempt is rejected by the policy assertion, no funds move.
+
+### T08 · P0 · DAML — Seed + proof script
+- `setupDemo` seeds 3 companies, 6 obligations matching the current mock (gross 460k
+  → net 45k, sums to zero), one policy per party, initial Cash.
+- A test script demonstrates the **3 on-ledger wins** (privacy read refusal, atomic
+  settle, policy rejection).
+- **Done when:** script runs green in Seaport.
+
+### T09 · P0 · DAML — Deploy + run on-ledger
+- Deploy the `netchain` `.dar` to 5N Sandbox; execute the setup so the demo state is
+  **live on Devnet**.
+- **Done when:** contracts are queryable on the validator; record contract IDs / a
+  screenshot here. **This is the core qualification checkpoint.**
+
+### T10 · P1 · DAML — Mirror source to repo
+- Export the `daml/` folder + `daml.yaml` from Seaport into `Net-chain/daml/` and
+  commit. Keep it current (public-repo requirement).
+- **Done when:** `daml/` builds from the repo and matches what's deployed.
+
+### T11 · P1 · FE — `lib/ledger.ts` JSON Ledger API client
+- Thin client for JSON Ledger API v2 against the validator endpoint: create, exercise,
+  query active contracts; inject the OIDC token from T02.
+- Build/test against the deployed contracts. **Do not change page components.**
+- **Done when:** can query the deployed `Obligation`s for one party from a local script/test.
+
+### T12 · P1 · FE — Per-party identity
+- Replace the mock party switcher's effect: switching party uses that party's
+  token/projection so reads reflect the **ledger's** per-party view.
+- **Done when:** logged in as A, the ledger itself returns only A's contracts.
+
+### T13 · P1 · FE — Wire reads (privacy first)
+- Reimplement `getObligationsFor`, `queryContract`, **and `getNetPositionFor`
+  (currently unused!)** in terms of `lib/ledger.ts`; keep signatures identical.
+- **Done when:** `/app/obligations`, `/app/privacy-check`, and the `/app/cycle`
+  party-view read from the real ledger; the `CONTRACT_NOT_FOUND` moment is real.
+
+### T14 · P1 · FE — Wire writes
+- Route obligation-create, run-cycle, allocate, settle, and the policy attempt through
+  real ledger exercises (via the store actions).
+- **Done when:** creating an obligation and settling a cycle in the UI changes on-ledger
+  state; a real tx id shows on the settlement screen.
+
+### T15 · P0 · SHIP — Deploy frontend live
+- Deploy the existing Next.js app to Vercel now (works with the mock); re-point to the
+  ledger once T13/T14 land. Gives us the required **live product link** early.
+- **Done when:** public URL is live; linked here.
+
+### T16 · P1 · AI — Real invoice extraction
+- Replace mock `extractInvoice` with an LLM call (Grok **or** OpenRouter) that reads a
+  dropped PDF/image and returns `{amount, counterparty, dueDate, reference, confidence}`.
+  **Manual entry stays as the always-works fallback.**
+- **Done when:** dropping a real invoice pre-fills the review form from actual content;
+  creating it makes an **agent-sourced** obligation. Keep AI ≈20% of effort.
+
+### T17 · P2 · FE — Fix conformance mismatches
+- (a) Confirm net-position privacy is now **ledger-enforced** (should fall out of
+  T06+T13). (b) Policy page copy: stop hardcoding "above your cycle cap" — state the
+  **actual rule that fired** for the active party (wrong today for B/C). (c) Hero
+  subhead sells "receivables minus payables" (the SoT says don't sell the algorithm);
+  fix `PrimitivesMarquee` "mainnet" → Devnet.
+- **Done when:** copy is accurate for all three parties and matches positioning.
+
+### T18 · P0 · SHIP — Deck
+- Problem → the 4 wins → **honest privacy model** (counterparties blind; operator is a
+  known authorized coordinator; MPC/ZK = future work) → architecture → Devnet proof.
+- **Done when:** deck exported and linked here.
+
+### T19 · P0 · SHIP — 3-min video
+- Splitwise hook **once** in the first line, then sell **confidential settlement +
+  on-ledger policy + atomic execution**. Demo the 4 wins against the live app.
+- **Done when:** ≤3-min video recorded + linked.
+
+### T20 · P0 · SHIP — Repo + README
+- Rewrite README for the real deploy (Seaport steps, validator, architecture, what's
+  live vs future). Remove "no blockchain / mock only" framing. Clean the repo.
+- **Done when:** a stranger can understand and run it from the README.
+
+---
+
+## Deferred — explicitly OUT of the must-have cut
+Pull these in only if the whole spine is live with time to spare.
+- Real **Scan API** dashboard (keep it mocked — it already looks right).
+- Real **USDCx / Circle xReserve** (we use the `Cash` token; USDCx is the deck story).
+- **NL-query** + **reconciliation** agents.
+- **Multi-currency** netting; **tokenized-invoice** financing.
+
+## Parking lot / open items
+- Confirm the **real deadline** in `#canton` (13 vs 14 Jul).
+- Confirm the **OIDC token flow** per party (T02) — biggest frontend unknown.
+- Confirm whether a shared/hosted USDCx test token exists on 5N Sandbox (else Cash token).
