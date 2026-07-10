@@ -5,10 +5,46 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Bot, FileUp, ScanLine } from "lucide-react";
 import { extractInvoice, ExtractedInvoice } from "@/lib/api";
 import { useNetChain } from "@/lib/store";
+import { PartyId } from "@/lib/types";
 
 interface InvoiceDropzoneProps {
-  /** Called with the mock-OCR result once "extraction" finishes. */
+  /** Called with the extraction result once the agent finishes. */
   onExtracted: (result: ExtractedInvoice, fileName: string) => void;
+}
+
+/** Read a File as a data: URL for the vision route. */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
+
+/**
+ * Live extraction for images via /api/extract (NVIDIA NIM vision). Falls back to
+ * the mock extractor for PDFs, when the route is unconfigured (503), or on any
+ * error, so the dropzone always returns something.
+ */
+async function extractInvoiceFor(
+  file: File,
+  currentParty: PartyId,
+): Promise<ExtractedInvoice> {
+  if (/\.(png|jpe?g|webp)$/i.test(file.name)) {
+    try {
+      const imageDataUrl = await fileToDataUrl(file);
+      const r = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl, currentParty }),
+      });
+      if (r.ok) return (await r.json()) as ExtractedInvoice;
+    } catch {
+      /* fall through to mock */
+    }
+  }
+  return extractInvoice(currentParty);
 }
 
 /**
@@ -31,7 +67,7 @@ export default function InvoiceDropzone({ onExtracted }: InvoiceDropzoneProps) {
         return;
       }
       setScanningFile(file.name);
-      const result = await extractInvoice(currentPartyId);
+      const result = await extractInvoiceFor(file, currentPartyId);
       setScanningFile(null);
       onExtracted(result, file.name);
     },
@@ -106,11 +142,11 @@ export default function InvoiceDropzone({ onExtracted }: InvoiceDropzoneProps) {
           >
             <FileUp size={34} className="text-frost/50" aria-hidden="true" />
             <p className="text-sm font-medium">
-              Drop an invoice — the treasury agent takes it from here
+              Drop an invoice, the treasury agent takes it from here
             </p>
             <p className="flex items-center gap-1.5 text-xs text-frost/50">
               <Bot size={13} aria-hidden="true" />
-              PDF · PNG · JPG — extraction is mocked for the demo
+              PNG · JPG · WEBP read by the agent · PDF uses the fallback
             </p>
           </motion.div>
         )}

@@ -89,7 +89,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 > C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
 > (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
 | T15 | P0 | SHIP | Deploy frontend live (Vercel) — the "live link" | | 🔲 | — |
-| T16 | P1 | AI | Real invoice extraction via LLM (NVIDIA NIM vision) | Jishnu | 🟡 | — |
+| T16 | P1 | AI | Real invoice extraction via LLM (NVIDIA NIM vision) | Jishnu | ✅ | — |
 | T17 | P2 | FE | Fix the 3 conformance mismatches | Jishnu | ✅ | T13 (partial) |
 | T18 | P0 | SHIP | Presentation deck | | 🔲 | — |
 | T19 | P0 | SHIP | 3-min video pitch + demo recording | | 🔲 | spine live |
