@@ -175,16 +175,21 @@ acs() { # acs <Template>  -> prints "cid<TAB>createArgumentJSON" lines (this run
     \"verbose\":true,\"activeAtOffset\":$off
   }" | python3 -c '
 import sys,json
-for line in sys.stdin:
-    line=line.strip()
-    if not line: continue
-    try: data=json.loads(line)
-    except Exception: continue
-    entries=data if isinstance(data,list) else [data]
-    for e in entries:
-        ce=(e.get("contractEntry",{}) or {}).get("JsActiveContract",{}).get("createdEvent",{})
-        if not ce: continue
-        print(ce.get("contractId",""),"\t",json.dumps(ce.get("createArgument",{})))'
+raw=sys.stdin.read()
+try:
+    data=json.loads(raw); entries=data if isinstance(data,list) else [data]
+except Exception:
+    entries=[]
+    for line in raw.splitlines():
+        line=line.strip()
+        if not line: continue
+        try: entries.append(json.loads(line))
+        except Exception: pass
+for e in entries:
+    if not isinstance(e,dict): continue
+    ce=(e.get("contractEntry",{}) or {}).get("JsActiveContract",{}).get("createdEvent",{})
+    if not ce: continue
+    print(ce.get("contractId","")+"\t"+json.dumps(ce.get("createArgument",{})))'
 }
 
 # The ACS is cumulative across runs; take the newest N of each to scope to this run.
@@ -242,10 +247,11 @@ for line in sys.stdin:
     cid,_,arg=line.partition("\t")
     try: a=json.loads(arg)
     except Exception: continue
-    o=a.get("owner");
+    o=a.get("owner")
     if o in want: seen[o]=a.get("balance")
 for pid,label in want.items():
-    print(f"  Company {label}: {seen.get(pid,\"(n/a)\")} USDCx")'
+    val=seen.get(pid) or "(n/a)"
+    print(f"  Company {label}: {val} USDCx")'
 
 say "Per-party NetPositions (expect A +15k, B +30k, C -45k; sum 0)"
 acs NetPosition | python3 -c '
