@@ -9,6 +9,7 @@ import { useNetChain } from "@/lib/store";
 export default function TopBar() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
   const balance = useNetChain((s) => s.balances[currentPartyId]);
+  const isLive = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
   return (
     <header className="flex items-center justify-between gap-3 border-b border-frost/10 px-4 py-3 md:px-6">
@@ -19,6 +20,17 @@ export default function TopBar() {
         Net<span className="text-accent">Chain</span>
         <span className="ml-2 hidden rounded-full border border-frost/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-frost/50 sm:inline">
           Demo
+        </span>
+        <span
+          className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${
+            isLive
+              ? "border-accent/40 text-accent"
+              : "border-frost/20 text-frost/50"
+          }`}
+          title={isLive ? "Data source: live ledger" : "Data source: mock"}
+          aria-label={isLive ? "Data source: live ledger" : "Data source: mock"}
+        >
+          {isLive ? "LIVE" : "MOCK"}
         </span>
       </Link>
 
