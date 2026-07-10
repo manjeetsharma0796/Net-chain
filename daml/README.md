@@ -72,7 +72,7 @@ dpm inspect-dar --json .daml/dist/netchain-1.0.0.dar \
 | `Obligation` | operator, obligor, obligee, amount, reference, dueDate, settled | obligor | obligee, operator | — |
 | `TreasuryPolicy` | operator, party, maxSettlementPerCycle | party | operator | `CheckSettlement(amount)` |
 | `NetPosition` | operator, party, cycleId, net | operator | party | — |
-| `NettingCycle` | operator, participants, obligationCids, settled | operator | participants | `ComputeNetPositions(cycleId)→[NetPosition]`, `Settle(cycleId, netPositionCids, accountCids, policyCids)` |
+| `NettingCycle` | operator, participants, obligationCids, settled | operator | participants | `ComputeNetPositions(cycleId)→[NetPosition]`, `CheckFunding(netPositionCids, accountCids)→[Party]` (T23, underfunded payers), `ComputeNetPositionsExcluding(cycleId, excluded)→[NetPosition]` (T24, drop-and-re-net), `Settle(cycleId, netPositionCids, accountCids, policyCids)` |
 
 **Settlement model:** the `operator` is the netting bank — it holds all `Account`s and
 runs `Settle` (controller `operator`). One shared M2M token `actAs` all parties, so no
