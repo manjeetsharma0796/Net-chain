@@ -107,12 +107,16 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T31 | P2 | FE | Policy page: read live `TreasuryPolicy` caps | Jishnu | ✅ | T14 |
 | T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | Jishnu | ✅ | — |
 | T33 | P1 | DAML | USDCx settlement via CIP-56 Allocation API (spike) | Jishnu | ✅ | T09 |
-| T35 | P2 | FE | TopBar USDCx balance still mock (512,400): wire to `getBalanceLive` | Jishnu | 🟡 | T11 |
+| T35 | P2 | FE | TopBar USDCx balance: wire to `getBalanceLive` | Jishnu | ✅ | T11 |
 | T36 | P2 | DAML | Optional: shape-only `Holding`/`Allocation` refactor mirroring CIP-56 (interim; real USDCx is no-go per `docs/USDCX_SPIKE.md`) | | 🔲 | T33 |
-| T37 | P1 | FE | Cycle operator cards show gross 0/0 in live mode (`toNetPosition` gross=0): compute client-side | Jishnu | 🟡 | T28 |
-| T38 | P1 | FE | Policy page: only the cap is live; wire the full `TreasuryPolicy` (counterparties, instrument, approval-above) | Jishnu | 🟡 | T31 |
+| T37 | P1 | FE | Cycle operator cards gross 0/0 in live mode: compute client-side | Jishnu | ✅ | T28 |
+| T38 | P1 | FE | Policy page: cap is live; off-ledger fields (counterparties, instrument, approval-above) marked illustrative (not on the deployed `TreasuryPolicy`) | Jishnu | ✅ | T31 |
 | T39 | P1 | FE | Fail-loud: `lib/ledger.ts` should tag live-vs-fallback and drive the LIVE badge + a dev warn (badge is build-flag-only today) | | 🔲 | T32 |
-| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual) | | 🔲 | T30 |
+| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual; needs an `Obligation` source field to fix live) | | 🔲 | T30 |
+| T41 | P2 | FE | Dedupe the 3-party-id literal to `PARTY_IDS` (copied in 5 places; `lib/ledger-map.ts` export unused) | | 🔲 | — |
+| T42 | P2 | FE | Extract shared cycle-open-and-compute helper in `lib/ledger-server.ts` (dup in `computeNetPositionsOnLedger`/`runAndSettle`) | | 🔲 | — |
+| T43 | P2 | DOCS | Em-dash sweep across tracked docs/source (per-line reword, not blind replace) | | 🔲 | — |
+| T44 | P2 | DOCS | Refresh `docs/UPGRADE_PLAN.md` real-vs-mock audit table to current status (T28-T35 done) | | 🔲 | — |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | 🔲 | T09 |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in

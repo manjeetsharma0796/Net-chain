@@ -51,6 +51,18 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
   page shows the real per-party ledger projection (company-a = 4 rows), but the dashboard USDCx
   balance still renders the mock value (512,400 vs live 115k), which is task **T27**.
 
+## Rule compliance (needs your decision)
+
+- [!] **6 commits on `main` are authored by "Claude"** (the PR #1 cloud-session commits:
+  `549adaf`, `c7fd5db`, `f0cc16a`, `e2361bf`, `9da9a50`, `12708a4`). This violates the
+  "no Claude as contributor" rule. Fixing it means **rewriting shared `main` history**
+  (`git rebase`/`filter-repo` + force-push), which is destructive and can disrupt anyone who
+  has pulled. I will NOT do this without your explicit go-ahead. New commits are authored by
+  `jishnu-baruah`, so no new violations. Options: leave it, or approve a history rewrite of
+  the author on those 6 commits.
+- [ ] Em-dashes are pervasive in existing docs/source (~200+, predating the rule). Tracked as
+  T43 (per-line reword, not a blind sed). New writing is em-dash free.
+
 ## Machine note (this Windows dev box)
 
 - [!] **Global npm is broken.** `npm install` fails with `SyntaxError: Invalid or unexpected
