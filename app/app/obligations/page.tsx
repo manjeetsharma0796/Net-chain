@@ -11,7 +11,8 @@ import Modal from "@/components/ui/Modal";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
-import { ExtractedInvoice, getObligationsFor } from "@/lib/api";
+import { ExtractedInvoice, getObligationsFor } from "@/lib/ledger";
+import { createObligationLive } from "@/lib/ledger";
 import { formatDate, shortHash } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { Obligation, PartyId } from "@/lib/types";
@@ -60,7 +61,7 @@ function ObligationForm({
   const set = (patch: Partial<DraftFields>) =>
     setFields((f) => ({ ...f, ...patch }));
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const amount = Number(fields.amount);
     if (!fields.counterparty) return setError("Choose a counterparty.");
@@ -88,9 +89,20 @@ function ObligationForm({
       kind: "obligation",
       message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${created.amount.toLocaleString()} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
     });
+    // Live path: also create the Obligation on-ledger (null when the flag is
+    // off / ledger unconfigured — the local demo obligation still stands).
+    const updateId = await createObligationLive({
+      obligor,
+      obligee,
+      amount,
+      reference: fields.reference.trim(),
+      dueDate: fields.dueDate,
+    });
     pushToast(
       "success",
-      `Obligation created on-ledger · ${shortHash(created.contractId, 10, 4)}`,
+      updateId
+        ? `Obligation created on-ledger · tx ${shortHash(updateId, 10, 4)}`
+        : `Obligation created · ${shortHash(created.contractId, 10, 4)}`,
     );
     onDone();
   };

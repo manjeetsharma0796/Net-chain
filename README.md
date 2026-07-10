@@ -77,6 +77,28 @@ switching re-scopes every read in the app to that party's ledger projection.
 - **`lib/store.ts`** — client session state (Zustand); would shrink to UI
   state once reads come from a real ledger.
 
+## Live ledger integration (opt-in)
+
+The mock seam now has a real counterpart. Set `NEXT_PUBLIC_LEDGER_LIVE=1` (plus the
+server-side `.env` values — `CLIENT_SECRET`, `NETCHAIN_PKG_ID`, and the party ids
+written by `daml/deploy.sh`) and the app reads/writes the deployed Daml contracts on
+the Canton Devnet validator instead of the mock. Path:
+
+`pages → lib/ledger.ts (same signatures as lib/api.ts) → app/api/ledger/* (server, holds
+the M2M token) → JSON Ledger API v2`. The secret never reaches the browser. With the flag
+off, everything runs the original mock demo — nothing hard-breaks. Bring up on-ledger state
+first with `cd daml && source ../.env && ./deploy.sh`. CI (`.github/workflows/daml.yml`)
+builds + tests the DAR on Linux.
+
+## Contributor tooling
+
+The **ponytail** YAGNI/laziness skill is vendored into `.claude/skills/` (MIT) and wired
+**always-on**: `CLAUDE.md` mandates the ladder for every code change and a `UserPromptSubmit`
+hook re-states it each turn, so every contributor's session enforces it — no install, no opt-in.
+It fits the pipeline at **authoring** (the ladder gates every change) and **review**
+(`/ponytail-review` on the diff before merge); it does not run in CI. Levels: `/ponytail
+lite|full|ultra`; disable per-session with "stop ponytail".
+
 ## Design system
 
 - Background `#0C0C0C`, text `#D7E2EA`, steel-gradient `.brand-heading`.

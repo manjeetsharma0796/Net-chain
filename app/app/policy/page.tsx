@@ -15,7 +15,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
-import { checkPolicy } from "@/lib/api";
+import { checkPolicy } from "@/lib/ledger";
 import { formatTime } from "@/lib/format";
 import { AGENT_OVERREACH_AMOUNT, POLICIES } from "@/lib/mock/data";
 import { partyById, useNetChain } from "@/lib/store";

@@ -16,7 +16,7 @@ import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
-import { newTxHash } from "@/lib/api";
+import { newTxHash, settleLive } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
 import { PartyId } from "@/lib/types";
 
@@ -98,6 +98,9 @@ export default function SettlementPage() {
       });
       pushToast("error", "Commit aborted — all legs reverted. Nothing moved.");
     } else {
+      // Live path: run + Settle the cycle on-ledger for a real update id
+      // (null when the flag is off / ledger unconfigured → mock hash).
+      const live = await settleLive();
       // Atomic commit: every leg flips in the same instant.
       setLegStatus("all", "settled");
       applySettlementBalances();
@@ -106,7 +109,7 @@ export default function SettlementPage() {
         "settled",
       );
       setCycleStatus("settled");
-      const hash = newTxHash(cycleId);
+      const hash = live?.updateId ?? newTxHash(cycleId);
       setTxHash(hash);
       logActivity({
         actor: "operator",
