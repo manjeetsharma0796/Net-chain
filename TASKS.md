@@ -100,6 +100,19 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T24 | P1 | DAML | Auto drop-and-re-net survivors on an underfunded payer + test | | 🔲 | T23 |
 | T25 | P2 | DAML | Partial settlement / gridlock resolution (largest solvent subset) | | 🔲 | T24 |
 | T26 | P1 | DOCS | Settlement design (research-grounded): `docs/SETTLEMENT_DESIGN.md` | Jishnu | ✅ | — |
+| T27 | P1 | FE | Dashboard live data (CoinGecko CC/USDCx + live USDCx balance) | | 🔲 | T09 |
+| T28 | P1 | FE | Cycle page: live `ComputeNetPositions` + per-party `NetPosition` read | | 🔲 | T09 |
+| T29 | P1 | FE | Settlement: live legs + real post-settle balances (keep real tx id) | | 🔲 | T28 |
+| T30 | P2 | FE | Obligations list ledger-sourced (dedupe store vs ledger) | | 🔲 | T13 |
+| T31 | P2 | FE | Policy page: read live `TreasuryPolicy` caps | | 🔲 | T14 |
+| T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | | 🔲 | — |
+| T33 | P1 | DAML | USDCx settlement via CIP-56 Allocation API (spike first) | | 🔲 | T09 |
+| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | 🔲 | T09 |
+
+> **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
+> [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md). Rule for every FE task: same visuals, real data, mock
+> fallback kept. Today the UI is mock-driven (dashboard and cycle make zero ledger calls; 39 store
+> mutations drive the view); these tasks wire it to the live ledger and CoinGecko without restyling.
 
 **Suggested parallelization (day 1):** one person takes **T01 → T02** (unblocks
 everything on-ledger); the other starts **T03** (Daml scaffold, authoring needs no
