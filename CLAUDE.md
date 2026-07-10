@@ -17,6 +17,24 @@ Where it fits in the pipeline:
 
 Levels: `/ponytail lite|full|ultra`. Turn off only if explicitly asked: "stop ponytail".
 
+## Frontend pipeline (every frontend edit goes through this)
+
+Any change under `app/`, `components/`, or app styling MUST run this pipeline. This is not
+optional, it applies to every UI task and every contributor.
+
+1. **Design intelligence first.** Consult the **ui-ux-pro-max** skill (`.claude/skills/ui-ux-pro-max`)
+   for styles, palettes, typography, and UX guidance before writing or restyling UI. Related skills:
+   `ui-styling`, `design`, `design-system`, `brand`.
+2. **Components via 21st.dev.** Use the **`magic`** MCP server (21st.dev Magic, configured in
+   `.mcp.json`) when building or refining a component. Needs `TWENTYFIRST_API_KEY` in your env.
+3. **Verify live with Playwright, no mocks.** A frontend change is not done until Playwright (the
+   `playwright` MCP or `@playwright/test`) drives the running app in a real browser, asserts the real
+   behavior, and captures a screenshot. Verify against the live ledger data path, not the mock.
+
+When wiring real data, keep the visuals identical (see `docs/UPGRADE_PLAN.md`). Ponytail still applies:
+the pipeline is about correctness and design quality, not adding scope. New MCP servers connect only
+after Claude Code restarts.
+
 ## Project pointers
 
 - Task pool + status: `TASKS.md`. Human-only actions/decisions: `OPERATOR_TODO.md`.

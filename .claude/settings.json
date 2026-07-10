@@ -9,6 +9,10 @@
           {
             "type": "command",
             "command": "echo 'Ponytail is ON (full): before writing code, apply the YAGNI ladder in .claude/skills/ponytail - reuse before rewrite, stdlib/native before a dependency, shortest working diff. Run /ponytail-review before merging.'"
+          },
+          {
+            "type": "command",
+            "command": "echo 'Frontend pipeline: any edit under app/ or components/ must (1) consult the ui-ux-pro-max skill, (2) use the 21st.dev magic MCP for components, (3) verify live in a real browser with Playwright (no mocks). See CLAUDE.md.'"
           }
         ]
       }
