@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NetChain — Hackathon Deck</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:      #0c0c0c;
+    --frost:    #d7e2ea;
+    --accent:   #38e1a4;
+    --privacy:  #7fa6c9;
+    --pending:  #f5c451;
+    --rejected: #ff5c5c;
+    --glass:    rgba(215,226,234,0.06);
+    --border:   rgba(215,226,234,0.1);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--ink);
+    color: var(--frost);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── slide container ── */
+  #deck {
+    width: 100vw; height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: clamp(2rem, 5vw, 5rem) clamp(2rem, 7vw, 8rem);
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1; transform: none; pointer-events: all;
+  }
+  .slide.exit {
+    opacity: 0; transform: translateY(-20px);
+  }
+
+  /* ── ledger grid bg ── */
+  .slide::before {
+    content: "";
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(215,226,234,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(215,226,234,0.03) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 80% at 20% 80%, black 30%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 20% 80%, black 30%, transparent 100%);
+  }
+
+  .slide > * { position: relative; z-index: 1; }
+
+  /* ── typography ── */
+  .eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(215,226,234,0.45);
+    margin-bottom: 1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-weight: 500;
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+    color: var(--frost);
+  }
+
+  h2 {
+    font-size: clamp(2rem, 4.5vw, 3.8rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.022em;
+    color: var(--frost);
+  }
+
+  h3 {
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--frost);
+  }
+
+  .accent { color: var(--accent); font-style: italic; font-weight: 400; }
+  .privacy-color { color: var(--privacy); }
+  .pending-color { color: var(--pending); }
+  .rejected-color { color: var(--rejected); }
+
+  .sub {
+    margin-top: 1.25rem;
+    max-width: 52ch;
+    font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+    line-height: 1.65;
+    color: rgba(215,226,234,0.65);
+  }
+
+  .mono {
+    font-family: "SF Mono", "Fira Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── cards ── */
+  .card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    backdrop-filter: blur(12px);
+  }
+
+  .cards {
+    display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .cards .card { flex: 1; min-width: 200px; }
+
+  /* ── win badge ── */
+  .win-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(56,225,164,0.12);
+    border: 1px solid rgba(56,225,164,0.3);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+  }
+
+  /* ── code block ── */
+  .code-block {
+    margin-top: 1.5rem;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    font-family: "SF Mono", "Fira Mono", monospace;
+    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+    line-height: 1.7;
+    color: rgba(215,226,234,0.8);
+    max-width: 60ch;
+  }
+  .code-block .ok  { color: var(--accent); }
+  .code-block .err { color: var(--rejected); }
+  .code-block .dim { color: rgba(215,226,234,0.35); }
+  .code-block .key { color: var(--privacy); }
+
+  /* ── table ── */
+  .data-table {
+    margin-top: 1.5rem;
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 640px;
+    font-family: "SF Mono", "Fira Mono", monospace;
+    font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+  }
+  .data-table th {
+    text-align: left;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(215,226,234,0.4);
+    padding: 0 1rem 0.6rem 0;
+  }
+  .data-table td {
+    padding: 0.4rem 1rem 0.4rem 0;
+    border-top: 1px solid rgba(215,226,234,0.06);
+    color: rgba(215,226,234,0.8);
+  }
+  .data-table .settled { color: var(--accent); }
+  .data-table .open    { color: rgba(215,226,234,0.35); }
+
+  /* ── arch flow ── */
+  .arch-flow {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+    margin-top: 1.5rem;
+    font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+  }
+  .arch-box {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem 0.9rem;
+    color: var(--frost);
+  }
+  .arch-box.highlight { border-color: rgba(56,225,164,0.4); color: var(--accent); }
+  .arch-arrow { color: rgba(215,226,234,0.3); font-size: 1.1rem; }
+
+  /* ── stat row ── */
+  .stat-row {
+    display: flex; flex-wrap: wrap; gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  .stat { display: flex; flex-direction: column; gap: 0.25rem; }
+  .stat-val {
+    font-family: "SF Mono", "Fira Mono", monospace;
+    font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+    font-weight: 500;
+    color: var(--frost);
+    letter-spacing: -0.02em;
+  }
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(215,226,234,0.4);
+  }
+
+  /* ── mint glow ── */
+  .glow {
+    position: absolute; z-index: 0; pointer-events: none;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    opacity: 0.06;
+  }
+
+  /* ── progress dots ── */
+  #progress {
+    position: fixed; bottom: 1.5rem; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 0.4rem;
+    z-index: 100;
+  }
+  .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(215,226,234,0.2);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active { background: var(--accent); transform: scale(1.4); }
+
+  /* ── nav hint ── */
+  #nav-hint {
+    position: fixed; bottom: 1.5rem; right: 2rem;
+    font-size: 0.65rem; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(215,226,234,0.2);
+    z-index: 100;
+  }
+
+  /* ── slide number ── */
+  #slide-num {
+    position: fixed; top: 1.5rem; right: 2rem;
+    font-family: "SF Mono", "Fira Mono", monospace;
+    font-size: 0.7rem;
+    color: rgba(215,226,234,0.2);
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- 0 · TITLE -->
+  <section class="slide active" id="s0">
+    <div class="glow" style="width:600px;height:600px;bottom:-30%;left:-10%;"></div>
+    <p class="eyebrow">Canton Hackathon · Jul 2026</p>
+    <h1>Settle everything.<br /><span class="accent">Reveal nothing.</span></h1>
+    <p class="sub">
+      NetChain is privacy-preserving multilateral netting with atomic settlement —
+      built on Canton Network, live on 5N Devnet.
+    </p>
+    <p class="sub mono" style="margin-top:2rem;font-size:0.8rem;color:rgba(215,226,234,0.35);">
+      460,000.00 gross &nbsp;→&nbsp; 45,000.00 settled &nbsp;·&nbsp; Σ nets = 0 &nbsp;·&nbsp; one atomic tx
+    </p>
+  </section>
+
+  <!-- 1 · THE PROBLEM -->
+  <section class="slide" id="s1">
+    <p class="eyebrow">The problem</p>
+    <h2>B2B netting today is a<br />privacy <span class="rejected-color">nightmare</span>.</h2>
+    <p class="sub">
+      Every counterparty in a multilateral net sees the full exposure table —
+      who owes whom, how much, and when. That's your trade data, your credit
+      risk, your negotiating position. All of it, visible to your competitors.
+    </p>
+    <div class="cards" style="margin-top:2rem;">
+      <div class="card">
+        <p class="eyebrow" style="margin-bottom:0.5rem;">Today</p>
+        <h3 class="rejected-color">Shared spreadsheet</h3>
+        <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
+          Every participant sees every obligation. Full counterparty exposure. Centralised trust.
+        </p>
+      </div>
+      <div class="card">
+        <p class="eyebrow" style="margin-bottom:0.5rem;">NetChain</p>
+        <h3 class="accent">Confidential settlement</h3>
+        <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
+          A cannot read B's obligations. The ledger enforces this — not the UI.
+          One operator, known and authorised. No MPC needed.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · WIN 1: PRIVACY -->
+  <section class="slide" id="s2">
+    <div class="win-badge">Win 1 · Counterparty Privacy</div>
+    <h2>C cannot see A↔B.<br /><span class="accent">The ledger says so.</span></h2>
+    <p class="sub">
+      The A→B Obligation has <span class="mono">signatory obligor, observer obligee + operator</span>.
+      C is not listed — so the node won't even acknowledge the contract exists.
+    </p>
+    <div class="code-block">
+      <span class="dim"># Party C queries A→B contract directly:</span><br />
+      GET /api/ledger/contract?party=<span class="key">company-c</span>&amp;contractId=00ab…<br />
+      <br />
+      <span class="err">← 404 CONTRACT_NOT_FOUND</span><br />
+      <br />
+      <span class="dim"># Party A queries the same contract:</span><br />
+      GET /api/ledger/contract?party=<span class="key">company-a</span>&amp;contractId=00ab…<br />
+      <br />
+      <span class="ok">← 200  { obligor: A, obligee: B, amount: "120000.0" }</span>
+    </div>
+  </section>
+
+  <!-- 3 · WIN 2: AI -->
+  <section class="slide" id="s3">
+    <div class="win-badge">Win 2 · AI-Created Obligation</div>
+    <h2>Drop an invoice.<br />The <span class="accent">agent</span> takes it from here.</h2>
+    <p class="sub">
+      The treasury agent reads the image with <strong>NVIDIA NIM vision</strong>
+      (<span class="mono">llama-3.2-11b-vision-instruct</span>), extracts amount, counterparty,
+      due date and reference — then creates an on-ledger Obligation tagged
+      <span class="mono accent">source: agent</span>. Manual entry is always the fallback.
+    </p>
+    <div class="code-block">
+      <span class="dim"># POST /api/extract  { imageDataUrl: "data:image/png;base64,…" }</span><br />
+      <br />
+      <span class="ok">← 200 {</span><br />
+      &nbsp;&nbsp;<span class="key">"counterparty"</span>: <span class="ok">"company-b"</span>,<br />
+      &nbsp;&nbsp;<span class="key">"amount"</span>: <span class="ok">62300</span>,<br />
+      &nbsp;&nbsp;<span class="key">"reference"</span>: <span class="ok">"INV-2026-0455 · Assembly line retrofit"</span>,<br />
+      &nbsp;&nbsp;<span class="key">"dueDate"</span>: <span class="ok">"2026-08-06"</span>,<br />
+      &nbsp;&nbsp;<span class="key">"confidence"</span>: <span class="ok">0.94</span><br />
+      <span class="ok">}</span>
+    </div>
+  </section>
+
+  <!-- 4 · WIN 3: ATOMIC SETTLEMENT -->
+  <section class="slide" id="s4">
+    <div class="win-badge">Win 3 · Atomic Settlement</div>
+    <h2>All legs settle.<br />Or <span class="rejected-color">none</span> do.</h2>
+    <p class="sub">
+      A single <span class="mono">Settle</span> choice moves every Account balance
+      inside one Canton transaction. No partial fills. No timing risk.
+      If any assertion fails, the whole thing aborts — no funds move.
+    </p>
+    <div class="cards" style="margin-top:1.5rem;">
+      <div class="card">
+        <p class="eyebrow" style="margin-bottom:0.6rem;">Gross exposure</p>
+        <p class="mono" style="font-size:1.6rem;color:var(--frost);">460,000</p>
+        <p style="font-size:0.8rem;color:rgba(215,226,234,0.45);margin-top:0.25rem;">6 obligations across A / B / C</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow" style="margin-bottom:0.6rem;">Net settled</p>
+        <p class="mono accent" style="font-size:1.6rem;">45,000</p>
+        <p style="font-size:0.8rem;color:rgba(215,226,234,0.45);margin-top:0.25rem;">90.2 % netting efficiency</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow" style="margin-bottom:0.6rem;">Net positions</p>
+        <p class="mono" style="font-size:0.9rem;line-height:1.8;">
+          A &nbsp;<span class="accent">+15,000</span><br />
+          B &nbsp;<span class="accent">+30,000</span><br />
+          C &nbsp;<span class="rejected-color">−45,000</span>
+        </p>
+        <p style="font-size:0.75rem;color:rgba(215,226,234,0.4);margin-top:0.5rem;">Σ = 0 ✓</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · WIN 4: POLICY -->
+  <section class="slide" id="s5">
+    <div class="win-badge">Win 4 · On-Ledger Policy Gate</div>
+    <h2>The policy lives<br />on the <span class="accent">ledger</span>, not the UI.</h2>
+    <p class="sub">
+      Each party holds a <span class="mono">TreasuryPolicy</span> with a
+      <span class="mono">maxSettlementPerCycle</span> cap. The <span class="mono">CheckSettlement</span>
+      choice asserts it — an over-cap attempt is rejected inside the Canton transaction.
+      An agent cannot route around it.
+    </p>
+    <div class="code-block">
+      <span class="dim"># POST /api/ledger/policy-check { party: "company-c", amount: 250000 }</span><br />
+      <span class="err">← 200  { ok: false, ruleFired: "TreasuryPolicy breach: 250000.0 > cap 200000.0" }</span><br />
+      <br />
+      <span class="dim"># POST /api/ledger/policy-check { party: "company-c", amount: 150000 }</span><br />
+      <span class="ok">← 200  { ok: true }</span>
+    </div>
+  </section>
+
+  <!-- 6 · PRIVACY MODEL (honest) -->
+  <section class="slide" id="s6">
+    <p class="eyebrow">Privacy model — the honest version</p>
+    <h2>Counterparties are blind.<br />Operator is <span class="privacy-color">known + authorised</span>.</h2>
+    <div class="cards" style="margin-top:1.5rem;">
+      <div class="card">
+        <h3>What's private</h3>
+        <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
+          A↔B obligations are invisible to C — enforced at the <em>ledger node</em>,
+          not the UI. Each party reads only its own <span class="mono">NetPosition</span>.
+          No counterparty can access another's net figure.
+        </p>
+      </div>
+      <div class="card">
+        <h3>What the operator sees</h3>
+        <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
+          The netting operator (signatory on <span class="mono">NettingCycle</span>)
+          sees all obligations in-scope for the cycle. This is the settlement bank
+          model — a known, regulated coordinator, not a hidden intermediary.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Future: MPC / ZK</h3>
+        <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
+          A blind operator is possible with MPC or ZK proofs of netting correctness —
+          explicitly deferred. The architecture makes this a future layer, not a rework.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · ARCHITECTURE -->
+  <section class="slide" id="s7">
+    <p class="eyebrow">Architecture</p>
+    <h2>Browser to ledger<br />in <span class="accent">four hops</span>.</h2>
+    <div class="arch-flow">
+      <div class="arch-box">Party Switcher<br /><span style="font-size:0.7rem;opacity:0.5;">Next.js client</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box highlight">lib/ledger.ts<br /><span style="font-size:0.7rem;opacity:0.7;">client shim</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box">app/api/ledger/[op]<br /><span style="font-size:0.7rem;opacity:0.5;">route handler</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box highlight">lib/ledger-server.ts<br /><span style="font-size:0.7rem;opacity:0.7;">M2M token, ACS</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box">JSON Ledger API v2<br /><span style="font-size:0.7rem;opacity:0.5;">5N Devnet</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box" style="border-color:rgba(127,166,201,0.4);color:var(--privacy);">Canton<br /><span style="font-size:0.7rem;opacity:0.7;">Daml contracts</span></div>
+    </div>
+    <p class="sub" style="margin-top:1.5rem;">
+      <span class="mono">NEXT_PUBLIC_LEDGER_LIVE=0</span> → full mock demo, no credentials needed.<br />
+      <span class="mono accent">NEXT_PUBLIC_LEDGER_LIVE=1</span> → every read/write hits the live ledger.
+      Graceful degradation: any 503 falls back to mock, never hard-breaks.
+    </p>
+  </section>
+
+  <!-- 8 · LIVE DEVNET -->
+  <section class="slide" id="s8">
+    <p class="eyebrow">Live on Canton Devnet · 5N Sandbox · 2026-07-10</p>
+    <h2>Not a sandbox.<br /><span class="accent">The actual devnet.</span></h2>
+    <div class="stat-row">
+      <div class="stat">
+        <span class="stat-val accent">✓</span>
+        <span class="stat-label">PV35 gate passed</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val">4</span>
+        <span class="stat-label">Script tests green</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val">5</span>
+        <span class="stat-label">Daml templates deployed</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val accent">45k</span>
+        <span class="stat-label">USDCx settled on-chain</span>
+      </div>
+    </div>
+    <div class="code-block" style="margin-top:1.5rem;">
+      <span class="dim"># Package on-ledger:</span><br />
+      <span class="key">NETCHAIN_PKG_ID</span>=<span class="ok">cdd76816c72b…ee655e7</span><br />
+      <br />
+      <span class="dim"># Verified balances after Settle:</span><br />
+      A (Carol)     <span class="ok">115,000 USDCx</span>  &nbsp;<span class="dim">net +15k</span><br />
+      B (Investor)  <span class="ok">130,000 USDCx</span>  &nbsp;<span class="dim">net +30k</span><br />
+      C (SME)       <span class="ok"> 55,000 USDCx</span>  &nbsp;<span class="dim">net −45k</span>
+    </div>
+  </section>
+
+  <!-- 9 · WHY CANTON -->
+  <section class="slide" id="s9">
+    <p class="eyebrow">Why Canton</p>
+    <h2>Privacy is a <span class="accent">first-class</span><br />ledger primitive.</h2>
+    <div class="cards" style="margin-top:1.5rem;">
+      <div class="card">
+        <h3 class="privacy-color">Sub-transaction privacy</h3>
+        <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
+          Parties receive only the sub-transactions they're a stakeholder in.
+          Privacy is enforced at the node — not the application layer.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="accent">Atomic by construction</h3>
+        <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
+          Multi-leg settlement in one Daml choice = one Canton transaction.
+          Either every leg clears, or the whole thing aborts. No partial state.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="privacy-color">Known-entity identity</h3>
+        <p style="margin-top:0.5rem;font-size:0.85rem;color:rgba(215,226,234,0.55);line-height:1.6;">
+          Parties are real legal entities, not pseudonymous keys.
+          TreasuryPolicy + allowed-counterparties = enforceable contractual rules.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · CLOSING -->
+  <section class="slide" id="s10">
+    <div class="glow" style="width:700px;height:700px;bottom:-40%;left:-15%;"></div>
+    <p class="eyebrow">NetChain · Canton Hackathon 2026</p>
+    <h1>Settle everything.<br /><span class="accent">Reveal nothing.</span></h1>
+    <p class="sub" style="margin-top:1.5rem;">
+      Live on Canton Devnet &nbsp;·&nbsp; AI invoice extraction &nbsp;·&nbsp;
+      On-ledger policy gates &nbsp;·&nbsp; Atomic multi-party settlement
+    </p>
+    <div class="cards" style="margin-top:2rem;max-width:500px;">
+      <div class="card" style="font-size:0.8rem;line-height:1.8;color:rgba(215,226,234,0.5);">
+        <span class="mono" style="color:var(--accent);">github.com / Net-chain</span><br />
+        Validator: 5N Sandbox Devnet<br />
+        Stack: Next.js 14 · Daml 3.5.2 · NVIDIA NIM · Canton JSON API v2
+      </div>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<!-- Progress -->
+<div id="progress"></div>
+<div id="slide-num"></div>
+<div id="nav-hint">← → Space · Click</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dots = document.getElementById('progress');
+  const numEl = document.getElementById('slide-num');
+  let cur = 0;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => go(i));
+    dots.appendChild(d);
+  });
+
+  function go(next) {
+    if (next < 0 || next >= slides.length) return;
+    slides[cur].classList.remove('active');
+    slides[cur].classList.add('exit');
+    setTimeout(() => slides[cur].classList.remove('exit'), 500);
+
+    cur = next;
+    slides[cur].classList.add('active');
+
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === cur);
+    });
+    numEl.textContent = `${cur + 1} / ${slides.length}`;
+  }
+
+  go(0);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') go(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    go(cur - 1);
+  });
+
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('.dot')) return;
+    go(cur + 1);
+  });
+</script>
+</body>
+</html>

@@ -12,6 +12,11 @@
 
 import { NetPosition, Obligation, PartyId } from "@/lib/types";
 
+export interface AccountBalance {
+  party: PartyId;
+  balance: number;
+}
+
 /** Frontend party order — index 0..2 == company-a/b/c. */
 export const PARTY_IDS: PartyId[] = ["company-a", "company-b", "company-c"];
 
@@ -43,6 +48,17 @@ export function toObligation(
     source: "manual", // not on-ledger; the store labels agent-created ones
     createdAt: "",
   };
+}
+
+/** Ledger `Account` createArgument → { party, balance }. */
+export function toAccount(
+  c: LedgerContract,
+  toPartyId: (ledgerId: string) => PartyId | null,
+): AccountBalance | null {
+  const p = c.payload;
+  const party = toPartyId(String(p.owner ?? ""));
+  if (!party) return null;
+  return { party, balance: Number(p.balance ?? 0) };
 }
 
 /** Ledger `NetPosition` createArgument → frontend NetPosition (gross unknown → 0). */

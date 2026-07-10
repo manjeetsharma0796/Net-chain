@@ -63,8 +63,8 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 
 | ID | Pri | Track | Task | Owner | Status | Depends on |
 |----|-----|-------|------|-------|--------|------------|
-| T01 | P0 | SETUP | Seaport access + trivial deploy spike | | 🔲 | — |
-| T02 | P0 | SETUP | Provision demo parties (A/B/C + operator) + tokens | | 🔲 | T01 |
+| T01 | P0 | SETUP | Seaport access + trivial deploy spike | Jishnu | ✅ | — |
+| T02 | P0 | SETUP | Provision demo parties (A/B/C + operator) + tokens | Jishnu | ✅ | T01 |
 | T03 | P0 | DAML | Scaffold `netchain` Daml project + agree shared types | Manjeet | ✅ | T01 |
 | T04 | P0 | DAML | `Account` balance template (operator-issued) | Manjeet | ✅ | T03 |
 | T05 | P0 | DAML | `Obligation` template (party-scoped) | Manjeet | ✅ | T03 |
@@ -91,7 +91,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T15 | P0 | SHIP | Deploy frontend live (Vercel): https://netchain.vercel.app | Manjeet/Jishnu | ✅ | — |
 | T16 | P1 | AI | Real invoice extraction via LLM (NVIDIA NIM vision) | Jishnu | ✅ | — |
 | T17 | P2 | FE | Fix the 3 conformance mismatches | Jishnu | ✅ | T13 (partial) |
-| T18 | P0 | SHIP | Presentation deck | | 🔲 | — |
+| T18 | P0 | SHIP | Presentation deck | Jishnu | ✅ | — |
 | T19 | P0 | SHIP | 3-min video pitch + demo recording | | 🔲 | spine live |
 | T20 | P0 | SHIP | Repo cleanup + README rewrite | Jishnu | ✅ | near end |
 | T21 | P1 | DOCS | End-to-end flow diagram (browser → API → ledger → settle) | Jishnu | ✅ | T14 |

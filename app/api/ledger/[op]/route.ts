@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   checkPolicy,
   createObligation,
+  getAccountBalance,
   getContract,
   getNetPosition,
   isLive,
@@ -44,6 +45,8 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
         return NextResponse.json(await listObligations(party));
       case "net-position":
         return NextResponse.json(await getNetPosition(party));
+      case "balance":
+        return NextResponse.json({ balance: await getAccountBalance(party) });
       case "contract": {
         const cid = q.get("contractId") ?? "";
         const c = await getContract(party, cid);

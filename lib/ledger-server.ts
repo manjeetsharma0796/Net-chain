@@ -11,7 +11,7 @@ import "server-only";
  * back to the mock. Mirrors the proven flow in daml/deploy.sh.
  */
 
-import { LedgerContract, toNetPosition, toObligation } from "@/lib/ledger-map";
+import { LedgerContract, toAccount, toNetPosition, toObligation } from "@/lib/ledger-map";
 import { NetPosition, Obligation, PartyId } from "@/lib/types";
 
 const env = process.env;
@@ -229,6 +229,13 @@ export async function getNetPosition(party: PartyId): Promise<NetPosition | null
     .map((c) => toNetPosition(c, toPartyId))
     .filter((n): n is NetPosition => n !== null && n.party === party);
   return mapped.length ? mapped[mapped.length - 1] : null;
+}
+
+/** The Account balance for `party` from the ledger (owner-scoped ACS). */
+export async function getAccountBalance(party: PartyId): Promise<number | null> {
+  const rows = await queryAcs(ledgerId(party), "Account");
+  const acct = rows.map((c) => toAccount(c, toPartyId)).find((a) => a?.party === party);
+  return acct?.balance ?? null;
 }
 
 export async function createObligation(input: {

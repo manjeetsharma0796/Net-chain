@@ -16,6 +16,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import NumberTicker from "@/components/ui/NumberTicker";
 import StatusPill from "@/components/ui/StatusPill";
 import { getScanSnapshot } from "@/lib/api";
+import { getBalanceLive } from "@/lib/ledger";
 import { formatCompact, formatDate, formatTime } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { ScanSnapshot } from "@/lib/types";
@@ -57,13 +58,19 @@ export default function DashboardPage() {
   const party = partyById(currentPartyId);
 
   const [scan, setScan] = useState<ScanSnapshot | null>(null);
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
+
   useEffect(() => {
     let live = true;
     getScanSnapshot().then((s) => live && setScan(s));
-    return () => {
-      live = false;
-    };
+    return () => { live = false; };
   }, []);
+
+  useEffect(() => {
+    let live = true;
+    getBalanceLive(currentPartyId).then((b) => live && b !== null && setLiveBalance(b));
+    return () => { live = false; };
+  }, [currentPartyId]);
 
   const myObligations = obligations.filter(
     (o) => o.obligor === currentPartyId || o.obligee === currentPartyId,
@@ -136,11 +143,11 @@ export default function DashboardPage() {
               <Wallet size={16} className="text-frost/40" aria-hidden="true" />
             </div>
             <p className="mt-3 text-3xl">
-              <NumberTicker value={balance} decimals={2} />
+              <NumberTicker value={liveBalance ?? balance} decimals={2} />
               <span className="figures ml-1.5 text-sm opacity-60">USDCx</span>
             </p>
             <p className="mt-1 text-xs text-frost/45">
-              Onboarded via Circle xReserve
+              {liveBalance !== null ? "Live on-ledger balance" : "Onboarded via Circle xReserve"}
             </p>
           </div>
 

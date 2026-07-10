@@ -26,6 +26,20 @@ export {
   newTxHash,
 } from "@/lib/api";
 
+/* ---- balance (live Account read) ---------------------------------------- */
+
+/** On-ledger Account balance for `party`, or null when not live / unconfigured. */
+export async function getBalanceLive(party: PartyId): Promise<number | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch(`/api/ledger/balance?party=${party}`);
+    if (r.ok) return ((await r.json()) as { balance: number | null }).balance;
+  } catch {
+    /* fall through */
+  }
+  return null;
+}
+
 /* ---- reads (T13) --------------------------------------------------------- */
 
 export async function getObligationsFor(
