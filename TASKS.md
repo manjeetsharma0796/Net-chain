@@ -98,13 +98,13 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T22 | P1 | DOCS | Contract usage guide (frontend/backend via JSON Ledger API) | Jishnu | ✅ | T11,T14 |
 | T23 | P1 | DAML | Pre-cycle funding check (fail-fast, defaulter-pays) + Script test | Jishnu | ✅ | T09 |
 | T24 | P1 | DAML | Auto drop-and-re-net survivors on an underfunded payer + test | Jishnu | ✅ | T23 |
-| T25 | P2 | DAML | Partial settlement / gridlock resolution (largest solvent subset) | Jishnu | 🟡 | T24 |
+| T25 | P2 | DAML | Partial settlement / gridlock resolution (largest solvent subset) | Jishnu | ✅ | T24 |
 | T26 | P1 | DOCS | Settlement design (research-grounded): `docs/SETTLEMENT_DESIGN.md` | Jishnu | ✅ | — |
 | T27 | P1 | FE | Dashboard live data (CoinGecko **via proxy** + server cache; live USDCx balance) | Jishnu | 🟡 | T09 |
 | T28 | P1 | FE | Cycle page: live `ComputeNetPositions` + per-party `NetPosition` read | Jishnu | ✅ | T09 |
 | T29 | P1 | FE | Settlement: live legs + real post-settle balances (keep real tx id) | Jishnu | ✅ | T28 |
-| T30 | P2 | FE | Obligations list ledger-sourced (dedupe store vs ledger) | Jishnu | 🟡 | T13 |
-| T31 | P2 | FE | Policy page: read live `TreasuryPolicy` caps | Jishnu | 🟡 | T14 |
+| T30 | P2 | FE | Obligations list ledger-sourced (dedupe store vs ledger) | Jishnu | ✅ | T13 |
+| T31 | P2 | FE | Policy page: read live `TreasuryPolicy` caps | Jishnu | ✅ | T14 |
 | T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | | 🔲 | — |
 | T33 | P1 | DAML | USDCx settlement via CIP-56 Allocation API (spike first) | | 🔲 | T09 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | 🔲 | T09 |
