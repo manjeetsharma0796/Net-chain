@@ -100,7 +100,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T24 | P1 | DAML | Auto drop-and-re-net survivors on an underfunded payer + test | Jishnu | ✅ | T23 |
 | T25 | P2 | DAML | Partial settlement / gridlock resolution (largest solvent subset) | Jishnu | ✅ | T24 |
 | T26 | P1 | DOCS | Settlement design (research-grounded): `docs/SETTLEMENT_DESIGN.md` | Jishnu | ✅ | - |
-| T27 | P1 | FE | Dashboard live data (CoinGecko **via proxy** + server cache; live USDCx balance) | Jishnu | 🟡 | T09 |
+| T27 | P1 | FE | Dashboard live data (CoinGecko **via proxy** + server cache; live USDCx balance) | Jishnu | ✅ | T09 |
 | T28 | P1 | FE | Cycle page: live `ComputeNetPositions` + per-party `NetPosition` read | Jishnu | ✅ | T09 |
 | T29 | P1 | FE | Settlement: live legs + real post-settle balances (keep real tx id) | Jishnu | ✅ | T28 |
 | T30 | P2 | FE | Obligations list ledger-sourced (dedupe store vs ledger) | Jishnu | ✅ | T13 |
@@ -122,9 +122,9 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T47 | P2 | SHIP | Positioning: explicitly vs Ripple/GTreasury (confidential N-party netting + atomicity), fold into deck/README | Jishnu | ✅ | - |
 | T48 | P0 | DAML | Settle correctness: mark obligations settled, assert not-already-settled, bind+filter NetPositions by cycleId, archive consumed NetPositions (fixes review C1/C2/H1/H2/H3/H4) | Jishnu | 🟡 | T24 |
 | T49 | P1 | FE | try/catch on cycle + settlement page ledger awaits (stuck computing/settling on error) | Jishnu | ✅ | T28 |
-| T50 | P2 | FE | Policy caption conditional on live read; checkPolicy distinguish network error from real breach | | 🔲 | T31 |
+| T50 | P2 | FE | Policy caption conditional on live read; checkPolicy distinguish network error from real breach | Jishnu | 🟡 | T31 |
 | T51 | P2 | FE | Fail-loud in prod too; fix jina proxy envelope parse in /api/scan; penalize extract confidence on default counterparty | Jishnu | 🟡 | T27 |
-| T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | | 🔲 | T48 |
+| T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | Jishnu | 🟡 | T48 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | ⛔ | T09 (redeploy) |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
