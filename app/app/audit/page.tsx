@@ -10,7 +10,12 @@ import MoneyValue from "@/components/ui/MoneyValue";
 import StatusPill from "@/components/ui/StatusPill";
 import { downloadCsv, toSettledLegsCsv } from "@/lib/export";
 import { shortHash } from "@/lib/format";
-import { buildSettlementLegs, getNetPositionsLive, getObligationsFor } from "@/lib/ledger";
+import {
+  buildSettlementLegs,
+  getCycleStatusLive,
+  getNetPositionsLive,
+  getObligationsFor,
+} from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
 import { NetPosition, Obligation, SettlementLeg } from "@/lib/types";
 
@@ -31,12 +36,22 @@ export default function AuditPage() {
 
   const [liveObligations, setLiveObligations] = useState<Obligation[] | null>(null);
   const [liveNetPositions, setLiveNetPositions] = useState<NetPosition[] | null>(null);
+  const [liveCycleRef, setLiveCycleRef] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
     getObligationsFor(currentPartyId, obligations).then((o) => live && setLiveObligations(o));
     return () => { live = false; };
   }, [currentPartyId, obligations]);
+
+  useEffect(() => {
+    let live = true;
+    getCycleStatusLive().then((c) => live && c?.ref && setLiveCycleRef(c.ref));
+    return () => { live = false; };
+  }, []);
+
+  // The on-ledger cycle reference when live, else the mock cycle id.
+  const displayCycle = liveCycleRef ? `cycle ${liveCycleRef}` : cycleId;
 
   useEffect(() => {
     let live = true;
@@ -153,15 +168,16 @@ export default function AuditPage() {
   ];
 
   const exportCsv = () => {
-    const csv = toSettledLegsCsv(myLegs, { cycleId, txHash: txHash ?? "" });
-    downloadCsv(`${cycleId}-${currentPartyId}-audit.csv`, csv);
+    const ref = liveCycleRef ?? cycleId;
+    const csv = toSettledLegsCsv(myLegs, { cycleId: ref, txHash: txHash ?? "" });
+    downloadCsv(`${ref}-${currentPartyId}-audit.csv`, csv);
   };
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Audit"
-        subtitle={`${cycleId}: tracing ${party.name}'s gross obligations to the computed net position and the settled legs that cleared them.`}
+        subtitle={`${displayCycle}: tracing ${party.name}'s gross obligations to the computed net position and the settled legs that cleared them.`}
       />
 
       <FadeIn>
@@ -174,7 +190,7 @@ export default function AuditPage() {
             columns={obligationColumns}
             rows={inScopeObligations}
             rowKey={(o) => o.id}
-            caption={`Obligations swept into ${cycleId} for ${party.name}`}
+            caption={`Obligations swept into ${displayCycle} for ${party.name}`}
             emptyMessage="No obligations have been netted for this party yet. Run the netting cycle first."
           />
         </section>
@@ -239,7 +255,7 @@ export default function AuditPage() {
             columns={legColumns}
             rows={myLegs}
             rowKey={(l) => l.id}
-            caption={`Settled legs for ${party.name} in ${cycleId}`}
+            caption={`Settled legs for ${party.name} in ${displayCycle}`}
             emptyMessage="No settled legs yet. Settle the cycle to complete the audit trail."
           />
         </section>
