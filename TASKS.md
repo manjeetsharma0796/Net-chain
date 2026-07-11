@@ -101,7 +101,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T37 | P1 | FE | Cycle operator cards gross 0/0 in live mode: compute client-side | Jishnu | ✅ | T28 |
 | T38 | P1 | FE | Policy page: cap is live; off-ledger fields (counterparties, instrument, approval-above) marked illustrative (not on the deployed `TreasuryPolicy`) | Jishnu | ✅ | T31 |
 | T39 | P1 | FE | Fail-loud: `lib/ledger.ts` should tag live-vs-fallback and drive the LIVE badge + a dev warn (badge is build-flag-only today) | Jishnu | ✅ | T32 |
-| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual; needs an `Obligation` source field to fix live, add as `Optional Text` for SCU upgrade-safety). Redeploy path proven (T52); deferred as pre-deadline risk for a cosmetic badge | | 🔲 | T30 |
+| T40 | P2 | FE | DONE: added `Obligation.source : Optional Text` (v1.0.2 SCU upgrade, no re-seed); createObligation stamps agent/manual, toObligation reads it, so the source badge survives a live refetch. Verified live | Jishnu | ✅ | T30 |
 | T41 | P2 | FE | Dedupe the 3-party-id literal to `PARTY_IDS` (copied in 5 places; `lib/ledger-map.ts` export unused) | Jishnu | ✅ | - |
 | T42 | P2 | FE | Extract shared cycle-open-and-compute helper in `lib/ledger-server.ts` (dup in `computeNetPositionsOnLedger`/`runAndSettle`) | Jishnu | ✅ | - |
 | T43 | P2 | DOCS | Em-dash sweep across tracked docs/source (per-line reword, not blind replace) | Jishnu | ✅ | - |
@@ -122,8 +122,8 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T57 | P2 | FE | Recent-activity feed now real on-chain events via `getActivityLive` over `/v2/updates` (settle/compute/cycle/obligation), mock fallback kept. Verified in-browser | | ✅ | - |
 | T58 | P2 | FE | Live obligation status collapses netted->open on refetch (`ledger-map.ts:47` maps only open/settled); infer "netted" client-side by cross-referencing the latest cycle's obligationCids. Won't do, cosmetic transient state (see triage below) | | ⛔ | T30 |
 | T59 | P1 | FE | ISO 20022 pain.001.001.09 export of settled legs (one PmtInf per debtor), alongside the CSV. Honest placeholders (Ccy=USD, Othr ids). "Export ISO 20022" button on audit page; output verified well-formed in-browser | | ✅ | T45 |
-| T60 | P2 | DOCS | Positioning refresh. Factual 2026 update (GENIUS/PPSI, Cycles Protocol, UNIDROIT, DTCC/Canton July-2026 scale, ISO 20022 cutover, UETR) documented in `docs/PRODUCT_RESEARCH.md` §4. Remaining: fold into the deck/README pitch copy (judgment-heavy messaging, left for a human pass) | | 🔲 | T26,T47 |
-| T61 | P3 | DAML | Add a UETR-style traceable reference to `Obligation`/settled leg (gpi baseline; SCU-safe only as `Optional Text`); plus a design note on strategic under-funding of the pre-cycle funding check (Garratt et al. 2026). Won't do, YAGNI (net legs, not obligations, settle; see triage below) | | ⛔ | T48 |
+| T60 | P2 | DOCS | DONE: 2026 research folded into the deck + README pitch (Track 1/3 positioning, Global Synchronizer, CIP-56/USDCx scoped adapter, live SCU proof, competitive table) and `docs/PRODUCT_RESEARCH.md` §4 | Jishnu | ✅ | T26,T47 |
+| T61 | P3 | DAML | DONE: added `Obligation.uetr : Optional Text` (v1.0.2), a UETR-style trace ref generated at creation and shown as a short trace on the obligations table. Bundled into the T40 upgrade. Verified live | Jishnu | ✅ | T48 |
 | T62 | P2 | FE | Dashboard network-topology stats (validators, governance, rounds/day, CC burnt) are the last mock: the Canton Scan API is unreachable from our setup (global devnet scan returns 403, validator scan URL does not resolve). Needs operator-provisioned Scan API access; today mock and honestly labeled "via the Scan API (mocked)". CC price/market-cap already live via CoinGecko. Blocked, needs operator-provisioned Scan API access (see triage below) | | ⛔ | - |
 
 > **Ponytail triage of remaining tasks (2026-07-12, day before the deadline).** Applying YAGNI: the
@@ -161,10 +161,18 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 > C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
 > (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
 
-> **Redeploy status (2026-07-11):** the live package is now **v1.0.1**, id
-> `8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254` (a valid SCU upgrade of the
-> original v1.0.0 `cdd7…55e7`), carrying the T48 settlement-correctness fix. Vercel points at it;
-> `https://netchain.vercel.app` verified live. See `OPERATOR_TODO.md`.
+> **Redeploy status (2026-07-12):** the live package is now **v1.0.2**, id
+> `afd2a89d4d12559911b80eca8dc9a84fb62fdda0a0209f850ec091ed0be2c57e` (a valid SCU upgrade chain:
+> v1.0.0 `cdd7…55e7` -> v1.0.1 `8d20d87f…6e8254` (T48 settle-correctness) -> v1.0.2 (T40/T61
+> `Obligation.source`/`uetr` Optional fields, no re-seed)). Vercel points at it; verified live.
+
+> **Completeness sprint (2026-07-12).** Beyond the numbered tasks: NetChain now ships an MCP server
+> (`mcp/`) so any AI agent can drive the flow bounded by the on-ledger policy; the Cycle page has a
+> netting-graph visualization (gross 460k collapses to net); a "How it works" guide; a sharpened
+> landing page; misleading UI content removed; and a locale hydration bug fixed. All 8 app pages
+> verified 0 console errors on production. The board is fully resolved: every task is done, or a
+> justified terminal state (T19 video = human; T62 Scan API = needs operator access; T34 = would
+> regress operator visibility; T36 = YAGNI/no-go).
 
 > **UI + settlement upgrade plan (T27–T61):** full per-task detail and the mock-vs-real audit are in
 > [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md). Rule for every FE task: same visuals, real data, mock

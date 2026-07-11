@@ -13,11 +13,11 @@ Privacy-preserving multilateral netting + atomic settlement.
   - `test_atomic_settlement`, every balance moves in one commit
   - `test_settlement_atomic_abort`, over-cap → whole commit reverts (nothing moves)
   - `test_policy_rejects_over_threshold`, 250k > 200k cap fails on-ledger
-- ✅ Deployed, **package id `8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254`**
-  (v1.0.1, a valid Smart Contract Upgrade of the original v1.0.0 `cdd7…55e7`) live on Devnet
-  (`POST /v2/packages` → HTTP 200; present in `GET /v2/packages`). **PV35 gate passed**, the
-  validator accepts LF 2.3. v1.0.1 carries the T48 settlement-correctness fix (obligations marked
-  settled, replay guard, NetPositions archived).
+- ✅ Deployed, **package id `afd2a89d4d12559911b80eca8dc9a84fb62fdda0a0209f850ec091ed0be2c57e`**
+  (v1.0.2) live on Devnet (`POST /v2/packages` → HTTP 200; present in `GET /v2/packages`).
+  **PV35 gate passed**, the validator accepts LF 2.3. Upgrade chain: v1.0.0 `cdd7…55e7` ->
+  v1.0.1 `8d20d87f…6e8254` (T48 settlement-correctness: obligations marked settled, replay guard,
+  NetPositions archived) -> v1.0.2 (T40/T61: `Obligation.source`/`uetr` Optional fields, no re-seed).
 - ⬜ On-ledger demo *state* (parties + instances + cycle/settle), see **Remaining**.
 
 ## Toolchain (one-time)
@@ -71,7 +71,7 @@ dpm inspect-dar --json .daml/dist/netchain-1.0.0.dar \
 | Template | Fields | Signatory | Observer | Choices |
 |----------|--------|-----------|----------|---------|
 | `Account` | operator, owner, balance | operator | owner | none |
-| `Obligation` | operator, obligor, obligee, amount, reference, dueDate, settled | obligor | obligee, operator | `MarkSettled` (controller operator; flips settled at settlement, runs with the obligor's signatory authority) |
+| `Obligation` | operator, obligor, obligee, amount, reference, dueDate, settled, source (Optional), uetr (Optional) | obligor | obligee, operator | `MarkSettled` (controller operator; flips settled at settlement, runs with the obligor's signatory authority) |
 | `TreasuryPolicy` | operator, party, maxSettlementPerCycle | party | operator | `CheckSettlement(amount)` |
 | `NetPosition` | operator, party, cycleId, net | operator | party | none |
 | `NettingCycle` | operator, participants, obligationCids, settled | operator | participants | `ComputeNetPositions(cycleId)→[NetPosition]` (stamps each NetPosition with the passed cycleId), `CheckFunding(netPositionCids, accountCids)→[Party]` (T23, underfunded payers), `ComputeNetPositionsExcluding(cycleId, excluded)→[NetPosition]` (T24, drop-and-re-net), `Settle(cycleId, netPositionCids, accountCids, policyCids)` (replay-guarded, asserts every NetPosition's cycleId matches the passed cycleId, marks in-scope obligations settled, archives the NetPositions) |
