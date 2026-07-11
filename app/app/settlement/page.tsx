@@ -6,8 +6,11 @@ import {
   ArrowRight,
   CheckCircle2,
   Download,
+  ExternalLink,
   FlaskConical,
   Landmark,
+  Loader2,
+  ShieldCheck,
   Undo2,
   Zap,
 } from "lucide-react";
@@ -18,11 +21,19 @@ import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { downloadCsv, toSettledLegsCsv } from "@/lib/export";
-import { getBalancesLive, newTxHash, settleLive } from "@/lib/ledger";
+import { formatDate, formatTime } from "@/lib/format";
+import { getBalancesLive, newTxHash, settleLive, verifyUpdateLive } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
 import { PartyId } from "@/lib/types";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Judge-facing proof is only meaningful against the real devnet, a mock
+// txHash re-verified against nothing would be theater.
+const LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
+const LIGHTHOUSE_URL = "https://lighthouse.devnet.cantonloop.com/blockchain";
+
+type VerifyResult = { confirmed: boolean; effectiveAt: string | null; validator: string } | null;
 
 const LEG_PILL = {
   "awaiting-allocation": { status: "pending", label: "Awaiting allocation" },
@@ -55,6 +66,9 @@ export default function SettlementPage() {
   const [forceFail, setForceFail] = useState(false);
   const [busy, setBusy] = useState(false);
   const [aborted, setAborted] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<VerifyResult>(null);
+  const [verified, setVerified] = useState(false);
 
   const payers = useMemo(
     () => Array.from(new Set(legs.map((l) => l.from))) as PartyId[],
@@ -79,6 +93,15 @@ export default function SettlementPage() {
     }
     setBusy(false);
     pushToast("success", "All net obligors have allocated USDCx.");
+  };
+
+  const reVerify = async () => {
+    if (!txHash) return;
+    setVerifying(true);
+    const result = await verifyUpdateLive(txHash);
+    setVerifyResult(result);
+    setVerified(true);
+    setVerifying(false);
   };
 
   const exportCsv = () => {
@@ -256,7 +279,50 @@ export default function SettlementPage() {
                     <p className="figures mt-1 break-all text-xs text-frost/60">
                       tx {txHash}
                     </p>
-                    <div className="mt-3">
+                    {LIVE && (
+                      <>
+                        <p className="mt-1.5 max-w-md text-[11px] font-light leading-relaxed text-frost/40">
+                          This is a real transaction id from Canton&apos;s Ledger
+                          API, not a mock. Canton keeps sub-transaction contents
+                          private to the parties involved, so even a public
+                          explorer cannot display it, by design. Re-verify
+                          re-fetches this id live from the validator.
+                        </p>
+
+                        <div className="mt-3 space-y-2">
+                          <GhostButton
+                            onClick={reVerify}
+                            disabled={verifying}
+                            aria-label="Re-verify this transaction live against the Canton validator"
+                            className="!min-h-[34px] !px-3.5 !text-xs"
+                          >
+                            {verifying ? (
+                              <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                            ) : (
+                              <ShieldCheck size={13} aria-hidden="true" />
+                            )}
+                            {verifying ? "Verifying…" : "Re-verify live"}
+                          </GhostButton>
+
+                          {verified &&
+                            (verifyResult?.confirmed ? (
+                              <p className="figures text-xs text-settled">
+                                ✓ Confirmed on {verifyResult.validator} · fetched
+                                just now · effective{" "}
+                                {verifyResult.effectiveAt
+                                  ? `${formatDate(verifyResult.effectiveAt)} ${formatTime(verifyResult.effectiveAt)} UTC`
+                                  : "unknown"}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-frost/45">
+                                Could not re-verify (live ledger unreachable)
+                              </p>
+                            ))}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
                       <GhostButton
                         onClick={exportCsv}
                         className="!min-h-[34px] !px-3.5 !text-xs"
@@ -265,6 +331,25 @@ export default function SettlementPage() {
                         Export CSV
                       </GhostButton>
                     </div>
+
+                    {LIVE && (
+                      <div className="mt-3">
+                        <a
+                          href={LIGHTHOUSE_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] text-frost/45 underline decoration-frost/20 underline-offset-2 transition-colors hover:text-frost/70"
+                        >
+                          See the live Canton network
+                          <ExternalLink size={11} aria-hidden="true" />
+                        </a>
+                        <p className="mt-1 text-[11px] text-frost/35">
+                          Public activity on the Five North devnet (Canton Coin
+                          transfers only; NetChain&apos;s records are private by
+                          design).
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

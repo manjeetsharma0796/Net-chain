@@ -389,6 +389,29 @@ export async function getActivityLive(): Promise<ActivityEvent[]> {
   return out;
 }
 
+/** Re-fetch a settle updateId from the live validator, proving it is a real
+ *  on-ledger transaction (not a mock). Content stays private; this confirms the
+ *  id exists in the validator's transaction stream, fetched live on demand. */
+export async function verifyUpdate(updateId: string): Promise<{
+  confirmed: boolean;
+  effectiveAt: string | null;
+  validator: string;
+}> {
+  let validator = BASE;
+  try {
+    validator = new URL(BASE).host;
+  } catch {
+    /* keep BASE */
+  }
+  try {
+    const txs = await updateHistory();
+    const tx = txs.find((t) => t.updateId === updateId);
+    return { confirmed: Boolean(tx), effectiveAt: tx?.effectiveAt ?? null, validator };
+  } catch {
+    return { confirmed: false, effectiveAt: null, validator };
+  }
+}
+
 /** Live netting-cycle status from the ACS (operator is signatory). */
 export async function getCycleStatusLive(): Promise<{
   status: "open" | "settled" | "none";

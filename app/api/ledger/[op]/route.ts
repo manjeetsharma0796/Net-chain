@@ -14,6 +14,7 @@ import {
   isLive,
   listObligations,
   runAndSettle,
+  verifyUpdate,
 } from "@/lib/ledger-server";
 import { PARTY_IDS } from "@/lib/ledger-map";
 import { PartyId } from "@/lib/types";
@@ -67,6 +68,13 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
   if (params.op === "net-positions") {
     try {
       return NextResponse.json(await getLastCycleNetPositionsLive());
+    } catch (e) {
+      return fail(e);
+    }
+  }
+  if (params.op === "verify") {
+    try {
+      return NextResponse.json(await verifyUpdate(req.nextUrl.searchParams.get("updateId") ?? ""));
     } catch (e) {
       return fail(e);
     }

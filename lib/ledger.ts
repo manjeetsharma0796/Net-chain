@@ -97,6 +97,25 @@ export async function getCycleStatusLive(): Promise<{
   return null;
 }
 
+/** Re-verify a settle updateId against the live validator (proves it is real,
+ *  fetched on demand). Returns null when not live / on failure. */
+export async function verifyUpdateLive(updateId: string): Promise<{
+  confirmed: boolean;
+  effectiveAt: string | null;
+  validator: string;
+} | null> {
+  if (!live()) return null;
+  try {
+    const r = await fetch(`/api/ledger/verify?updateId=${encodeURIComponent(updateId)}`);
+    if (r.ok)
+      return (await r.json()) as { confirmed: boolean; effectiveAt: string | null; validator: string };
+  } catch {
+    /* fall through */
+  }
+  warnFallback("verifyUpdateLive", "null");
+  return null;
+}
+
 /** All net positions from the most recent cycle (from history), or null. */
 export async function getNetPositionsLive(): Promise<NetPosition[] | null> {
   if (!live()) return null;
