@@ -127,6 +127,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | Jishnu | ✅ | T48 |
 | T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Settle/Compute choices dropped the cycleId arg) | Jishnu | ✅ | T48 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | ⛔ | T09 (redeploy) |
+| T54 | P2 | FE | Fix SSR hydration mismatches (React #418/#423/#425 in prod console on /app; likely NumberTicker/time formatting rendering differently server vs client). Non-breaking, but noisy. | | 🔲 | - |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
 > [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md). Rule for every FE task: same visuals, real data, mock

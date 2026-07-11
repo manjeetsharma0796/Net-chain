@@ -74,7 +74,7 @@ dpm inspect-dar --json .daml/dist/netchain-1.0.0.dar \
 | `Obligation` | operator, obligor, obligee, amount, reference, dueDate, settled | obligor | obligee, operator | `MarkSettled` (controller operator; flips settled at settlement, runs with the obligor's signatory authority) |
 | `TreasuryPolicy` | operator, party, maxSettlementPerCycle | party | operator | `CheckSettlement(amount)` |
 | `NetPosition` | operator, party, cycleId, net | operator | party | none |
-| `NettingCycle` | operator, participants, obligationCids, cycleId, settled | operator | participants | `ComputeNetPositions→[NetPosition]` (stamps the cycle's cycleId), `CheckFunding(netPositionCids, accountCids)→[Party]` (T23, underfunded payers), `ComputeNetPositionsExcluding(excluded)→[NetPosition]` (T24, drop-and-re-net), `Settle(netPositionCids, accountCids, policyCids)` (replay-guarded, binds NetPositions to this cycle, marks in-scope obligations settled, archives the NetPositions) |
+| `NettingCycle` | operator, participants, obligationCids, settled | operator | participants | `ComputeNetPositions(cycleId)→[NetPosition]` (stamps each NetPosition with the passed cycleId), `CheckFunding(netPositionCids, accountCids)→[Party]` (T23, underfunded payers), `ComputeNetPositionsExcluding(cycleId, excluded)→[NetPosition]` (T24, drop-and-re-net), `Settle(cycleId, netPositionCids, accountCids, policyCids)` (replay-guarded, asserts every NetPosition's cycleId matches the passed cycleId, marks in-scope obligations settled, archives the NetPositions) |
 
 **Settlement model:** the `operator` is the netting bank, it holds all `Account`s and
 runs `Settle` (controller `operator`). One shared M2M token `actAs` all parties, so no
