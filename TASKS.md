@@ -121,7 +121,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T46 | P1 | FE | Audit/reporting view mapping settled net legs back to underlying obligations (BEPS transfer-pricing; AFP top driver) | Jishnu | ✅ | T14 |
 | T47 | P2 | SHIP | Positioning: explicitly vs Ripple/GTreasury (confidential N-party netting + atomicity), fold into deck/README | Jishnu | ✅ | - |
 | T48 | P0 | DAML | Settle correctness: mark obligations settled, assert not-already-settled, bind+filter NetPositions by cycleId, archive consumed NetPositions (fixes review C1/C2/H1/H2/H3/H4) | Jishnu | 🟡 | T24 |
-| T49 | P1 | FE | try/catch on cycle + settlement page ledger awaits (stuck computing/settling on error) | Jishnu | 🟡 | T28 |
+| T49 | P1 | FE | try/catch on cycle + settlement page ledger awaits (stuck computing/settling on error) | Jishnu | ✅ | T28 |
 | T50 | P2 | FE | Policy caption conditional on live read; checkPolicy distinguish network error from real breach | | 🔲 | T31 |
 | T51 | P2 | FE | Fail-loud in prod too; fix jina proxy envelope parse in /api/scan; penalize extract confidence on default counterparty | Jishnu | 🟡 | T27 |
 | T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | | 🔲 | T48 |
