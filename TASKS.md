@@ -116,7 +116,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | Jishnu | ✅ | T48 |
 | T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Compute/Settle choices take a cycleId arg; NettingCycle has no cycleId field) | Jishnu | ✅ | T48 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle. Redeploy path now proven (T52), but this changes operator ACS visibility (obligations reads would need rework) and needs its own SCU upgrade + re-seed, deferred as pre-deadline risk | | 🔲 | - |
-| T54 | P2 | FE | Fix SSR hydration mismatches (React #418/#423/#425 in prod console on /app; likely NumberTicker/time formatting rendering differently server vs client). Non-breaking, but noisy. | | 🔲 | - |
+| T54 | P2 | FE | Fixed SSR hydration mismatches: formatDate/formatTime now pin `timeZone:"UTC"` (server rendered activity timestamps in UTC, browser in local tz, so React #418/#423/#425). Verified 0 console errors in a prod build | | ✅ | - |
 | T55 | P1 | FE | Audit page live: gross obligations + net position + settled legs now from the ledger; net positions recovered from tx history (survive Settle), cycle label uses the live on-ledger ref. Verified in-browser | | ✅ | T30 |
 | T56 | P2 | FE | Dashboard "Current cycle" (live `getCycleStatusLive`) + "Your obligations" count (live `getObligationsFor`) wired. Verified in-browser | | ✅ | T30 |
 | T57 | P2 | FE | Recent-activity feed now real on-chain events via `getActivityLive` over `/v2/updates` (settle/compute/cycle/obligation), mock fallback kept. Verified in-browser | | ✅ | - |
