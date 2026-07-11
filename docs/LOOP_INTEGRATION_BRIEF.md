@@ -39,6 +39,25 @@ This is honest ("your real Canton wallet is connected; on-ledger actions current
 NetChain operator; per-user signing is on the roadmap") and gives a strong "real Canton" demo moment.
 It does not overclaim that Loop is driving NetChain's contracts.
 
+## Update (v1.0.3): bilateral confirmation gives Loop a concrete first per-user action
+
+NetChain now has an on-ledger **bilateral confirmation** step: an obligation is pending
+until the obligee exercises the `Accept` choice (`controller obligee`), and only accepted
+obligations net (see `docs/VERIFICATION.md` Scenario F). This sharpens the Loop angle:
+
+- **The single most valuable per-user action to target first is `Accept`**, not arbitrary
+  contract submission. It is bounded and safe (a party consenting to its *own* incoming
+  obligation, nothing else), it maps cleanly to a wallet "approve this?" prompt, and it is
+  the trust-critical step (it is what stops a fake invoice from settling). If Loop /
+  external-signing can drive exactly one NetChain choice per user, `Accept` is the one that
+  matters. Add this to Q4 below when scoping the signing path.
+- **Privacy tie-in.** NetChain's guarantee is *counterparty* privacy (A cannot see C's
+  obligations); the operator is a trusted intermediary by design (see `docs/VERIFICATION.md`
+  §2b, and operator-blind netting as roadmap in `docs/SETTLEMENT_DESIGN.md` §6). A
+  Loop-connected user reading their **own** per-party projection (the `CanReadAs` angle in
+  Q3) is the honest, low-effort way to show a real user their real, privacy-scoped slice,
+  independent of whether per-user signing lands.
+
 ## Operator questions for veribee (please confirm / answer)
 
 1. Does the current `loop-sdk` truly block ALL third-party DAR submission, or is there an

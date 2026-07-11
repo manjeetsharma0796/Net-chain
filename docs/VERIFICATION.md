@@ -33,7 +33,15 @@ not aspirational.
   identity, not a login.
 - **The operator**: the netting bank, the one coordinating party that can see the
   full graph of obligations across A, B, and C and runs the netting cycle. Everyone
-  else only ever sees their own slice.
+  else only ever sees their own slice. The operator *does* see everything, that is
+  the standard trusted-operator model (see "The privacy model, honestly" below), not
+  an accident, and NetChain's privacy guarantee is between *counterparties*, not
+  against the operator.
+- **Bilateral confirmation / bilateral consent** (v1.0.3): an obligation only counts
+  toward settlement once the obligee has confirmed it on-ledger (the `Accept` choice).
+  Like a two-signature cheque: the obligor writes it, but it clears only when the
+  payee countersigns. This is the on-ledger safeguard against a fabricated ("fake
+  invoice") obligation settling, an unaccepted obligation nets to zero.
 - **`TreasuryPolicy` cap**: an on-ledger spending limit (`maxSettlementPerCycle`)
   written into the contract itself. An agent, or a human, cannot exceed it by
   crafting a cleverer request, the ledger itself refuses the transaction.
@@ -77,6 +85,37 @@ is primarily **Track 1 (Private DeFi & Capital Markets)**, and also reaches into
 drive the same flow, bounded by the on-ledger `TreasuryPolicy` cap it cannot bypass,
 a working answer to "how do you give an agent real authority without giving it an
 unbounded blast radius."
+
+---
+
+## 2b. The privacy model, honestly (operator sees everything, so what's the point?)
+
+A fair first reaction: if the operator can see the whole obligation graph, what is
+actually private? The precise, honest answer:
+
+- **NetChain's privacy is counterparty privacy, and that is the commercially valuable
+  kind.** Company A and Company C cannot see each other's obligations, volumes, or who
+  they trade with. That is the confidentiality every real netting service (CLS, CHIPS)
+  provides *between its members*, and it is exactly what a corporate treasurer cares
+  about: your positions never leak to a competitor or a counterparty. Verify it
+  yourself in Scenario A, the ledger returns a real 404 to C, not a UI mask.
+- **The operator seeing all is the standard, trusted-operator model**, identical to how
+  CLS, CHIPS, and every in-house-bank netting center works today. It is a regulated,
+  contractually-bound intermediary, not an eavesdropper. So "operator sees all" is not
+  a weakness versus the market; NetChain already goes *beyond* incumbents like
+  Kyriba/SAP by giving counterparties a cryptographic/ledger boundary rather than mere
+  database access control (where a DB admin can peek).
+- **Bilateral confirmation hardens trust even under a trusted operator** (v1.0.3, new).
+  Because an obligation must be accepted by the obligee before it can net, neither a
+  rogue party nor the operator can unilaterally inject a debt that settles. See
+  Scenario F.
+- **Removing the operator-trust assumption entirely is roadmap, named honestly** in
+  `docs/SETTLEMENT_DESIGN.md` §6: *operator-blind netting*, where even the operator
+  computes the net without seeing individual obligations (only the zero-sum result),
+  via MPC, zero-knowledge proofs, or a TEE. This is the genuine research frontier
+  (BIS/Zama work, the Cycles Protocol direction) with a real latency/scalability cost,
+  which is why it is future work and not in this demo. NetChain's design is staged
+  toward it, not pretending to already be there.
 
 ---
 
@@ -290,6 +329,50 @@ Confirm this is working as intended, not a bug, by checking that
 `curl https://netchain.vercel.app/api/ledger/balances` still shows only the fixed
 three demo parties (company-a/b/c), your sandbox company never appears there. A
 hard reload of `/app` while in sandbox mode resets the sandbox state (see Section 5).
+
+### Scenario F: Bilateral confirmation, the fake-invoice safeguard (`/app/obligations`)
+
+This answers "what if someone submits a fake invoice?" A newly created obligation is
+**pending** (`accepted = false`) and is *excluded from netting* until the obligee
+confirms it on-ledger with the `Accept` choice. A fabricated debt therefore cannot
+settle on one party's say-so.
+
+**What to click:**
+1. `/app/obligations`: with the party switcher set to the **obligor**, record a new
+   obligation to some obligee. The new row shows **"Awaiting counterparty acceptance"**.
+2. Switch the party to that **obligee**. The same row now shows **"Pending your
+   acceptance"** with an **Accept** button. Click it.
+3. The row flips to accepted. Now run a cycle (`/app/cycle`), only accepted
+   obligations contribute to the net.
+
+**What to expect:** before acceptance, the pending obligation contributes **nothing**
+to any net position (run the cycle with only a pending obligation and every net is
+zero). After the obligee accepts, the same obligation nets normally.
+
+**How to verify it is real (on-ledger, not a UI flag):**
+```bash
+# Create an obligation (starts pending: accepted=false)
+curl -s -X POST https://netchain.vercel.app/api/ledger/obligation \
+  -H "Content-Type: application/json" \
+  -d '{"obligor":"company-a","obligee":"company-b","amount":10000,"reference":"TEST","dueDate":"2026-08-01"}'
+
+# Read it back as the obligee; note "accepted": false on the new row
+curl -s "https://netchain.vercel.app/api/ledger/obligations?party=company-b"
+
+# Accept it as the obligee (contractId from the read above)
+curl -s -X POST https://netchain.vercel.app/api/ledger/accept \
+  -H "Content-Type: application/json" \
+  -d '{"obligee":"company-b","contractId":"<ID>"}'
+
+# Read again; the row now shows "accepted": true
+curl -s "https://netchain.vercel.app/api/ledger/obligations?party=company-b"
+```
+The enforcement is in the Daml contract itself, not the UI: `ComputeNetPositions`,
+`ComputeNetPositionsExcluding`, and the `Settle` mark-loop in `daml/daml/NetChain.daml`
+all filter to `accepted == Some True`, and the `Accept` choice is controlled by the
+obligee (`controller obligee`), so only the obligee can consent. The test
+`test_bilateral_consent` in `daml/daml/Test.daml` proves a pending obligation nets to
+zero and the same obligation nets +40k/-40k once accepted.
 
 ---
 
