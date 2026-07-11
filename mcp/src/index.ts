@@ -132,7 +132,9 @@ server.registerTool(
       "`dueDate`, tagged with `reference` (e.g. an invoice number). Use this to enter a new " +
       "invoice or payable before it is picked up by a netting cycle. `source` stamps " +
       "provenance on-ledger and defaults to `agent`, since a tool call from an AI agent is " +
-      "exactly what that label is for.",
+      "exactly what that label is for. BILATERAL CONSENT: the new obligation starts PENDING " +
+      "and is excluded from netting until the obligee confirms it with `accept_obligation`, " +
+      "so a fabricated invoice cannot settle on the obligor's say-so alone.",
     inputSchema: {
       obligor: PartyId,
       obligee: PartyId,
@@ -143,6 +145,25 @@ server.registerTool(
     },
   },
   async (input) => apiPost("obligation", input),
+);
+
+server.registerTool(
+  "accept_obligation",
+  {
+    title: "Accept an obligation (bilateral consent)",
+    description:
+      "As the `obligee`, confirm a pending obligation identified by `contractId`, exercising " +
+      "the on-ledger `Accept` choice. Only accepted obligations net, so this is the required " +
+      "second signature: an obligor records a debt with `create_obligation` and the obligee " +
+      "affirms it here before it can ever settle. Use `list_obligations` (as the obligee) to " +
+      "find pending obligations, they read back with `accepted: false` until this succeeds. " +
+      "Controlled on-ledger by the obligee, no other party (or the operator) can accept for them.",
+    inputSchema: {
+      obligee: PartyId,
+      contractId: z.string().min(1).describe("The obligation's ledger contract id"),
+    },
+  },
+  async (input) => apiPost("accept", input),
 );
 
 server.registerTool(

@@ -25,7 +25,8 @@ already-deployed HTTP API (`${NETCHAIN_API_BASE}/api/ledger/<op>`, default
 | `get_balances` | `GET balance?party=` / `GET balances` | One party's balance, or all three |
 | `get_net_positions` | `GET net-position?party=` / `GET net-positions` | One party's net position, or all |
 | `get_policy` | `GET policy?party=` | A party's `TreasuryPolicy`, incl. `maxSettlementPerCycle` |
-| `create_obligation` | `POST obligation` | Record a new obligation (invoice); `source` defaults to `agent` |
+| `create_obligation` | `POST obligation` | Record a new obligation (invoice), starts PENDING; `source` defaults to `agent` |
+| `accept_obligation` | `POST accept` | Obligee confirms a pending obligation (bilateral consent); only accepted obligations net |
 | `check_policy` | `POST policy-check` | Dry-run whether an amount would pass a party's cap |
 | `run_netting_cycle` | `POST run-cycle` | Open a cycle and compute net positions |
 | `settle` | `POST settle` | Execute settlement for the current cycle (see below) |
@@ -83,9 +84,12 @@ Then add it to your MCP client config, e.g. this repo's `.mcp.json` at the proje
 
 A typical session an agent would run against this server:
 
-1. **Record an invoice as an obligation**
+1. **Record an invoice as an obligation** (it starts pending)
    `create_obligation({ obligor: "company-a", obligee: "company-b", amount: 20000, reference: "INV-2044", dueDate: "2026-08-01" })`
-2. **Run a netting cycle** to fold all open obligations into net positions
+2. **Obligee confirms it** (bilateral consent, else it never nets). As `company-b`, find it with
+   `list_obligations({ party: "company-b" })` (it reads `accepted: false`), then
+   `accept_obligation({ obligee: "company-b", contractId: <its contractId> })`
+3. **Run a netting cycle** to fold all accepted obligations into net positions
    `run_netting_cycle({})` → inspect with `get_net_positions({})`
 3. **Try to settle over cap and get blocked.** Suppose `company-a`'s policy caps
    settlement at 15,000 but the netted amount it must pay is 20,000:
