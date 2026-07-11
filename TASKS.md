@@ -112,7 +112,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T37 | P1 | FE | Cycle operator cards gross 0/0 in live mode: compute client-side | Jishnu | ✅ | T28 |
 | T38 | P1 | FE | Policy page: cap is live; off-ledger fields (counterparties, instrument, approval-above) marked illustrative (not on the deployed `TreasuryPolicy`) | Jishnu | ✅ | T31 |
 | T39 | P1 | FE | Fail-loud: `lib/ledger.ts` should tag live-vs-fallback and drive the LIVE badge + a dev warn (badge is build-flag-only today) | Jishnu | ✅ | T32 |
-| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual; needs an `Obligation` source field to fix live) | | ⛔ | T30 (redeploy) |
+| T40 | P2 | FE | Agent/Manual source badge lost on live re-fetch (`toObligation` hardcodes source=manual; needs an `Obligation` source field to fix live, add as `Optional Text` for SCU upgrade-safety). Redeploy path proven (T52); deferred as pre-deadline risk for a cosmetic badge | | 🔲 | T30 |
 | T41 | P2 | FE | Dedupe the 3-party-id literal to `PARTY_IDS` (copied in 5 places; `lib/ledger-map.ts` export unused) | Jishnu | ✅ | - |
 | T42 | P2 | FE | Extract shared cycle-open-and-compute helper in `lib/ledger-server.ts` (dup in `computeNetPositionsOnLedger`/`runAndSettle`) | Jishnu | ✅ | - |
 | T43 | P2 | DOCS | Em-dash sweep across tracked docs/source (per-line reword, not blind replace) | Jishnu | ✅ | - |
@@ -125,14 +125,27 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T50 | P2 | FE | Policy caption conditional on live read; checkPolicy distinguish network error from real breach | Jishnu | ✅ | T31 |
 | T51 | P2 | FE | Fail-loud in prod too; fix jina proxy envelope parse in /api/scan; penalize extract confidence on default counterparty | Jishnu | ✅ | T27 |
 | T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | Jishnu | ✅ | T48 |
-| T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Settle/Compute choices dropped the cycleId arg) | Jishnu | ✅ | T48 |
-| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | ⛔ | T09 (redeploy) |
+| T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Compute/Settle choices take a cycleId arg; NettingCycle has no cycleId field) | Jishnu | ✅ | T48 |
+| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle. Redeploy path now proven (T52), but this changes operator ACS visibility (obligations reads would need rework) and needs its own SCU upgrade + re-seed, deferred as pre-deadline risk | | 🔲 | - |
 | T54 | P2 | FE | Fix SSR hydration mismatches (React #418/#423/#425 in prod console on /app; likely NumberTicker/time formatting rendering differently server vs client). Non-breaking, but noisy. | | 🔲 | - |
+| T55 | P1 | FE | Audit page (`app/app/audit/page.tsx`) is 100% Zustand store while badged live; wire gross obligations + net position from `getObligationsFor`/`getNetPositionFor` (settled-leg trail has no ledger query, so label that part "session view") | | 🔲 | T30 |
+| T56 | P2 | FE | Dashboard "Current cycle" + "Your obligations" tiles are store reads; wire the obligations count via `getObligationsFor`; cycle status needs a thin `listOpenCycle` server op (ACS query mirroring `openCycleAndCompute`) | | 🔲 | T30 |
+| T57 | P2 | FE | Recent-activity feed is 100% mock seed (`SEED_ACTIVITY`); either wire it to a `/v2/updates` server route or relabel it "session activity" so it does not imply ledger history | | 🔲 | - |
+| T58 | P2 | FE | Live obligation status collapses netted->open on refetch (`ledger-map.ts:47` maps only open/settled); infer "netted" client-side by cross-referencing the latest cycle's obligationCids (no redeploy) | | 🔲 | T30 |
+| T59 | P1 | FE | ISO 20022 MX-shaped settlement export (MT/MX coexistence ended 2025-11-22; generic CSV is not pluggable into bank/TMS rails). Extends T45's CSV | | 🔲 | T45 |
+| T60 | P2 | DOCS | Positioning refresh: reframe settlement-asset roadmap around the GENIUS Act PPSI category; name Cycles Protocol as the operator-blind-netting watch item; reference UNIDROIT Principles on Close-out Netting for the legal-netting artifact; refresh deck proof points with the DTCC/Canton tokenization pilot (live 2026-07) + ~700-institution / ~$9T-monthly Canton scale | | 🔲 | T26,T47 |
+| T61 | P3 | DAML | Add a UETR-style traceable reference to `Obligation`/settled leg (gpi baseline; SCU-safe only as `Optional Text`); plus a design note on strategic under-funding of the pre-cycle funding check (Garratt et al. 2026) | | 🔲 | T48 |
 
-> **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in
+> **Redeploy status (2026-07-11):** the live package is now **v1.0.1**, id
+> `8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254` (a valid SCU upgrade of the
+> original v1.0.0 `cdd7…55e7`), carrying the T48 settlement-correctness fix. Vercel points at it;
+> `https://netchain.vercel.app` verified live. See `OPERATOR_TODO.md`.
+
+> **UI + settlement upgrade plan (T27–T61):** full per-task detail and the mock-vs-real audit are in
 > [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md). Rule for every FE task: same visuals, real data, mock
-> fallback kept. Today the UI is mock-driven (dashboard and cycle make zero ledger calls; 39 store
-> mutations drive the view); these tasks wire it to the live ledger and CoinGecko without restyling.
+> fallback kept. Most of the app is now wired live (dashboard balance/CC price, obligations, cycle,
+> settlement, policy, privacy-check); the remaining mock surface is the audit page (T55), the dashboard
+> cycle/obligation tiles (T56), and the activity feed (T57). Wire to the live ledger without restyling.
 
 **Suggested parallelization (day 1):** one person takes **T01 → T02** (unblocks
 everything on-ledger); the other starts **T03** (Daml scaffold, authoring needs no

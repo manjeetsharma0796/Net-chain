@@ -1,6 +1,6 @@
 name: daml
 
-# Authoritative build/test for the NetChain Daml package, on Linux — independent
+# Authoritative build/test for the NetChain Daml package, on Linux, independent
 # of whatever toolchain (or OS) a contributor has locally. Installs DPM + SDK 3.5.2
 # and runs `dpm build` + `dpm test` against daml/.
 

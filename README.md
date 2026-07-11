@@ -7,8 +7,8 @@ mock mode, so the demo runs with zero backend when you want it to.
 
 **Tracks:** Track 1 (Private DeFi) and Track 3 (Agentic Commerce)
 
-**Live status:** package `cdd76816...55e7` deployed on Devnet (Canton Protocol Version 35, PV35
-gate passed). Settled demo cycle on-ledger: A=115k, B=130k, C=55k; net positions +15k / +30k /
+**Live status:** package `8d20d87f...6e8254` (v1.0.1) deployed on Devnet (Canton Protocol Version 35,
+PV35 gate passed). Settled demo cycle on-ledger: A=115k, B=130k, C=55k; net positions +15k / +30k /
 -45k (sum zero). Verified end to end against the live validator.
 
 ## Positioning

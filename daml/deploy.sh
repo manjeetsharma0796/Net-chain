@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# NetChain — T09 on-ledger state bring-up.
+# NetChain, T09 on-ledger state bring-up.
 #
 # Makes the deployed package (pkg cdd7…55e7) into live *state*: allocates the
 # demo parties, seeds the 460k→45k obligation graph (accounts + policies +
@@ -23,7 +23,7 @@ ENV_FILE="${ENV_FILE:-$HERE/../.env}"
 : "${BASE:?set BASE in ../.env}"
 : "${TOKEN_ENDPOINT:?set TOKEN_ENDPOINT in ../.env}"
 : "${CLIENT_ID:?set CLIENT_ID in ../.env}"
-: "${CLIENT_SECRET:?set CLIENT_SECRET (env or ../.env) — see OPERATOR_TODO.md}"
+: "${CLIENT_SECRET:?set CLIENT_SECRET (env or ../.env), see OPERATOR_TODO.md}"
 : "${AUDIENCE:?set AUDIENCE in ../.env}"
 : "${SCOPE:?set SCOPE in ../.env}"
 : "${NETCHAIN_PKG_ID:?set NETCHAIN_PKG_ID in ../.env}"
@@ -52,7 +52,7 @@ JSON=(-H "Content-Type: application/json")
 api() { # api <path> <json-body>  -> POST, prints body, fails on .code error
   local path="$1" body="$2" out
   out=$(curl -sS -X POST "$BASE$path" "${AUTH[@]}" "${JSON[@]}" -d "$body")
-  # JSON API returns errors as {"code":...,"cause":...} — surface them (G8).
+  # JSON API returns errors as {"code":...,"cause":...}, surface them (G8).
   python3 - "$out" <<'PY'
 import sys,json
 raw=sys.argv[1]
@@ -92,7 +92,7 @@ d=json.load(sys.stdin)
 print(d.get("partyDetails",{}).get("party") or d.get("party"))'
 }
 
-grant_actas() { # let user 6 act as <party> (G6) — ignore "already exists"
+grant_actas() { # let user 6 act as <party> (G6), ignore "already exists"
   local party="$1"
   curl -sS -X POST "$BASE/v2/users/$USER_ID/rights" "${AUTH[@]}" "${JSON[@]}" -d "{
     \"userId\":\"$USER_ID\",
@@ -103,7 +103,7 @@ grant_actas() { # let user 6 act as <party> (G6) — ignore "already exists"
 # Reuse caller-provided party ids (NETCHAIN_* already in .env) when set; else
 # allocate a fresh party + grant CanActAs. Reuse is required on the shared devnet
 # participant, where user 6 is at its user-rights cap (TOO_MANY_USER_RIGHTS) and
-# cannot be granted CanActAs for newly-allocated parties — so we point at
+# cannot be granted CanActAs for newly-allocated parties, so we point at
 # existing scratch parties user 6 already controls (all on the same participant
 # fingerprint as the primary party).
 say "Resolving parties (operator + company-a/b/c)"
@@ -185,7 +185,7 @@ count() { acs "$1" | grep -c . || true; }     # active-contract count for a temp
 # so a re-run reuses what a prior (possibly partial) run created rather than
 # piling up duplicate contracts.
 if [ "$(count Account)" -ge 3 ]; then
-  say "Accounts already present ($(count Account)) — skipping seed"
+  say "Accounts already present ($(count Account)), skipping seed"
 else
   say "Seeding 3 Accounts (100k each, actAs operator)"
   for owner in "$CA" "$CB" "$CC"; do
@@ -194,7 +194,7 @@ else
 fi
 
 if [ "$(count TreasuryPolicy)" -ge 3 ]; then
-  say "TreasuryPolicies already present ($(count TreasuryPolicy)) — skipping seed"
+  say "TreasuryPolicies already present ($(count TreasuryPolicy)), skipping seed"
 else
   say "Seeding 3 TreasuryPolicies (caps A=200k B=500k C=350k)"
   create "$CA" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CA\",\"maxSettlementPerCycle\":\"200000.0\"}"
@@ -203,7 +203,7 @@ else
 fi
 
 if [ "$(count Obligation)" -ge 6 ]; then
-  say "Obligations already present ($(count Obligation)) — skipping seed"
+  say "Obligations already present ($(count Obligation)), skipping seed"
 else
   say "Seeding 6 Obligations (gross 460k → net 45k)"
   # obligor obligee amount ref  (actAs = obligor, the signatory)
@@ -297,4 +297,4 @@ for pid,label in want.items():
     print(f"  Company {label}: {v} USDCx")
 print(f"  Σ nets = {tot:g} (zero by construction)")'
 
-say "T09 done — on-ledger state is live and queryable via the JSON Ledger API."
+say "T09 done, on-ledger state is live and queryable via the JSON Ledger API."
