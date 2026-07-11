@@ -44,14 +44,19 @@ export default function PolicyPage() {
 
   useEffect(() => {
     let cancelled = false;
-    getPolicyLive(currentPartyId).then((p) => {
-      if (!cancelled) setLiveCap(p?.maxSettlementPerCycle ?? null);
-    });
+    getPolicyLive(currentPartyId)
+      .then((p) => {
+        if (!cancelled) setLiveCap(p?.maxSettlementPerCycle ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setLiveCap(null);
+      });
     return () => {
       cancelled = true;
     };
   }, [currentPartyId]);
 
+  const isCapLive = liveCap !== null;
   const maxSettlementPerCycle = liveCap ?? policy.maxSettlementPerCycle;
 
   const runAttempt = async () => {
@@ -84,6 +89,7 @@ export default function PolicyPage() {
     {
       label: "maxSettlementPerCycle",
       value: <MoneyValue amount={maxSettlementPerCycle} />,
+      illustrative: !isCapLive,
     },
     {
       label: "allowedCounterparties",
@@ -145,12 +151,14 @@ export default function PolicyPage() {
               ))}
             </dl>
             <p className="mt-4 text-xs font-light leading-relaxed text-frost/50">
-              maxSettlementPerCycle is read live from the deployed
-              TreasuryPolicy contract. Fields marked illustrative are
-              product-config, not yet on-ledger, extending the contract is
-              future work. In the real system these are assertions inside the
-              Daml settlement choice, the transaction fails validation
-              before it ever reaches the ledger if any rule is violated.
+              {isCapLive
+                ? "maxSettlementPerCycle is read live from the deployed TreasuryPolicy contract."
+                : "maxSettlementPerCycle shown here is illustrative, mock mode or the live ledger read failed."}{" "}
+              Fields marked illustrative are product-config, not yet on-ledger,
+              extending the contract is future work. In the real system these
+              are assertions inside the Daml settlement choice, the
+              transaction fails validation before it ever reaches the ledger
+              if any rule is violated.
             </p>
           </section>
         </FadeIn>
