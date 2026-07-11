@@ -14,11 +14,15 @@ export function formatCompact(amount: number): string {
   }).format(amount);
 }
 
+// Pin the timezone (UTC) so server and client render identical text: without it
+// toLocale*String uses the runtime zone, so SSR (UTC) and the browser (local)
+// disagree and React reports a hydration mismatch. Ledger timestamps are UTC.
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -26,6 +30,7 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 }
 
