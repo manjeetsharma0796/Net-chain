@@ -275,11 +275,11 @@
   <!-- 0 · TITLE -->
   <section class="slide active" id="s0">
     <div class="glow" style="width:600px;height:600px;bottom:-30%;left:-10%;"></div>
-    <p class="eyebrow">Canton Hackathon · Jul 2026</p>
+    <p class="eyebrow">Build on Canton Hackathon · Jul 2026 · Track 1 (Private DeFi &amp; Capital Markets)</p>
     <h1>Settle everything.<br /><span class="accent">Reveal nothing.</span></h1>
     <p class="sub">
-      NetChain is privacy-preserving multilateral netting with atomic settlement -
-      built on Canton Network, live on 5N Devnet.
+      NetChain is confidential multilateral netting with atomic settlement on Canton.
+      AI proposes, the ledger disposes. Deployed live on Canton Devnet, not a local sandbox.
     </p>
     <p class="sub mono" style="margin-top:2rem;font-size:0.8rem;color:rgba(215,226,234,0.35);">
       460,000.00 gross &nbsp;→&nbsp; 45,000.00 settled &nbsp;·&nbsp; Σ nets = 0 &nbsp;·&nbsp; one atomic tx
@@ -409,10 +409,38 @@
     </div>
   </section>
 
+  <!-- 5b · AGENT USABILITY (Track 3 straddle) -->
+  <section class="slide" id="s5b">
+    <div class="win-badge">Track 3 · Agentic Commerce</div>
+    <h2>Any AI agent can drive it.<br />The <span class="accent">ledger</span> is the guardrail.</h2>
+    <p class="sub">
+      NetChain ships an MCP server, so any AI agent can operate the full flow over the
+      same on-ledger path the app uses: record an invoice as an Obligation, run the
+      netting cycle, read positions, and attempt to settle. Every write is bounded by the
+      on-ledger <span class="mono">TreasuryPolicy</span> cap. When an agent tries to settle
+      over-cap, the ledger, not a prompt, refuses. This is a working answer to the 2026
+      "bounded authority for agents" problem: give the agent the tools, keep the limit on
+      the ledger where the agent cannot reach it.
+    </p>
+    <div class="code-block">
+      <span class="dim"># Agent calls NetChain's tools over the MCP server:</span><br />
+      agent → <span class="key">record obligation</span> → <span class="ok">Obligation created</span><br />
+      agent → <span class="key">run cycle</span> → <span class="ok">net positions computed</span><br />
+      agent → <span class="key">settle 250,000</span> (over cap 200,000)<br />
+      <br />
+      <span class="err">← blocked on-ledger: TreasuryPolicy cap. No funds move.</span>
+    </div>
+  </section>
+
   <!-- 6 · PRIVACY MODEL (honest) -->
   <section class="slide" id="s6">
     <p class="eyebrow">Privacy model, the honest version</p>
     <h2>Counterparties are blind.<br />Operator is <span class="privacy-color">known + authorised</span>.</h2>
+    <p class="sub" style="margin-top:1rem;">
+      Atomicity and privacy are enforced by Canton's <span class="privacy-color">Global Synchronizer</span>,
+      which routes and orders the encrypted messages without seeing their content, not by
+      parties trusting each other.
+    </p>
     <div class="cards" style="margin-top:1.5rem;">
       <div class="card">
         <h3>What's private</h3>
@@ -466,7 +494,7 @@
 
   <!-- 8 · LIVE DEVNET -->
   <section class="slide" id="s8">
-    <p class="eyebrow">Live on Canton Devnet · 5N Sandbox · 2026-07-10</p>
+    <p class="eyebrow">Live on Canton Devnet · 5N Sandbox · 2026-07</p>
     <h2>Not a sandbox.<br /><span class="accent">The actual devnet.</span></h2>
     <div class="stat-row">
       <div class="stat">
@@ -474,7 +502,7 @@
         <span class="stat-label">PV35 gate passed</span>
       </div>
       <div class="stat">
-        <span class="stat-val">4</span>
+        <span class="stat-val">8</span>
         <span class="stat-label">Script tests green</span>
       </div>
       <div class="stat">
@@ -483,17 +511,51 @@
       </div>
       <div class="stat">
         <span class="stat-val accent">45k</span>
-        <span class="stat-label">USDCx settled on-chain</span>
+        <span class="stat-label">Net settled on-chain</span>
       </div>
     </div>
     <div class="code-block" style="margin-top:1.5rem;">
-      <span class="dim"># Package on-ledger:</span><br />
-      <span class="key">NETCHAIN_PKG_ID</span>=<span class="ok">8d20d87f559d…fd6e8254</span><br />
+      <span class="dim"># Live Smart Contract Upgrade, no downtime:</span><br />
+      v1.0.0 <span class="ok">cdd7…55e7</span> <span class="dim">→</span> v1.0.1 <span class="ok">8d20d87f…6e8254</span><br />
       <br />
-      <span class="dim"># Verified balances after Settle:</span><br />
-      A (Carol)     <span class="ok">115,000 USDCx</span>  &nbsp;<span class="dim">net +15k</span><br />
-      B (Investor)  <span class="ok">130,000 USDCx</span>  &nbsp;<span class="dim">net +30k</span><br />
-      C (SME)       <span class="ok"> 55,000 USDCx</span>  &nbsp;<span class="dim">net −45k</span>
+      <span class="dim"># Verified balances after Settle (Cash placeholder token):</span><br />
+      A (Carol)     <span class="ok">115,000</span>  &nbsp;<span class="dim">net +15k</span><br />
+      B (Investor)  <span class="ok">130,000</span>  &nbsp;<span class="dim">net +30k</span><br />
+      C (SME)       <span class="ok"> 55,000</span>  &nbsp;<span class="dim">net −45k</span>
+    </div>
+  </section>
+
+  <!-- 8b · LIVE UPGRADE -->
+  <section class="slide" id="s8b">
+    <div class="win-badge">Production-grade · Canton SCU</div>
+    <h2>We upgraded a running<br />contract, <span class="accent">live</span>.</h2>
+    <p class="sub">
+      A settlement-correctness fix shipped as a valid Canton Smart Contract Upgrade of the
+      already-deployed package, v1.0.0 <span class="mono">cdd7…55e7</span> to v1.0.1
+      <span class="mono">8d20d87f…6e8254</span>. Same choice signatures, changed bodies plus a
+      new <span class="mono">MarkSettled</span> choice. The demo stayed live through the
+      upgrade. This is the versioned-upgrade discipline a real treasury needs, not a redeploy
+      from scratch.
+    </p>
+    <div class="cards" style="margin-top:1.5rem;">
+      <div class="card">
+        <h3 class="privacy-color">Settlement asset, scoped on purpose</h3>
+        <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
+          NetChain settles a placeholder <span class="mono">Cash</span> token today. Moving the
+          same <span class="mono">Settle</span> choice onto a CIP-56 asset like USDCx is an
+          adapter, not a rearchitecture. We verified the CIP-56 packages are vetted on our
+          validator (<span class="mono">docs/USDCX_SPIKE.md</span>) and chose not to fake
+          CIP-56 shape-compliance under deadline.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="accent">Third-party validation</h3>
+        <p style="margin-top:0.6rem;font-size:0.85rem;color:rgba(215,226,234,0.6);line-height:1.7;">
+          Jan 2026: J.P. Morgan / Kinexys announced bringing JPMD natively to Canton,
+          adopting the sub-transaction privacy its own rails lack. The privacy thesis
+          NetChain is built on is the one the biggest institutions are moving toward.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -529,17 +591,17 @@
   <!-- 10 · CLOSING -->
   <section class="slide" id="s10">
     <div class="glow" style="width:700px;height:700px;bottom:-40%;left:-15%;"></div>
-    <p class="eyebrow">NetChain · Canton Hackathon 2026</p>
+    <p class="eyebrow">NetChain · Build on Canton Hackathon 2026 · Track 1, straddling Track 3</p>
     <h1>Settle everything.<br /><span class="accent">Reveal nothing.</span></h1>
     <p class="sub" style="margin-top:1.5rem;">
-      Live on Canton Devnet &nbsp;·&nbsp; AI invoice extraction &nbsp;·&nbsp;
-      On-ledger policy gates &nbsp;·&nbsp; Atomic multi-party settlement
+      Confidential netting &nbsp;·&nbsp; Atomic multi-party settlement &nbsp;·&nbsp;
+      On-ledger policy gates &nbsp;·&nbsp; AI proposes, the ledger disposes
     </p>
-    <div class="cards" style="margin-top:2rem;max-width:500px;">
+    <div class="cards" style="margin-top:2rem;max-width:520px;">
       <div class="card" style="font-size:0.8rem;line-height:1.8;color:rgba(215,226,234,0.5);">
         <span class="mono" style="color:var(--accent);">github.com / Net-chain</span><br />
-        Validator: 5N Sandbox Devnet<br />
-        Stack: Next.js 14 · Daml 3.5.2 · NVIDIA NIM · Canton JSON API v2
+        Validator: 5N Sandbox Devnet &nbsp;·&nbsp; Package v1.0.1 (live SCU)<br />
+        Stack: Next.js 14 · Daml 3.5.2 · NVIDIA NIM · Canton JSON API v2 · MCP server
       </div>
     </div>
   </section>

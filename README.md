@@ -1,11 +1,15 @@
 # NetChain: Confidential Treasury Settlement
 
-Privacy-preserving multilateral netting and atomic settlement on the Canton Network.
-The Daml contracts are **deployed live on the Canton Devnet** (5N Sandbox validator) and the
-Next.js app reads and writes them through the JSON Ledger API v2. The app also ships a full
-mock mode, so the demo runs with zero backend when you want it to.
+Confidential multilateral netting and atomic settlement on the Canton Network. AI proposes,
+the ledger disposes. The Daml contracts are **deployed live on the Canton Devnet** (5N Sandbox
+validator) and the Next.js app reads and writes them through the JSON Ledger API v2. Atomicity
+and privacy are enforced by Canton's Global Synchronizer, which routes and orders the encrypted
+messages without seeing their content, not by parties trusting each other. The app also ships a
+full mock mode, so the demo runs with zero backend when you want it to.
 
-**Tracks:** Track 1 (Private DeFi) and Track 3 (Agentic Commerce)
+**Tracks:** Primary **Track 1 (Private DeFi & Capital Markets)**; also straddles **Track 3
+(Agentic Commerce)**, because any AI agent can drive the full flow through NetChain's MCP server,
+bounded by an on-ledger policy cap the agent cannot bypass.
 
 **Live status:** package `8d20d87f...6e8254` (v1.0.1) deployed on Devnet (Canton Protocol Version 35,
 PV35 gate passed). Settled demo cycle on-ledger: A=115k, B=130k, C=55k; net positions +15k / +30k /
@@ -28,6 +32,39 @@ hackathon Devnet, not a production claim.
 | Netting incumbents (Kyriba, Coprocess/GTreasury, SAP IHC, Ripple Treasury) | No, conventional access control | No, instruction file then a separate execution step |
 | DLT settlement (Partior, Fnality, Kinexys)                                 | No, bilateral/permissioned visibility | Yes, bilaterally |
 | NetChain                                                                   | Yes, Canton per-party projection | Yes, across the full N-party net |
+
+### What is verifiable, live
+
+Not slideware. Each of these is reproducible against the deployed package:
+
+- **Real per-party 404 privacy.** A company gets `CONTRACT_NOT_FOUND` on a contract it is not a
+  stakeholder of. Enforced at the ledger node, not masked in the UI.
+- **Atomic all-or-nothing DvP settlement.** Every net leg moves in one Canton transaction, or none
+  does. A forced abort moves zero funds.
+- **A non-bypassable on-ledger `TreasuryPolicy` cap.** An over-cap settle is rejected inside the
+  transaction; no caller, human or agent, can route around it.
+- **A live Smart Contract Upgrade of a running contract**, v1.0.0 `cdd7...55e7` to v1.0.1
+  `8d20d87f...6e8254`, carrying a settlement-correctness fix. The demo stayed live through it.
+- **Real Canton Devnet deployment** (5N Sandbox validator, PV35), not a local sandbox.
+
+### Agent-usable, bounded by the ledger
+
+NetChain ships an MCP server, so any AI agent can operate the same on-ledger flow the app uses:
+record an invoice as an Obligation, run the netting cycle, read balances and net positions, query
+the policy, and attempt to settle. Every write is gated by each party's on-ledger `TreasuryPolicy`
+cap, so when an agent tries to settle over-cap the ledger refuses, not a prompt. This is a working
+answer to the 2026 "bounded authority for agents" problem: hand the agent the tools, keep the limit
+on the ledger where the agent cannot reach it.
+
+### Settlement asset, deliberately scoped
+
+NetChain settles a placeholder `Cash` token today (rendered as a USDCx balance in the UI). Moving
+the same `Settle` choice onto a CIP-56 asset like USDCx is an adapter, not a rearchitecture: the
+CIP-56 Allocation/Holding packages are already vetted on our validator, but real USDCx needs
+Circle-side KYC and an xReserve deposit per party, so we chose not to fake CIP-56 shape-compliance
+under deadline (see `docs/USDCX_SPIKE.md`). Third-party validation of the underlying privacy thesis:
+in Jan 2026 J.P. Morgan / Kinexys announced bringing JPMD natively to Canton, adopting the
+sub-transaction privacy its own rails lack.
 
 ## Setup
 
