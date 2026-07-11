@@ -77,17 +77,6 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T12 | P1 | FE | Per-party identity/switcher → real projections | Jishnu | ✅ | T02,T11 |
 | T13 | P1 | FE | Wire **reads** to the ledger (privacy first) | Jishnu | ✅ | T09,T11 |
 | T14 | P1 | FE | Wire **writes** (create/cycle/allocate/settle/policy) | Jishnu | ✅ | T09,T11 |
-
-> **DAML-interaction spine (branch `daml-interaction`, 2026-07-10), LIVE:**
-> `daml/deploy.sh` ran end-to-end on the 5N devnet → settled **A=115k/B=130k/C=55k**,
-> nets **+15k/+30k/−45k** (sum 0). All four wins verified through the route handlers
-> (`NEXT_PUBLIC_LEDGER_LIVE=1`): privacy (C→404 / A→200 on the A→B contract), per-party
-> net position, on-ledger policy gate (250k→AssertionFailed, 150k→ok). Stack:
-> `lib/ledger.ts` → `app/api/ledger/*` → `lib/ledger-server.ts` → JSON Ledger API v2.
-> CI in `.github/workflows/daml.yml`. **Note:** the shared M2M user is at its 1000-rights
-> cap, so the demo reuses existing scratch parties (operator=Dave, A=Carol, B=Investor,
-> C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
-> (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
 | T15 | P0 | SHIP | Deploy frontend live (Vercel): https://netchain.vercel.app | Manjeet/Jishnu | ✅ | - |
 | T16 | P1 | AI | Real invoice extraction via LLM (NVIDIA NIM vision) | Jishnu | ✅ | - |
 | T17 | P2 | FE | Fix the 3 conformance mismatches | Jishnu | ✅ | T13 (partial) |
@@ -135,6 +124,17 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T59 | P1 | FE | ISO 20022 MX-shaped settlement export (MT/MX coexistence ended 2025-11-22; generic CSV is not pluggable into bank/TMS rails). Extends T45's CSV | | 🔲 | T45 |
 | T60 | P2 | DOCS | Positioning refresh: reframe settlement-asset roadmap around the GENIUS Act PPSI category; name Cycles Protocol as the operator-blind-netting watch item; reference UNIDROIT Principles on Close-out Netting for the legal-netting artifact; refresh deck proof points with the DTCC/Canton tokenization pilot (live 2026-07) + ~700-institution / ~$9T-monthly Canton scale | | 🔲 | T26,T47 |
 | T61 | P3 | DAML | Add a UETR-style traceable reference to `Obligation`/settled leg (gpi baseline; SCU-safe only as `Optional Text`); plus a design note on strategic under-funding of the pre-cycle funding check (Garratt et al. 2026) | | 🔲 | T48 |
+
+> **DAML-interaction spine (branch `daml-interaction`, 2026-07-10), LIVE:**
+> `daml/deploy.sh` ran end-to-end on the 5N devnet → settled **A=115k/B=130k/C=55k**,
+> nets **+15k/+30k/−45k** (sum 0). All four wins verified through the route handlers
+> (`NEXT_PUBLIC_LEDGER_LIVE=1`): privacy (C→404 / A→200 on the A→B contract), per-party
+> net position, on-ledger policy gate (250k→AssertionFailed, 150k→ok). Stack:
+> `lib/ledger.ts` → `app/api/ledger/*` → `lib/ledger-server.ts` → JSON Ledger API v2.
+> CI in `.github/workflows/daml.yml`. **Note:** the shared M2M user is at its 1000-rights
+> cap, so the demo reuses existing scratch parties (operator=Dave, A=Carol, B=Investor,
+> C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
+> (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
 
 > **Redeploy status (2026-07-11):** the live package is now **v1.0.1**, id
 > `8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254` (a valid SCU upgrade of the
