@@ -117,13 +117,14 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Compute/Settle choices take a cycleId arg; NettingCycle has no cycleId field) | Jishnu | ✅ | T48 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle. Redeploy path now proven (T52), but this changes operator ACS visibility (obligations reads would need rework) and needs its own SCU upgrade + re-seed, deferred as pre-deadline risk | | 🔲 | - |
 | T54 | P2 | FE | Fix SSR hydration mismatches (React #418/#423/#425 in prod console on /app; likely NumberTicker/time formatting rendering differently server vs client). Non-breaking, but noisy. | | 🔲 | - |
-| T55 | P1 | FE | Audit page (`app/app/audit/page.tsx`) is 100% Zustand store while badged live; wire gross obligations + net position from `getObligationsFor`/`getNetPositionFor` (settled-leg trail has no ledger query, so label that part "session view") | | 🔲 | T30 |
-| T56 | P2 | FE | Dashboard "Current cycle" + "Your obligations" tiles are store reads; wire the obligations count via `getObligationsFor`; cycle status needs a thin `listOpenCycle` server op (ACS query mirroring `openCycleAndCompute`) | | 🔲 | T30 |
-| T57 | P2 | FE | Recent-activity feed is 100% mock seed (`SEED_ACTIVITY`); either wire it to a `/v2/updates` server route or relabel it "session activity" so it does not imply ledger history | | 🔲 | - |
+| T55 | P1 | FE | Audit page live: gross obligations + net position + settled legs now from the ledger; net positions recovered from tx history (survive Settle), cycle label uses the live on-ledger ref. Verified in-browser | | ✅ | T30 |
+| T56 | P2 | FE | Dashboard "Current cycle" (live `getCycleStatusLive`) + "Your obligations" count (live `getObligationsFor`) wired. Verified in-browser | | ✅ | T30 |
+| T57 | P2 | FE | Recent-activity feed now real on-chain events via `getActivityLive` over `/v2/updates` (settle/compute/cycle/obligation), mock fallback kept. Verified in-browser | | ✅ | - |
 | T58 | P2 | FE | Live obligation status collapses netted->open on refetch (`ledger-map.ts:47` maps only open/settled); infer "netted" client-side by cross-referencing the latest cycle's obligationCids (no redeploy) | | 🔲 | T30 |
 | T59 | P1 | FE | ISO 20022 MX-shaped settlement export (MT/MX coexistence ended 2025-11-22; generic CSV is not pluggable into bank/TMS rails). Extends T45's CSV | | 🔲 | T45 |
 | T60 | P2 | DOCS | Positioning refresh: reframe settlement-asset roadmap around the GENIUS Act PPSI category; name Cycles Protocol as the operator-blind-netting watch item; reference UNIDROIT Principles on Close-out Netting for the legal-netting artifact; refresh deck proof points with the DTCC/Canton tokenization pilot (live 2026-07) + ~700-institution / ~$9T-monthly Canton scale | | 🔲 | T26,T47 |
 | T61 | P3 | DAML | Add a UETR-style traceable reference to `Obligation`/settled leg (gpi baseline; SCU-safe only as `Optional Text`); plus a design note on strategic under-funding of the pre-cycle funding check (Garratt et al. 2026) | | 🔲 | T48 |
+| T62 | P2 | FE | Dashboard network-topology stats (validators, governance, rounds/day, CC burnt) are the last mock: the Canton Scan API is unreachable from our setup (global devnet scan returns 403, validator scan URL does not resolve). Needs operator-provisioned Scan API access; today mock and honestly labeled "via the Scan API (mocked)". CC price/market-cap already live via CoinGecko | | 🔲 | - |
 
 > **DAML-interaction spine (branch `daml-interaction`, 2026-07-10), LIVE:**
 > `daml/deploy.sh` ran end-to-end on the 5N devnet → settled **A=115k/B=130k/C=55k**,
@@ -143,9 +144,11 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 
 > **UI + settlement upgrade plan (T27–T61):** full per-task detail and the mock-vs-real audit are in
 > [`docs/UPGRADE_PLAN.md`](docs/UPGRADE_PLAN.md). Rule for every FE task: same visuals, real data, mock
-> fallback kept. Most of the app is now wired live (dashboard balance/CC price, obligations, cycle,
-> settlement, policy, privacy-check); the remaining mock surface is the audit page (T55), the dashboard
-> cycle/obligation tiles (T56), and the activity feed (T57). Wire to the live ledger without restyling.
+> fallback kept. **The app now runs on real on-chain data end to end**: dashboard balance/CC price +
+> activity feed (live tx history) + cycle/obligation tiles, obligations, cycle, settlement, policy,
+> privacy-check, and the audit page (gross obligations, net positions recovered from history, settled
+> legs). The ONLY remaining mock is the dashboard network-topology stats (T62), because the Canton Scan
+> API is not reachable from our setup, that piece is honestly labeled "(mocked)" in the UI.
 
 **Suggested parallelization (day 1):** one person takes **T01 → T02** (unblocks
 everything on-ledger); the other starts **T03** (Daml scaffold, authoring needs no
