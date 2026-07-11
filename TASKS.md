@@ -125,6 +125,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T50 | P2 | FE | Policy caption conditional on live read; checkPolicy distinguish network error from real breach | Jishnu | ✅ | T31 |
 | T51 | P2 | FE | Fail-loud in prod too; fix jina proxy envelope parse in /api/scan; penalize extract confidence on default counterparty | Jishnu | ✅ | T27 |
 | T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | Jishnu | ✅ | T48 |
+| T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Settle/Compute choices dropped the cycleId arg) | | 🔲 | T48 |
 | T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle | | ⛔ | T09 (redeploy) |
 
 > **UI + settlement upgrade plan (T27–T34):** full per-task detail and the mock-vs-real audit are in

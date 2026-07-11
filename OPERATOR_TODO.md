@@ -63,6 +63,19 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 - [ ] Em-dashes are pervasive in existing docs/source (~200+, predating the rule). Tracked as
   T43 (per-line reword, not a blind sed). New writing is em-dash free.
 
+## Redeploy the settlement correctness fix (your decision)
+
+- [!] **T48 is fixed in source and CI-green, but not live yet.** A correctness review found the
+  deployed `Settle` never marked obligations settled (so repeated cycles re-net paid debts) and had
+  no replay guard. The fix is merged and validated (7 Daml tests pass), and CI now publishes the
+  built DAR as the `netchain-dar` artifact. To make it live, follow `docs/REDEPLOY.md`: download the
+  artifact, upload via `POST /v2/packages`, update `NETCHAIN_PKG_ID` in `.env` and Vercel, and re-run
+  `deploy.sh`. This is outward-facing: it mints a NEW package id, re-seeds the live demo state, and
+  the frontend must repoint, so I did not trigger it unprompted this close to the deadline. Say the
+  word and I will run the parts I can (upload + re-seed) and hand you the Vercel env change.
+- The current live demo still works for a single run; the bug only shows on a second cycle. T34/T40
+  (privacy refinement, source badge) are the other changes waiting on this same redeploy.
+
 ## Machine note (this Windows dev box)
 
 - [!] **Global npm is broken.** `npm install` fails with `SyntaxError: Invalid or unexpected
