@@ -47,9 +47,12 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
   MCP can authenticate (the value is in the untracked `.env`; `.mcp.json` only references it).
 - [ ] **Install Python 3** if you want the `ui-ux-pro-max` search script (it is not on this box).
   The skill's reference data still reads without it; only the search helper needs Python.
-- Playwright is installed (`@playwright/test` + Chromium). Live audit (2026-07-11): the obligations
-  page shows the real per-party ledger projection (company-a = 4 rows), but the dashboard USDCx
-  balance still renders the mock value (512,400 vs live 115k), which is task **T27**.
+- Playwright is installed (`@playwright/test` + Chromium). Live audit (2026-07-11, re-verified after
+  the T48 redeploy): the obligations page shows the real per-party ledger projection (company-a = 4
+  rows), and the dashboard USDCx balance card **does render the live on-ledger value (115,000.00 for
+  company-a)** with the "Live on-ledger balance" caption. An earlier audit reading 512,400 was a
+  `NumberTicker` timing artifact, it animates from the mock initial value before `getBalanceLive`
+  resolves, then settles on the live number. No mock fix needed there.
 
 ## Rule compliance (needs your decision)
 
