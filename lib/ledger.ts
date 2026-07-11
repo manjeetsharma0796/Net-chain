@@ -93,6 +93,19 @@ export async function getCycleStatusLive(): Promise<{
   return null;
 }
 
+/** All net positions from the most recent cycle (from history), or null. */
+export async function getNetPositionsLive(): Promise<NetPosition[] | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch("/api/ledger/net-positions");
+    if (r.ok) return (await r.json()) as NetPosition[];
+  } catch {
+    /* fall through */
+  }
+  warnFallback("getNetPositionsLive", "null");
+  return null;
+}
+
 /* ---- market data (T27, CoinGecko via /api/scan) -------------------------- */
 
 export interface ScanLive {

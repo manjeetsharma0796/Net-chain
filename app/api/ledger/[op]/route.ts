@@ -8,6 +8,7 @@ import {
   getAllAccountBalances,
   getContract,
   getCycleStatusLive,
+  getLastCycleNetPositionsLive,
   getNetPosition,
   getPolicy,
   isLive,
@@ -59,6 +60,13 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
   if (params.op === "cycle-status") {
     try {
       return NextResponse.json(await getCycleStatusLive());
+    } catch (e) {
+      return fail(e);
+    }
+  }
+  if (params.op === "net-positions") {
+    try {
+      return NextResponse.json(await getLastCycleNetPositionsLive());
     } catch (e) {
       return fail(e);
     }

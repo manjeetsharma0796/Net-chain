@@ -401,6 +401,21 @@ export async function getCycleStatusLive(): Promise<{
   return { status: open ? "open" : "settled", ref: chosen.contractId ? chosen.contractId.slice(-8) : null };
 }
 
+/** All net positions from the most recent cycle, recovered from history so the
+ * audit view survives Settle archiving them. Operator-scoped, newest cycle. */
+export async function getLastCycleNetPositionsLive(): Promise<NetPosition[]> {
+  const txs = await updateHistory(); // newest-first
+  for (const tx of txs) {
+    const nps = tx.events.filter((e) => e.kind === "created" && e.template === "NetPosition");
+    if (nps.length) {
+      return nps
+        .map((e) => toNetPosition({ contractId: e.contractId, payload: e.payload }, toPartyId))
+        .filter((n): n is NetPosition => n !== null);
+    }
+  }
+  return [];
+}
+
 /**
  * Shared by computeNetPositionsOnLedger and runAndSettle: build a cycle id,
  * create a NettingCycle over the current open obligations, find its contract
