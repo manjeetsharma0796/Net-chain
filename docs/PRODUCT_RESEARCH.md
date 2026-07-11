@@ -300,6 +300,47 @@ now would be scope creep against demand that does not exist yet.
 
 ---
 
+## 4. 2026 regulatory and competitive update
+
+Facts that post-date the landscape above, each tied to a NetChain implication.
+
+- **ISO 20022 MX is now mandatory, not a migration.** The SWIFT MT/MX coexistence period ended
+  2025-11-22; cross-border instructions must be exchanged in ISO 20022 MX (CBPR+) or risk rejection,
+  with unstructured addresses barred from November 2026 [64]. Implication: the settled-leg export must
+  be pain.001-shaped to be ingestible by a real bank/TMS. Now built (T59); a generic CSV alone would
+  not clear.
+- **GENIUS Act (signed 2025-07-18) creates a real settlement-asset category.** It defines "permitted
+  payment stablecoin issuers" (PPSIs) with 1:1 reserves and Fed/OCC supervision; the OCC's 2026
+  rulemaking would let a national-trust-chartered PPSI settle in central-bank money [65][66].
+  Implication: the Cash-token placeholder now has a specific, nameable regulated target (a PPSI stablecoin
+  or tokenized deposit), not just "USDCx someday."
+- **Operator-blind netting now has a funded builder.** Cycles Protocol (Cosmos co-founder; roughly $8.7M
+  raised, Coinbase Ventures among backers) is building TEE plus ZK multilateral clearing that removes the
+  trusted-operator-sees-all assumption [67]. Implication: track it as the named competitive risk on the
+  confidentiality axis, as Ripple/GTreasury is named on the netting axis. NetChain's Canton-native
+  per-party privacy is defensible for now but no longer uncontested research.
+- **A named legal-netting standard exists.** UNIDROIT's Principles on the Operation of Close-out Netting
+  Provisions (2013; roughly 26 states plus the EU) give the missing "netting agreement artifact" a real
+  standard to reference by name instead of a generic legal-opinion placeholder [68].
+- **The "same production network" proof point is stronger.** DTCC's tokenization pilot (SEC no-action
+  Dec 2025) reached limited live production on Canton in July 2026 (tokenized Russell 1000, ETFs, US
+  Treasuries; 50-plus firms including BlackRock, Goldman, JPMorgan, Circle); Canton overall cites roughly
+  700 institutions and about $9T/month settled [69][70]. Implication: refresh deck proof points from
+  Broadridge-only to the DTCC/Canton July-2026 figures.
+- **Traceability is baseline.** SWIFT gpi carries a UETR that lets any party trace a payment end to end
+  [71]; NetChain has an on-ledger updateId but no portable cross-institution reference. Worth a
+  UETR-style field (tracked as T61).
+- **Design caution: strategic under-funding.** A 2026 study of Canada's high-value payment system finds
+  banks rationally engineer gridlock to save liquidity [72]; a rational NetChain participant could
+  deliberately under-fund to force a cheaper re-net rather than genuinely default. Worth a design note on
+  the pre-cycle funding check.
+
+Confidence caveats: the Cycles Protocol figures are from its own whitepaper and press coverage (not
+independently audited); the Garratt/Lu/Tian applicability to an operator-run corporate netting cycle is
+an inference from a bank-RTGS setting, offered as a design caution, not a proven equivalence.
+
+---
+
 ## Sources
 
 1. DBS Corporate Banking, "Benefits of Multilateral Payment Netting." https://www.dbs.com.sg/corporate/insights/multilateral-payment-netting
@@ -365,6 +406,15 @@ now would be scope creep against demand that does not exist yet.
 61. HQLAX, "HQLAx Announces Strategic Investments from Broadridge and Digital Asset to Support its Next Phase of Growth on Canton." https://www.hqla-x.com/post/hqlax-announces-strategic-investments-from-broadridge-and-digital-asset-to-support-its-next-phase-of-growth-on-canton
 62. Canton Network, "USDCx Now Live on Canton: Unlocking Private and Composable USDC-Backed Settlement." https://www.canton.network/blog/usdcx-now-live-on-canton-unlocking-private-and-composable-usdc-backed-settlement
 63. Canton Network, "What is CIP-56? A Guide to Canton's Token Standard." https://www.canton.network/blog/what-is-cip-56-a-guide-to-cantons-token-standard
+64. BNY, "Update on ISO 20022 End of Co-Existence" (May 2025); PaymentExpert, "Swift's ISO 20022 cutover: The end of MT and a 20-year promise" (Nov 2025). https://www.bny.com/assets/corporate/documents/pdf/iso-20022-end-of-co-existence_-may-2025-final.pdf ; https://paymentexpert.com/2025/11/21/swifts-iso-20022-cutover-the-end-of-mt-and-a-20-year-promise/
+65. Wikipedia, "GENIUS Act"; World Economic Forum, "How will the GENIUS Act work in the US and impact the world?" https://en.wikipedia.org/wiki/GENIUS_Act ; https://www.weforum.org/stories/2025/07/stablecoin-regulation-genius-act/
+66. Davis Wright Tremaine, "OCC Proposes Stablecoin Issuer Regulation, Finalizes Rule on National Trust Banks Authority" (Feb 2026). https://www.dwt.com/blogs/financial-services-law-advisor/2026/02/occ-stablecoin-rule-national-trust-banks-powers
+67. The Block, "Cosmos co-founder's new multilateral clearing startup Cycles raises $6.4 million"; Cycles, "Respect the Graph, Announcing the Cycles Whitepaper." https://www.theblock.co/post/402176/cosmos-co-founders-new-multilateral-clearing-startup-cycles-raises-6-4-million ; https://cycles.money/blog/cycles-whitepaper
+68. UNIDROIT, "Netting" instrument page and "Principles on the Operation of Close-Out Netting Provisions." https://www.unidroit.org/instruments/capital-markets/netting/
+69. DTCC, "DTCC Advances Development of New Tokenization Service" (May 2026); Reuters/Yahoo Finance coverage of the July 2026 pilot launch. https://www.dtcc.com/news/2026/may/04/dtcc-advances-development-of-new-tokenization-service ; https://finance.yahoo.com/markets/stocks/articles/dtcc-tokenize-russell-1000-stocks-161215488.html
+70. Genfinity, "Inside the Canton Network: Infrastructure for Real-Time, Tokenized Institutional Finance" (Jan 2026). https://genfinity.io/2026/01/29/canton-network-institutional-blockchain-overview/
+71. Swift, "Swift gpi" product page. https://www.swift.com/products/swift-gpi
+72. Garratt, Lu, Tian, "How Banks Create Gridlock in Payment Systems to Save Liquidity: The Case of Canada," Journal of Money, Credit and Banking (2026). https://onlinelibrary.wiley.com/doi/10.1111/jmcb.70013
 
 **Not independently re-verified in this pass (flagged inline as unverified/moderate confidence):** the
 exact real-time sanctions-screening citation (source 21 is representative industry guidance, not a single
