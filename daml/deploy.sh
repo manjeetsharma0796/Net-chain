@@ -208,7 +208,7 @@ else
   say "Seeding 6 Obligations (gross 460k → net 45k)"
   # obligor obligee amount ref  (actAs = obligor, the signatory)
   obl() { create "$1" Obligation \
-    "{\"operator\":\"$OP\",\"obligor\":\"$1\",\"obligee\":\"$2\",\"amount\":\"$3\",\"reference\":\"$4\",\"dueDate\":\"2026-07-20\",\"settled\":false}"; }
+    "{\"operator\":\"$OP\",\"obligor\":\"$1\",\"obligee\":\"$2\",\"amount\":\"$3\",\"reference\":\"$4\",\"dueDate\":\"2026-07-20\",\"settled\":false,\"source\":null,\"uetr\":null}"; }
   obl "$CA" "$CB" 120000.0 "AB"
   obl "$CB" "$CC"  95000.0 "BC"
   obl "$CC" "$CA" 150000.0 "CA"

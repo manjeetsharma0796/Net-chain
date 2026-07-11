@@ -32,6 +32,10 @@ template Obligation
     reference : Text
     dueDate : Text
     settled : Bool
+    -- Provenance ("agent" vs "manual") and a UETR-style trace ref. Optional so
+    -- this is a valid Smart Contract Upgrade of v1.0.1 (old contracts read None).
+    source : Optional Text
+    uetr : Optional Text
   where
     signatory obligor
     observer obligee, operator

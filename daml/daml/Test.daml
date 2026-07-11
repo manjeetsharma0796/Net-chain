@@ -34,7 +34,7 @@ seedCycle Setup{operator, a, b, c} capA capB capC = do
   polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = capA
   polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = capB
   polC <- submit c $ createCmd TreasuryPolicy with operator, party = c, maxSettlementPerCycle = capC
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
   o1 <- ob a b 120000.0 "AB"
   o2 <- ob b c 95000.0 "BC"
   o3 <- ob c a 150000.0 "CA"
@@ -50,7 +50,7 @@ seedCycle Setup{operator, a, b, c} capA capB capC = do
 test_counterparty_privacy : Script ()
 test_counterparty_privacy = do
   Setup{operator, a, b, c} <- parties
-  _ <- submit a $ createCmd Obligation with operator, obligor = a, obligee = b, amount = 120000.0, reference = "INV-1", dueDate = "2026-07-20", settled = False
+  _ <- submit a $ createCmd Obligation with operator, obligor = a, obligee = b, amount = 120000.0, reference = "INV-1", dueDate = "2026-07-20", settled = False, source = None, uetr = None
   cObls <- query @Obligation c
   length cObls === 0
   aObls <- query @Obligation a
@@ -123,7 +123,7 @@ test_prefunding_check = do
   accA <- submit operator $ createCmd Account with operator, owner = a, balance = 100000.0
   accB <- submit operator $ createCmd Account with operator, owner = b, balance = 100000.0
   accC <- submit operator $ createCmd Account with operator, owner = c, balance = 10000.0
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
   o1 <- ob a b 120000.0 "AB"
   o2 <- ob b c 95000.0 "BC"
   o3 <- ob c a 150000.0 "CA"
@@ -148,7 +148,7 @@ test_drop_and_renet = do
   accB <- submit operator $ createCmd Account with operator, owner = b, balance = 100000.0
   polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = 500000.0
   polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = 500000.0
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
   o1 <- ob a b 120000.0 "AB"
   o2 <- ob b c 95000.0 "BC"
   o3 <- ob c a 150000.0 "CA"
@@ -184,7 +184,7 @@ test_partial_settlement = do
   polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = 500000.0
   polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = 500000.0
   polC <- submit c $ createCmd TreasuryPolicy with operator, party = c, maxSettlementPerCycle = 500000.0
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
   o1 <- ob b a 50000.0 "BA"
   o2 <- ob c a 60000.0 "CA"
   cyc <- submit operator $ createCmd NettingCycle with
