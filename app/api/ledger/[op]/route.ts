@@ -4,8 +4,10 @@ import {
   computeNetPositionsOnLedger,
   createObligation,
   getAccountBalance,
+  getActivityLive,
   getAllAccountBalances,
   getContract,
+  getCycleStatusLive,
   getNetPosition,
   getPolicy,
   isLive,
@@ -39,10 +41,24 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
   const blocked = guard();
   if (blocked) return blocked;
 
-  // /api/ledger/balances needs no party param, queries as operator.
+  // These need no party param, they query as operator.
   if (params.op === "balances") {
     try {
       return NextResponse.json(await getAllAccountBalances());
+    } catch (e) {
+      return fail(e);
+    }
+  }
+  if (params.op === "activity") {
+    try {
+      return NextResponse.json(await getActivityLive());
+    } catch (e) {
+      return fail(e);
+    }
+  }
+  if (params.op === "cycle-status") {
+    try {
+      return NextResponse.json(await getCycleStatusLive());
     } catch (e) {
       return fail(e);
     }

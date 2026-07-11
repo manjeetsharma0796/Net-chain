@@ -12,7 +12,7 @@ import "server-only";
  */
 
 import { LedgerContract, PARTY_IDS, toAccount, toNetPosition, toObligation } from "@/lib/ledger-map";
-import { NetPosition, Obligation, PartyId } from "@/lib/types";
+import { ActivityEvent, NetPosition, Obligation, PartyId } from "@/lib/types";
 
 const env = process.env;
 const BASE = env.BASE ?? "";
@@ -247,6 +247,158 @@ export async function getAllAccountBalances(): Promise<Partial<Record<PartyId, n
     if (acct) result[acct.party] = acct.balance;
   }
   return result;
+}
+
+/* -------------------------------------------------------------------------- */
+/* transaction history: real on-chain activity feed + cycle status            */
+/* -------------------------------------------------------------------------- */
+
+type HistoryEvent = {
+  kind: "created" | "archived";
+  template: string; // last id segment, e.g. "Obligation"
+  contractId: string;
+  payload: Record<string, unknown>;
+};
+type HistoryTx = {
+  updateId: string;
+  commandId: string;
+  effectiveAt: string;
+  events: HistoryEvent[];
+};
+
+/** Flat transactions from the operator's projection, newest-first. */
+async function updateHistory(): Promise<HistoryTx[]> {
+  const end = await ledgerEnd();
+  const res = await post("/v2/updates/flats", {
+    beginExclusive: 0,
+    endInclusive: end,
+    filter: {
+      filtersByParty: {
+        [ledgerId("operator")]: {
+          cumulative: [
+            {
+              identifierFilter: {
+                WildcardFilter: { value: { includeCreatedEventBlob: false } },
+              },
+            },
+          ],
+        },
+      },
+    },
+    verbose: true,
+  });
+  const items: unknown[] = Array.isArray(res) ? res : [res];
+  const txs: HistoryTx[] = [];
+  for (const item of items) {
+    if (!isRecord(item) || !isRecord(item.update)) continue;
+    const wrap = item.update.Transaction;
+    const tx = isRecord(wrap) && isRecord(wrap.value) ? wrap.value : null;
+    if (!tx) continue;
+    const rawEvents = Array.isArray(tx.events) ? tx.events : [];
+    const events: HistoryEvent[] = [];
+    for (const ev of rawEvents) {
+      if (!isRecord(ev)) continue;
+      const k = Object.keys(ev)[0];
+      const v = isRecord(ev[k]) ? (ev[k] as Record<string, unknown>) : {};
+      events.push({
+        kind: k === "CreatedEvent" ? "created" : "archived",
+        template: String(v.templateId ?? "").split(":").pop() ?? "",
+        contractId: String(v.contractId ?? ""),
+        payload: isRecord(v.createArgument) ? (v.createArgument as Record<string, unknown>) : {},
+      });
+    }
+    txs.push({
+      updateId: String(tx.updateId ?? ""),
+      commandId: String(tx.commandId ?? ""),
+      effectiveAt: String(tx.effectiveAt ?? ""),
+      events,
+    });
+  }
+  return txs.reverse(); // ledger returns oldest-first
+}
+
+const PARTY_LABEL: Record<string, string> = {
+  "company-a": "Company A",
+  "company-b": "Company B",
+  "company-c": "Company C",
+};
+function partyLabel(id: string): string {
+  return PARTY_LABEL[toPartyId(id) ?? ""] ?? "a counterparty";
+}
+
+/** Map one transaction to a human activity line, or null to skip it. */
+function mapTx(tx: HistoryTx): ActivityEvent | null {
+  const created = tx.events.filter((e) => e.kind === "created");
+  const archived = tx.events.filter((e) => e.kind === "archived");
+  const has = (t: string) => created.some((e) => e.template === t);
+  const base = { id: tx.updateId, at: tx.effectiveAt };
+
+  // Settle consumes NetPositions and re-creates Accounts with moved balances.
+  if (
+    archived.some((e) => e.template === "NetPosition") ||
+    (has("Account") && archived.some((e) => e.template === "Account"))
+  ) {
+    const n = created.filter((e) => e.template === "Account").length;
+    return {
+      ...base,
+      actor: "operator",
+      kind: "settlement",
+      message: `Settlement committed atomically, ${n || "all"} balances moved on-ledger`,
+    };
+  }
+  if (has("NettingCycle")) {
+    const cyc = created.find((e) => e.template === "NettingCycle");
+    const cids = cyc && Array.isArray(cyc.payload.obligationCids) ? cyc.payload.obligationCids : [];
+    return { ...base, actor: "operator", kind: "cycle", message: `Netting cycle opened over ${cids.length} obligations` };
+  }
+  if (has("NetPosition")) {
+    const n = created.filter((e) => e.template === "NetPosition").length;
+    return { ...base, actor: "operator", kind: "cycle", message: `Net positions computed for ${n} participants` };
+  }
+  if (has("Obligation")) {
+    const p = created.find((e) => e.template === "Obligation")!.payload;
+    const actor = toPartyId(String(p.obligor ?? "")) ?? "operator";
+    const amt = Number(p.amount ?? 0).toLocaleString("en-US");
+    const ref = p.reference ? `, ref ${p.reference}` : "";
+    return {
+      ...base,
+      actor,
+      kind: "obligation",
+      message: `Obligation recorded: ${amt} USDCx (${partyLabel(String(p.obligor ?? ""))} to ${partyLabel(String(p.obligee ?? ""))})${ref}`,
+    };
+  }
+  if (has("Account")) {
+    const n = created.filter((e) => e.template === "Account").length;
+    return { ...base, actor: "operator", kind: "network", message: `Treasury accounts funded for ${n} parties` };
+  }
+  if (has("TreasuryPolicy")) {
+    return { ...base, actor: "operator", kind: "policy", message: "Treasury policy cap registered on-ledger" };
+  }
+  return null;
+}
+
+/** Real on-chain activity feed from transaction history, newest-first (max 8). */
+export async function getActivityLive(): Promise<ActivityEvent[]> {
+  const txs = await updateHistory();
+  const out: ActivityEvent[] = [];
+  for (const tx of txs) {
+    const ev = mapTx(tx);
+    if (ev) out.push(ev);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+/** Live netting-cycle status from the ACS (operator is signatory). */
+export async function getCycleStatusLive(): Promise<{
+  status: "open" | "settled" | "none";
+  ref: string | null;
+}> {
+  const rows = await queryAcs(ledgerId("operator"), "NettingCycle");
+  if (!rows.length) return { status: "none", ref: null };
+  const open = rows.find((c) => c.payload.settled !== true);
+  const chosen = open ?? rows[rows.length - 1];
+  return { status: open ? "open" : "settled", ref: chosen.contractId ? chosen.contractId.slice(-8) : null };
 }
 
 /**

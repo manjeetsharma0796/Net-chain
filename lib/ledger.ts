@@ -11,7 +11,7 @@
  */
 
 import * as api from "@/lib/api";
-import { NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "@/lib/types";
+import { ActivityEvent, NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "@/lib/types";
 
 const LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
@@ -58,6 +58,38 @@ export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>
     /* fall through */
   }
   warnFallback("getBalancesLive", "null");
+  return null;
+}
+
+/* ---- activity feed + cycle status (live transaction history) ------------- */
+
+/** Real on-chain activity feed from ledger transaction history, or null. */
+export async function getActivityLive(): Promise<ActivityEvent[] | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch("/api/ledger/activity");
+    if (r.ok) return (await r.json()) as ActivityEvent[];
+  } catch {
+    /* fall through */
+  }
+  warnFallback("getActivityLive", "null");
+  return null;
+}
+
+/** Live netting-cycle status (open/settled/none + short ref), or null. */
+export async function getCycleStatusLive(): Promise<{
+  status: "open" | "settled" | "none";
+  ref: string | null;
+} | null> {
+  if (!LIVE) return null;
+  try {
+    const r = await fetch("/api/ledger/cycle-status");
+    if (r.ok)
+      return (await r.json()) as { status: "open" | "settled" | "none"; ref: string | null };
+  } catch {
+    /* fall through */
+  }
+  warnFallback("getCycleStatusLive", "null");
   return null;
 }
 
