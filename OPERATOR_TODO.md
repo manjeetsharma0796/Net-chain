@@ -63,18 +63,33 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 - [ ] Em-dashes are pervasive in existing docs/source (~200+, predating the rule). Tracked as
   T43 (per-line reword, not a blind sed). New writing is em-dash free.
 
-## Redeploy the settlement correctness fix (your decision)
+## Redeploy the settlement correctness fix (DONE except one Vercel step)
 
-- [!] **T48 is fixed in source and CI-green, but not live yet.** A correctness review found the
-  deployed `Settle` never marked obligations settled (so repeated cycles re-net paid debts) and had
-  no replay guard. The fix is merged and validated (7 Daml tests pass), and CI now publishes the
-  built DAR as the `netchain-dar` artifact. To make it live, follow `docs/REDEPLOY.md`: download the
-  artifact, upload via `POST /v2/packages`, update `NETCHAIN_PKG_ID` in `.env` and Vercel, and re-run
-  `deploy.sh`. This is outward-facing: it mints a NEW package id, re-seeds the live demo state, and
-  the frontend must repoint, so I did not trigger it unprompted this close to the deadline. Say the
-  word and I will run the parts I can (upload + re-seed) and hand you the Vercel env change.
-- The current live demo still works for a single run; the bug only shows on a second cycle. T34/T40
-  (privacy refinement, source badge) are the other changes waiting on this same redeploy.
+- [x] **T48 redeploy is LIVE (2026-07-11).** The correctness fix is now vetted and running on
+  Devnet. What was done:
+  - Reworked the fix to be a **valid Canton Smart Contract Upgrade** of the deployed `v1.0.0`
+    (the first attempt failed `NOT_VALID_UPGRADE_PACKAGE` because it removed choice input fields).
+    v1.0.1 keeps every `v1.0.0` choice signature + template field and changes only choice bodies
+    plus the added `MarkSettled` choice. CI green (8 Daml tests).
+  - Uploaded `netchain-1.0.1.dar` via `POST /v2/packages` (HTTP 200). **New package id
+    `8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254`** (supersedes `cdd7…55e7`).
+  - Updated `NETCHAIN_PKG_ID` in `.env` to the new id.
+  - **Reset + re-seeded live state under v1.0.1** and settled one clean cycle. Verified via ACS:
+    Accounts **A=115k, B=130k, C=55k**, all 6 Obligations **settled=true** (the C1 fix, proven live),
+    NetPositions archived by Settle, cycle replay-guarded. The old buggy state (which had drifted to
+    A=130k/B=160k/C=10k from repeated re-netting) was archived first.
+- [!] **Remaining human action, update Vercel env.** The live Vercel app still points at the old
+  package id. The CLI here is not logged in (no token in `.env`), so you must do this:
+  ```
+  vercel login
+  vercel env rm  NETCHAIN_PKG_ID production
+  printf '8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254' | vercel env add NETCHAIN_PKG_ID production
+  vercel --prod           # redeploy so the new env takes effect
+  ```
+  Until this runs, the deployed site (if in live mode) creates cycles under the old v1.0.0 package
+  and will not show the fix. Local `npm run dev` with the updated `.env` already uses v1.0.1.
+- T34/T40 (privacy refinement, source badge) were the other changes waiting on this redeploy and
+  are now unblocked (they ship on the same v1.0.1 package).
 
 ## Machine note (this Windows dev box)
 

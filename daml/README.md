@@ -13,9 +13,11 @@ Privacy-preserving multilateral netting + atomic settlement.
   - `test_atomic_settlement`, every balance moves in one commit
   - `test_settlement_atomic_abort`, over-cap → whole commit reverts (nothing moves)
   - `test_policy_rejects_over_threshold`, 250k > 200k cap fails on-ledger
-- ✅ Deployed, **package id `cdd76816c72bba50c880ea7f8d48c9f78ae5d37e48706aa012cfeac80ee655e7`**
-  live on Devnet (`POST /v2/packages` → HTTP 200; present in `GET /v2/packages`).
-  **PV35 gate passed**, the validator accepts LF 2.3.
+- ✅ Deployed, **package id `8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254`**
+  (v1.0.1, a valid Smart Contract Upgrade of the original v1.0.0 `cdd7…55e7`) live on Devnet
+  (`POST /v2/packages` → HTTP 200; present in `GET /v2/packages`). **PV35 gate passed**, the
+  validator accepts LF 2.3. v1.0.1 carries the T48 settlement-correctness fix (obligations marked
+  settled, replay guard, NetPositions archived).
 - ⬜ On-ledger demo *state* (parties + instances + cycle/settle), see **Remaining**.
 
 ## Toolchain (one-time)
