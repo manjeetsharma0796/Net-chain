@@ -75,6 +75,7 @@ template NettingCycle
     operator : Party
     participants : [Party]
     obligationCids : [ContractId Obligation]
+    cycleId : Text
     settled : Bool
   where
     signatory operator
@@ -83,15 +84,13 @@ template NettingCycle
     -- Compute each participant's net (receivable - payable) and emit a
     -- per-party NetPosition contract.
     nonconsuming choice ComputeNetPositions : [ContractId NetPosition]
-      with
-        cycleId : Text
       controller operator
       do
         obls <- mapA fetch obligationCids
         forA participants \p -> do
           let payable = sum [ o.amount | o <- obls, o.obligor == p ]
           let receivable = sum [ o.amount | o <- obls, o.obligee == p ]
-          create (NetPosition with operator, party = p, cycleId, net = receivable - payable)
+          create (NetPosition with operator, party = p, cycleId = this.cycleId, net = receivable - payable)
 
     -- T23 pre-cycle funding check (defaulter pays). Returns the net payers whose
     -- account cannot cover their net; an empty list means the cycle is fully
@@ -120,7 +119,6 @@ template NettingCycle
     -- settled batch. Precedent: CLS rescind + re-net, T2 AS procedure B, Lamfalussy IV.
     nonconsuming choice ComputeNetPositionsExcluding : [ContractId NetPosition]
       with
-        cycleId : Text
         excluded : [Party]
       controller operator
       do
@@ -130,20 +128,22 @@ template NettingCycle
         forA survivors \p -> do
           let payable = sum [ o.amount | o <- inScope, o.obligor == p ]
           let receivable = sum [ o.amount | o <- inScope, o.obligee == p ]
-          create (NetPosition with operator, party = p, cycleId, net = receivable - payable)
+          create (NetPosition with operator, party = p, cycleId = this.cycleId, net = receivable - payable)
 
     -- Atomic settlement: assert every net is within policy, then move every
     -- account balance, all in ONE transaction. Any failed assertion rolls
     -- back the whole commit, so nothing moves (all-or-nothing DvP).
     choice Settle : ContractId NettingCycle
       with
-        cycleId : Text
         netPositionCids : [ContractId NetPosition]
         accountCids : [ContractId Account]
         policyCids : [ContractId TreasuryPolicy]
       controller operator
       do
+        assertMsg "cycle already settled" (not this.settled)
         nps <- mapA fetch netPositionCids
+        forA_ nps \np ->
+          assertMsg "NetPosition from a different cycle" (np.cycleId == this.cycleId)
         policies <- mapA fetch policyCids
         -- Policy gate (all-or-nothing): each party within its cap.
         forA_ nps \np ->
@@ -162,4 +162,18 @@ template NettingCycle
               _ <- create (acc with balance = acc.balance + np.net)
               pure ()
             None -> pure ()
+        -- Mark settled only the obligations fully within this settlement's party
+        -- set; an obligation touching an excluded (dropped) party stays open so
+        -- a later cycle can still net it (T24/T25 drop-and-re-net semantics).
+        let settledParties = map (\np -> np.party) nps
+        forA_ obligationCids \oCid -> do
+          o <- fetch oCid
+          if not o.settled && o.obligor `elem` settledParties && o.obligee `elem` settledParties
+            then do
+              archive oCid
+              _ <- create (o with settled = True)
+              pure ()
+            else pure ()
+        -- Consume the NetPositions: single-use, so this cycle cannot be replayed.
+        forA_ netPositionCids archive
         create (this with settled = True)

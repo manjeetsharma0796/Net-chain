@@ -268,11 +268,11 @@ async function openCycleAndCompute(): Promise<{
   if (open.length < 2) throw new LedgerError("need at least two open obligations to net");
   const obligationCids = open.map((c) => c.contractId);
 
-  await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, settled: false });
+  await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, cycleId, settled: false });
   const cycleCid = latestUnsettled(await queryAcs(op, "NettingCycle"));
   if (!cycleCid) throw new LedgerError("netting cycle not found after create");
 
-  await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", { cycleId });
+  await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", {});
 
   return { op, cycleId, cycleCid };
 }
@@ -338,7 +338,13 @@ export async function checkPolicy(
     });
     return { ok: true };
   } catch (e) {
-    return { ok: false, ruleFired: e instanceof Error ? e.message : String(e) };
+    const msg = e instanceof Error ? e.message : String(e);
+    // Only a real TreasuryPolicy assertion is a policy breach; a network/infra
+    // error must propagate instead of being reported as one (M1).
+    if (msg.includes("TreasuryPolicy") || msg.includes("breach")) {
+      return { ok: false, ruleFired: msg };
+    }
+    throw e;
   }
 }
 
@@ -353,13 +359,15 @@ export async function runAndSettle(): Promise<{
 }> {
   const { op, cycleId, cycleCid } = await openCycleAndCompute();
 
-  const npRows = (await queryAcs(op, "NetPosition")).slice(-3);
-  const accRows = (await queryAcs(op, "Account")).slice(-3);
-  const polRows = (await queryAcs(op, "TreasuryPolicy")).slice(-3);
+  // Same filter as computeNetPositionsOnLedger: NetPositions accumulate across
+  // cycles, so scope strictly to this cycle's, not "the last 3" (H1/H3).
+  const npRows = (await queryAcs(op, "NetPosition")).filter((c) => c.payload.cycleId === cycleId);
+  const partyLedgerIds = PARTY_IDS.map(ledgerId);
+  const accRows = onePerParty(await queryAcs(op, "Account"), "owner", partyLedgerIds);
+  const polRows = onePerParty(await queryAcs(op, "TreasuryPolicy"), "party", partyLedgerIds);
   const cycleCid2 = latestUnsettled(await queryAcs(op, "NettingCycle"));
 
   const settle = await exercise(op, "NettingCycle", cycleCid2 ?? cycleCid, "Settle", {
-    cycleId,
     netPositionCids: npRows.map((c) => c.contractId),
     accountCids: accRows.map((c) => c.contractId),
     policyCids: polRows.map((c) => c.contractId),
@@ -374,4 +382,15 @@ export async function runAndSettle(): Promise<{
 function latestUnsettled(rows: LedgerContract[]): string | null {
   const open = rows.filter((c) => c.payload.settled !== true);
   return open.length ? open[open.length - 1].contractId : null;
+}
+
+/** One (the latest) active contract per known party id, keyed by `field`. */
+function onePerParty(
+  rows: LedgerContract[],
+  field: "owner" | "party",
+  partyIds: string[],
+): LedgerContract[] {
+  return partyIds
+    .map((pid) => rows.filter((r) => r.payload[field] === pid).at(-1))
+    .filter((r): r is LedgerContract => r !== undefined);
 }
