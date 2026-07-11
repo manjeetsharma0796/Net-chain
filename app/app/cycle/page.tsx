@@ -65,41 +65,47 @@ export default function CyclePage() {
     setCycleStatus("computing");
     setLiveMyPosition(null);
 
-    const liveResult = await runCycleLive();
+    try {
+      const liveResult = await runCycleLive();
 
-    let positions;
-    let usedCycleId = cycleId;
-    if (liveResult) {
-      positions = liveResult.netPositions;
-      usedCycleId = liveResult.cycleId;
-      // Fetch this party's position directly from the ledger (real per-party privacy).
-      const myPos = await getNetPositionFor(currentPartyId, positions);
-      setLiveMyPosition(myPos);
-    } else {
-      if (inScope.length < 2) {
-        setCycleStatus("open");
-        pushToast("error", "Select at least two obligations to net.");
-        return;
+      let positions;
+      let usedCycleId = cycleId;
+      if (liveResult) {
+        positions = liveResult.netPositions;
+        usedCycleId = liveResult.cycleId;
+        // Fetch this party's position directly from the ledger (real per-party privacy).
+        const myPos = await getNetPositionFor(currentPartyId, positions);
+        setLiveMyPosition(myPos);
+      } else {
+        if (inScope.length < 2) {
+          setCycleStatus("open");
+          pushToast("error", "Select at least two obligations to net.");
+          return;
+        }
+        await sleep(1400);
+        positions = computeNetPositions(inScope, cycleId);
       }
-      await sleep(1400);
-      positions = computeNetPositions(inScope, cycleId);
-    }
 
-    setNetPositions(positions);
-    setLegs(buildSettlementLegs(positions));
-    markObligations(inScope.map((o) => o.id), "netted");
-    setCycleStatus("computed");
-    logActivity({
-      actor: "operator",
-      kind: "cycle",
-      message: `Cycle ${usedCycleId} computed${liveResult ? " on-ledger" : ""}, ${positions.filter((p) => p.net !== 0).length} net positions`,
-    });
-    pushToast(
-      "success",
-      liveResult
-        ? "On-ledger netting complete. Each party reads only their own NetPosition."
-        : "Netting cycle computed. Each party sees only its own figure.",
-    );
+      setNetPositions(positions);
+      setLegs(buildSettlementLegs(positions));
+      markObligations(inScope.map((o) => o.id), "netted");
+      setCycleStatus("computed");
+      logActivity({
+        actor: "operator",
+        kind: "cycle",
+        message: `Cycle ${usedCycleId} computed${liveResult ? " on-ledger" : ""}, ${positions.filter((p) => p.net !== 0).length} net positions`,
+      });
+      pushToast(
+        "success",
+        liveResult
+          ? "On-ledger netting complete. Each party reads only their own NetPosition."
+          : "Netting cycle computed. Each party sees only its own figure.",
+      );
+    } catch (e) {
+      // Never leave the page stuck in "computing" on a ledger/network error.
+      setCycleStatus("open");
+      pushToast("error", `Netting cycle failed: ${e instanceof Error ? e.message : "unknown error"}`);
+    }
   };
 
   const inScopeObligations = obligations.filter((o) => selected.has(o.id));

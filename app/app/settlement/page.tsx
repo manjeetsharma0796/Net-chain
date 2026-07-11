@@ -90,6 +90,7 @@ export default function SettlementPage() {
     setBusy(true);
     setAborted(false);
     setCycleStatus("settling");
+    try {
     await sleep(1600); // the commit window, legs pulse while pending
 
     if (forceFail) {
@@ -132,7 +133,13 @@ export default function SettlementPage() {
       });
       pushToast("success", "Settled. Every leg cleared in one transaction.");
     }
-    setBusy(false);
+    } catch (e) {
+      // Never leave the settle button stuck spinning on a ledger/network error.
+      setCycleStatus("computed");
+      pushToast("error", `Settlement failed: ${e instanceof Error ? e.message : "unknown error"}`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (legs.length === 0) {
