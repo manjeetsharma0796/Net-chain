@@ -34,7 +34,7 @@ seedCycle Setup{operator, a, b, c} capA capB capC = do
   polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = capA
   polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = capB
   polC <- submit c $ createCmd TreasuryPolicy with operator, party = c, maxSettlementPerCycle = capC
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = Some True
   o1 <- ob a b 120000.0 "AB"
   o2 <- ob b c 95000.0 "BC"
   o3 <- ob c a 150000.0 "CA"
@@ -50,7 +50,7 @@ seedCycle Setup{operator, a, b, c} capA capB capC = do
 test_counterparty_privacy : Script ()
 test_counterparty_privacy = do
   Setup{operator, a, b, c} <- parties
-  _ <- submit a $ createCmd Obligation with operator, obligor = a, obligee = b, amount = 120000.0, reference = "INV-1", dueDate = "2026-07-20", settled = False, source = None, uetr = None
+  _ <- submit a $ createCmd Obligation with operator, obligor = a, obligee = b, amount = 120000.0, reference = "INV-1", dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = Some True
   cObls <- query @Obligation c
   length cObls === 0
   aObls <- query @Obligation a
@@ -123,7 +123,7 @@ test_prefunding_check = do
   accA <- submit operator $ createCmd Account with operator, owner = a, balance = 100000.0
   accB <- submit operator $ createCmd Account with operator, owner = b, balance = 100000.0
   accC <- submit operator $ createCmd Account with operator, owner = c, balance = 10000.0
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = Some True
   o1 <- ob a b 120000.0 "AB"
   o2 <- ob b c 95000.0 "BC"
   o3 <- ob c a 150000.0 "CA"
@@ -148,7 +148,7 @@ test_drop_and_renet = do
   accB <- submit operator $ createCmd Account with operator, owner = b, balance = 100000.0
   polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = 500000.0
   polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = 500000.0
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = Some True
   o1 <- ob a b 120000.0 "AB"
   o2 <- ob b c 95000.0 "BC"
   o3 <- ob c a 150000.0 "CA"
@@ -184,7 +184,7 @@ test_partial_settlement = do
   polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = 500000.0
   polB <- submit b $ createCmd TreasuryPolicy with operator, party = b, maxSettlementPerCycle = 500000.0
   polC <- submit c $ createCmd TreasuryPolicy with operator, party = c, maxSettlementPerCycle = 500000.0
-  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None
+  let ob obligor obligee amt ref = submit obligor $ createCmd Obligation with operator, obligor, obligee, amount = amt, reference = ref, dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = Some True
   o1 <- ob b a 50000.0 "BA"
   o2 <- ob c a 60000.0 "CA"
   cyc <- submit operator $ createCmd NettingCycle with
@@ -203,3 +203,28 @@ test_partial_settlement = do
   bObl.settled === False
   [(_, cObl)] <- query @Obligation c
   cObl.settled === False
+
+-- WIN 8 (v1.0.3), bilateral consent: an obligation the obligee has NOT accepted
+-- (accepted = None) is excluded from netting, so it can move no balance. Once the
+-- obligee exercises Accept, the same obligation nets. This is the fake-invoice
+-- safeguard: a debt settles only after BOTH parties have affirmed it on-ledger.
+test_bilateral_consent : Script ()
+test_bilateral_consent = do
+  Setup{operator, a, b} <- parties
+  -- B owes A 40k, signed by B (obligor) but not yet accepted by A (obligee).
+  pending <- submit b $ createCmd Obligation with
+    operator, obligor = b, obligee = a, amount = 40000.0, reference = "INV-40",
+    dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = None
+  cyc <- submit operator $ createCmd NettingCycle with
+    operator, participants = [a, b], obligationCids = [pending], settled = False
+  -- Unaccepted → excluded from the net → every participant nets to zero.
+  nps0 <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-pending"
+  n0 <- mapA (\cid -> do Some np <- queryContractId operator cid; pure np.net) nps0
+  n0 === [0.0, 0.0]
+  -- A (obligee) accepts; the SAME obligation now nets +40k / -40k.
+  accepted <- submit a $ exerciseCmd pending Accept
+  cyc2 <- submit operator $ createCmd NettingCycle with
+    operator, participants = [a, b], obligationCids = [accepted], settled = False
+  nps1 <- submit operator $ exerciseCmd cyc2 ComputeNetPositions with cycleId = "cyc-accepted"
+  n1 <- mapA (\cid -> do Some np <- queryContractId operator cid; pure np.net) nps1
+  n1 === [40000.0, -40000.0]

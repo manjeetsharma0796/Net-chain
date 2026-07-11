@@ -505,7 +505,28 @@ export async function createObligation(input: {
     // Provenance + a UETR-style trace ref, stamped at creation (v1.0.2).
     source: input.source ?? "manual",
     uetr: crypto.randomUUID(),
+    // Bilateral consent (v1.0.3): a freshly created obligation is PENDING
+    // (accepted = null) until the obligee exercises Accept. Only accepted
+    // obligations net, so this is the fake-invoice safeguard.
+    accepted: null,
   });
+}
+
+/**
+ * The obligee accepts an obligation (bilateral consent). Runs as the obligee,
+ * the choice's controller. Returns the update id. Only accepted obligations net.
+ */
+export async function acceptObligation(input: {
+  obligee: PartyId;
+  contractId: string;
+}): Promise<{ updateId?: string }> {
+  return exercise(
+    ledgerId(input.obligee),
+    "Obligation",
+    input.contractId,
+    "Accept",
+    {},
+  );
 }
 
 /** The on-ledger TreasuryPolicy cap for `party` (operator-scoped ACS), or null if absent. */

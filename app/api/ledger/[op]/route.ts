@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  acceptObligation,
   checkPolicy,
   computeNetPositionsOnLedger,
   createObligation,
@@ -134,6 +135,13 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
             source: body.source === "agent" ? "agent" : "manual",
           }),
         );
+      }
+      case "accept": {
+        const obligee = asParty(String(body.obligee ?? ""));
+        const contractId = String(body.contractId ?? "");
+        if (!obligee || !contractId)
+          return NextResponse.json({ error: "bad accept args" }, { status: 400 });
+        return NextResponse.json(await acceptObligation({ obligee, contractId }));
       }
       case "policy-check": {
         const party = asParty(String(body.party ?? ""));

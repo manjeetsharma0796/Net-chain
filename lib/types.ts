@@ -41,6 +41,10 @@ export interface Obligation {
   createdAt: string;
   /** UETR-style on-ledger trace reference (v1.0.2+), when present. */
   uetr?: string;
+  /** Bilateral consent (v1.0.3): has the obligee accepted? `false` = pending
+   *  acceptance (excluded from netting until accepted); `true` = accepted;
+   *  `undefined` = not applicable (mock path, treated as accepted). */
+  accepted?: boolean;
 }
 
 export type CycleStatus =

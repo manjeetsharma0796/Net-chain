@@ -49,6 +49,9 @@ export function toObligation(
     source: p.source === "agent" ? "agent" : "manual",
     createdAt: "",
     uetr: p.uetr ? String(p.uetr) : undefined,
+    // Bilateral consent (v1.0.3): Optional Bool → true (accepted) / false
+    // (pending, None reads as null → not-yet-accepted). Only accepted nets.
+    accepted: p.accepted === true,
   };
 }
 

@@ -279,6 +279,30 @@ export async function createObligationLive(input: {
   }
 }
 
+/** The obligee accepts a pending obligation (bilateral consent). Returns the
+ *  update id, or null when not live / on failure. Only accepted obligations net. */
+export async function acceptObligationLive(input: {
+  obligee: PartyId;
+  contractId: string;
+}): Promise<string | null> {
+  if (!live()) return null;
+  try {
+    const r = await fetch("/api/ledger/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!r.ok) {
+      warnFallback("acceptObligationLive", "null");
+      return null;
+    }
+    return ((await r.json()) as { updateId?: string }).updateId ?? null;
+  } catch {
+    warnFallback("acceptObligationLive", "null");
+    return null;
+  }
+}
+
 /** Create a NettingCycle + ComputeNetPositions on-ledger. Returns cycleId + positions. */
 export async function runCycleLive(): Promise<{
   cycleId: string;

@@ -36,9 +36,19 @@ template Obligation
     -- this is a valid Smart Contract Upgrade of v1.0.1 (old contracts read None).
     source : Optional Text
     uetr : Optional Text
+    -- Bilateral consent (v1.0.3): the obligee must confirm before this obligation
+    -- can net. Optional so old contracts upgrade cleanly (None = pending acceptance).
+    accepted : Optional Bool
   where
     signatory obligor
     observer obligee, operator
+
+    -- The obligee confirms the obligation on-ledger. Bilateral consent: neither a
+    -- rogue party nor a fake invoice can unilaterally fabricate a debt that settles,
+    -- an unaccepted obligation is excluded from netting (see ComputeNetPositions).
+    choice Accept : ContractId Obligation
+      controller obligee
+      do create this with accepted = Some True
 
     -- Operator marks a netted obligation settled at settlement time. As a choice
     -- ON the obligation it runs with the obligor's signatory authority, so Settle
@@ -98,7 +108,9 @@ template NettingCycle
         cycleId : Text
       controller operator
       do
-        obls <- mapA fetch obligationCids
+        allObls <- mapA fetch obligationCids
+        -- Only obligations the obligee has confirmed (accepted = Some True) net.
+        let obls = filter (\o -> o.accepted == Some True) allObls
         forA participants \p -> do
           let payable = sum [ o.amount | o <- obls, o.obligor == p ]
           let receivable = sum [ o.amount | o <- obls, o.obligee == p ]
@@ -136,7 +148,7 @@ template NettingCycle
       controller operator
       do
         obls <- mapA fetch obligationCids
-        let inScope = [ o | o <- obls, not (o.obligor `elem` excluded), not (o.obligee `elem` excluded) ]
+        let inScope = [ o | o <- obls, o.accepted == Some True, not (o.obligor `elem` excluded), not (o.obligee `elem` excluded) ]
         let survivors = [ p | p <- participants, not (p `elem` excluded) ]
         forA survivors \p -> do
           let payable = sum [ o.amount | o <- inScope, o.obligor == p ]
@@ -182,7 +194,7 @@ template NettingCycle
         let settledParties = map (\np -> np.party) nps
         forA_ obligationCids \oCid -> do
           o <- fetch oCid
-          if not o.settled && o.obligor `elem` settledParties && o.obligee `elem` settledParties
+          if not o.settled && o.accepted == Some True && o.obligor `elem` settledParties && o.obligee `elem` settledParties
             then do
               _ <- exercise oCid MarkSettled
               pure ()
