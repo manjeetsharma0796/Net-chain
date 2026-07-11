@@ -125,7 +125,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T60 | P2 | DOCS | DONE: 2026 research folded into the deck + README pitch (Track 1/3 positioning, Global Synchronizer, CIP-56/USDCx scoped adapter, live SCU proof, competitive table) and `docs/PRODUCT_RESEARCH.md` §4 | Jishnu | ✅ | T26,T47 |
 | T61 | P3 | DAML | DONE: added `Obligation.uetr : Optional Text` (v1.0.2), a UETR-style trace ref generated at creation and shown as a short trace on the obligations table. Bundled into the T40 upgrade. Verified live | Jishnu | ✅ | T48 |
 | T62 | P2 | FE | Dashboard network-topology stats (validators, governance, rounds/day, CC burnt) are the last mock: the Canton Scan API is unreachable from our setup (global devnet scan returns 403, validator scan URL does not resolve). Needs operator-provisioned Scan API access; today mock and honestly labeled "via the Scan API (mocked)". CC price/market-cap already live via CoinGecko. Blocked, needs operator-provisioned Scan API access (see triage below) | | ⛔ | - |
-| T63 | P1 | DAML | Bilateral confirmation (fake-invoice safeguard): `Obligation.accepted : Optional Bool` + obligee-controlled `Accept` choice (v1.0.3 SCU of v1.0.2). Only accepted obligations net (ComputeNetPositions/Excluding + Settle mark-loop filter `accepted == Some True`); new obligations start pending. Server `acceptObligation` + `/api/ledger/accept` + `acceptObligationLive`; obligee Accept UI on `/app/obligations`; `test_bilateral_consent`. Also documented the privacy model honestly (operator-visible + operator-blind roadmap) in `docs/VERIFICATION.md` §2b + Loop brief. Redeploy pending CI green | Jishnu | 🔄 | T48 |
+| T63 | P1 | DAML | DONE: Bilateral confirmation (fake-invoice safeguard): `Obligation.accepted : Optional Bool` + obligee-controlled `Accept` choice (v1.0.3 SCU of v1.0.2, pkg `219a350c…61eed0`). Only accepted obligations net (ComputeNetPositions/Excluding + Settle mark-loop filter `accepted == Some True`); new obligations start pending. Server `acceptObligation` + `/api/ledger/accept` + `acceptObligationLive`; obligee Accept UI on `/app/obligations`; `test_bilateral_consent` (CI green). Privacy model documented honestly (operator-visible + operator-blind roadmap) in `docs/VERIFICATION.md` §2b + Loop brief. **Verified live via Playwright**: create→pending→obligor "Awaiting"→obligee "Pending your acceptance"+Accept→click flips to accepted on-ledger; demo reseeded clean (6 accepted, gross 460k) | Jishnu | ✅ | T48 |
 
 > **Ponytail triage of remaining tasks (2026-07-12, day before the deadline).** Applying YAGNI: the
 > core product is complete, live, and verified, so the open items below are resolved on their merits
@@ -162,10 +162,14 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 > C=SME) instead of fresh `netchain-*`; see `OPERATOR_TODO.md`. **Merged to `main` via PR #1**
 > (CI green: dpm build + 4 script tests). Live ACS cleaned: 6 obligations, accounts 115k/130k/55k.
 
-> **Redeploy status (2026-07-12):** the live package is now **v1.0.2**, id
-> `afd2a89d4d12559911b80eca8dc9a84fb62fdda0a0209f850ec091ed0be2c57e` (a valid SCU upgrade chain:
-> v1.0.0 `cdd7…55e7` -> v1.0.1 `8d20d87f…6e8254` (T48 settle-correctness) -> v1.0.2 (T40/T61
-> `Obligation.source`/`uetr` Optional fields, no re-seed)). Vercel points at it; verified live.
+> **Redeploy status (2026-07-12):** the live package is now **v1.0.3**, id
+> `219a350c3940b76031a2d8c55b29a6bb9f8923f307918fa107b974bc3361eed0` (a valid SCU upgrade chain:
+> v1.0.0 `cdd7…55e7` -> v1.0.1 `8d20d87f…6e8254` (T48 settle-correctness) -> v1.0.2
+> `afd2a89d…be2c57e` (T40/T61 `Obligation.source`/`uetr`) -> v1.0.3 `219a350c…61eed0` (T63
+> bilateral confirmation: `Obligation.accepted` + `Accept` choice)). Vercel `NETCHAIN_PKG_ID` points
+> at it; verified live. **SCU gotcha learned:** Canton auto-upgrades *creates* to the newest
+> compatible package, but a choice EXERCISE against an older pkg-id fails if the choice is new, so
+> the app's `NETCHAIN_PKG_ID` MUST be bumped on any redeploy that adds a choice (not just fields).
 
 > **Completeness sprint (2026-07-12).** Beyond the numbered tasks: NetChain now ships an MCP server
 > (`mcp/`) so any AI agent can drive the flow bounded by the on-ledger policy; the Cycle page has a

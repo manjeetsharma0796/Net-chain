@@ -7,8 +7,9 @@ against the code in this repo (`lib/ledger.ts`, `app/api/ledger/[op]/route.ts`,
 not aspirational.
 
 **Live app:** https://netchain.vercel.app
-**Package:** v1.0.2, `afd2a89d4d12559911b80eca8dc9a84fb62fdda0a0209f850ec091ed0be2c57e`, on the 5N Devnet
-(Canton Protocol Version 35).
+**Package:** v1.0.3, `219a350c3940b76031a2d8c55b29a6bb9f8923f307918fa107b974bc3361eed0`, on the 5N Devnet
+(Canton Protocol Version 35). v1.0.3 adds bilateral confirmation (Scenario F); it is a valid Smart
+Contract Upgrade of v1.0.2 `afd2a89d…be2c57e`.
 
 ---
 
