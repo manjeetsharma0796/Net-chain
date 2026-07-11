@@ -25,7 +25,10 @@ async function fetchCg(): Promise<Cg | null> {
       const r = await fetch(CG, { signal: AbortSignal.timeout(6000), cache: "no-store" });
       return r.ok ? ((await r.json()) as Cg) : null;
     },
-    // proxy fallback: r.jina.ai wraps the body in { data: { text } }
+    // proxy fallback: r.jina.ai wraps the body in a markdown envelope (often
+    // { data: { text } }, but the text itself may also carry markdown around
+    // the JSON), so pull the JSON out by its outermost braces instead of
+    // assuming either layer is clean JSON.
     async () => {
       const r = await fetch("https://r.jina.ai/" + CG, {
         signal: AbortSignal.timeout(9000),
@@ -33,8 +36,22 @@ async function fetchCg(): Promise<Cg | null> {
         cache: "no-store",
       });
       if (!r.ok) return null;
-      const j = (await r.json()) as { data?: { text?: string } };
-      return j.data?.text ? (JSON.parse(j.data.text) as Cg) : null;
+      const body = await r.text();
+      let text = body;
+      try {
+        const envelope = JSON.parse(body) as { data?: { text?: string } };
+        if (envelope.data?.text) text = envelope.data.text;
+      } catch {
+        /* body is not the { data: { text } } envelope, use it as-is */
+      }
+      const start = text.indexOf("{");
+      const end = text.lastIndexOf("}");
+      if (start < 0 || end <= start) return null;
+      try {
+        return JSON.parse(text.slice(start, end + 1)) as Cg;
+      } catch {
+        return null;
+      }
     },
   ];
   for (const src of sources) {

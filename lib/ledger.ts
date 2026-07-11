@@ -15,11 +15,11 @@ import { NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "
 
 const LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
-/** Dev-only warning when a LIVE call falls back (network error or non-ok response). */
+/** Warning when a LIVE call falls back (network error or non-ok response). Logged
+ *  in all environments, a silent fallback in production is the case with zero
+ *  signal otherwise. */
 function warnFallback(name: string, fellBackTo: "mock" | "null"): void {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn(`[ledger] live ${name} fell back to ${fellBackTo}`);
-  }
+  console.warn(`[ledger] live ${name} fell back to ${fellBackTo}`);
 }
 
 export type { PolicyVerdict, ExtractedInvoice } from "@/lib/api";

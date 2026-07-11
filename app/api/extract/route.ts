@@ -90,22 +90,26 @@ export async function POST(req: NextRequest) {
   }
 
   // Map counterparty to a real PartyId: accept a returned id, else match the
-  // name in the raw text, else default to the first candidate.
+  // name in the raw text, else default to the first candidate (an arbitrary
+  // guess, forced low-confidence below so the review UI flags it).
   let counterparty = String(parsed.counterparty ?? "") as PartyId;
+  let forcedLowConfidence = false;
   if (!candidates.some((p) => p.id === counterparty)) {
     const low = raw.toLowerCase();
-    counterparty =
-      candidates.find((p) => low.includes(p.name.toLowerCase()))?.id ??
-      candidates[0].id;
+    const matched = candidates.find((p) => low.includes(p.name.toLowerCase()))?.id;
+    counterparty = matched ?? candidates[0].id;
+    forcedLowConfidence = !matched;
   }
 
   const amount = Number(parsed.amount);
   const confidence = Number(parsed.confidence);
+  let clampedConfidence = Number.isFinite(confidence) ? Math.min(Math.max(confidence, 0), 1) : 0.5;
+  if (forcedLowConfidence) clampedConfidence = Math.min(clampedConfidence, 0.3);
   return NextResponse.json({
     counterparty,
     amount: Number.isFinite(amount) ? amount : 0,
     reference: String(parsed.reference ?? ""),
     dueDate: String(parsed.dueDate ?? ""),
-    confidence: Number.isFinite(confidence) ? Math.min(Math.max(confidence, 0), 1) : 0.5,
+    confidence: clampedConfidence,
   });
 }
