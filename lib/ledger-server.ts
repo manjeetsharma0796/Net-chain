@@ -268,11 +268,11 @@ async function openCycleAndCompute(): Promise<{
   if (open.length < 2) throw new LedgerError("need at least two open obligations to net");
   const obligationCids = open.map((c) => c.contractId);
 
-  await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, cycleId, settled: false });
+  await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, settled: false });
   const cycleCid = latestUnsettled(await queryAcs(op, "NettingCycle"));
   if (!cycleCid) throw new LedgerError("netting cycle not found after create");
 
-  await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", {});
+  await exercise(op, "NettingCycle", cycleCid, "ComputeNetPositions", { cycleId });
 
   return { op, cycleId, cycleCid };
 }
@@ -368,6 +368,7 @@ export async function runAndSettle(): Promise<{
   const cycleCid2 = latestUnsettled(await queryAcs(op, "NettingCycle"));
 
   const settle = await exercise(op, "NettingCycle", cycleCid2 ?? cycleCid, "Settle", {
+    cycleId,
     netPositionCids: npRows.map((c) => c.contractId),
     accountCids: accRows.map((c) => c.contractId),
     policyCids: polRows.map((c) => c.contractId),

@@ -25,9 +25,9 @@ parties = do
 -- Accounts seeded at 100k each; policy caps are parameters so a test can
 -- deliberately trip one.
 seedCycle :
-  Setup -> Text -> Decimal -> Decimal -> Decimal
+  Setup -> Decimal -> Decimal -> Decimal
   -> Script (ContractId NettingCycle, [ContractId Account], [ContractId TreasuryPolicy])
-seedCycle Setup{operator, a, b, c} cycleId capA capB capC = do
+seedCycle Setup{operator, a, b, c} capA capB capC = do
   accA <- submit operator $ createCmd Account with operator, owner = a, balance = 100000.0
   accB <- submit operator $ createCmd Account with operator, owner = b, balance = 100000.0
   accC <- submit operator $ createCmd Account with operator, owner = c, balance = 100000.0
@@ -42,7 +42,7 @@ seedCycle Setup{operator, a, b, c} cycleId capA capB capC = do
   o5 <- ob b a 25000.0 "BA"
   o6 <- ob c b 30000.0 "CB"
   cyc <- submit operator $ createCmd NettingCycle with
-    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], cycleId, settled = False
+    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], settled = False
   pure (cyc, [accA, accB, accC], [polA, polB, polC])
 
 -- WIN 1, counterparty privacy: C is not a stakeholder on A→B, so the ledger
@@ -60,10 +60,10 @@ test_counterparty_privacy = do
 test_atomic_settlement : Script ()
 test_atomic_settlement = do
   s@Setup{operator, a, b, c} <- parties
-  (cyc, accs, pols) <- seedCycle s "cyc-1" 200000.0 500000.0 350000.0
-  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions
+  (cyc, accs, pols) <- seedCycle s 200000.0 500000.0 350000.0
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-1"
   _ <- submit operator $ exerciseCmd cyc Settle with
-    netPositionCids = nps, accountCids = accs, policyCids = pols
+    cycleId = "cyc-1", netPositionCids = nps, accountCids = accs, policyCids = pols
   [(_, accA)] <- query @Account a
   accA.balance === 115000.0
   [(_, accB)] <- query @Account b
@@ -80,10 +80,10 @@ test_atomic_settlement = do
 test_settlement_atomic_abort : Script ()
 test_settlement_atomic_abort = do
   s@Setup{operator, a, b, c} <- parties
-  (cyc, accs, pols) <- seedCycle s "cyc-2" 200000.0 500000.0 10000.0
-  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions
+  (cyc, accs, pols) <- seedCycle s 200000.0 500000.0 10000.0
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-2"
   submitMustFail operator $ exerciseCmd cyc Settle with
-    netPositionCids = nps, accountCids = accs, policyCids = pols
+    cycleId = "cyc-2", netPositionCids = nps, accountCids = accs, policyCids = pols
   [(_, accA)] <- query @Account a
   accA.balance === 100000.0
   [(_, accC)] <- query @Account c
@@ -97,12 +97,12 @@ test_settlement_atomic_abort = do
 test_no_double_settle : Script ()
 test_no_double_settle = do
   s@Setup{operator} <- parties
-  (cyc, accs, pols) <- seedCycle s "cyc-double" 200000.0 500000.0 350000.0
-  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions
+  (cyc, accs, pols) <- seedCycle s 200000.0 500000.0 350000.0
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-double"
   cyc2 <- submit operator $ exerciseCmd cyc Settle with
-    netPositionCids = nps, accountCids = accs, policyCids = pols
+    cycleId = "cyc-double", netPositionCids = nps, accountCids = accs, policyCids = pols
   submitMustFail operator $ exerciseCmd cyc2 Settle with
-    netPositionCids = [], accountCids = [], policyCids = []
+    cycleId = "cyc-double", netPositionCids = [], accountCids = [], policyCids = []
 
 -- WIN 4, the on-ledger policy the agent cannot bypass: 250k > 200k cap fails
 -- on-ledger; a within-cap amount succeeds.
@@ -131,8 +131,8 @@ test_prefunding_check = do
   o5 <- ob b a 25000.0 "BA"
   o6 <- ob c b 30000.0 "CB"
   cyc <- submit operator $ createCmd NettingCycle with
-    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], cycleId = "cyc-fund", settled = False
-  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions
+    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], settled = False
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-fund"
   under <- submit operator $ exerciseCmd cyc CheckFunding with
     netPositionCids = nps, accountCids = [accA, accB, accC]
   under === [c]
@@ -156,10 +156,10 @@ test_drop_and_renet = do
   o5 <- ob b a 25000.0 "BA"
   o6 <- ob c b 30000.0 "CB"
   cyc <- submit operator $ createCmd NettingCycle with
-    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], cycleId = "cyc-drop", settled = False
-  nps <- submit operator $ exerciseCmd cyc ComputeNetPositionsExcluding with excluded = [c]
+    operator, participants = [a, b, c], obligationCids = [o1, o2, o3, o4, o5, o6], settled = False
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositionsExcluding with cycleId = "cyc-drop", excluded = [c]
   _ <- submit operator $ exerciseCmd cyc Settle with
-    netPositionCids = nps, accountCids = [accA, accB], policyCids = [polA, polB]
+    cycleId = "cyc-drop", netPositionCids = nps, accountCids = [accA, accB], policyCids = [polA, polB]
   [(_, aAcc)] <- query @Account a
   aAcc.balance === 5000.0
   [(_, bAcc)] <- query @Account b
@@ -188,15 +188,15 @@ test_partial_settlement = do
   o1 <- ob b a 50000.0 "BA"
   o2 <- ob c a 60000.0 "CA"
   cyc <- submit operator $ createCmd NettingCycle with
-    operator, participants = [a, b, c], obligationCids = [o1, o2], cycleId = "cyc-partial", settled = False
-  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions
+    operator, participants = [a, b, c], obligationCids = [o1, o2], settled = False
+  nps <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-partial"
   under <- submit operator $ exerciseCmd cyc CheckFunding with
     netPositionCids = nps, accountCids = [accA, accB, accC]
   under === [b, c]
   survivorNps <- submit operator $ exerciseCmd cyc ComputeNetPositionsExcluding with
-    excluded = under
+    cycleId = "cyc-partial", excluded = under
   _ <- submit operator $ exerciseCmd cyc Settle with
-    netPositionCids = survivorNps, accountCids = [accA], policyCids = [polA]
+    cycleId = "cyc-partial", netPositionCids = survivorNps, accountCids = [accA], policyCids = [polA]
   [(_, aAcc)] <- query @Account a
   aAcc.balance === 100000.0
   [(_, bObl)] <- query @Obligation b
