@@ -66,16 +66,20 @@ a ledger instead of over SWIFT.
 
 **On screen:** Go to `/app/obligations`. Drop an invoice image on the dropzone. The agent reads it
 with NVIDIA NIM vision and pre-fills amount, counterparty, due date, and reference. Confirm it, and
-an `Obligation` lands on the ledger tagged as agent-sourced. Note the manual-entry fallback beside it.
+an `Obligation` lands on the ledger tagged as agent-sourced, showing **"Awaiting counterparty
+acceptance"**. Flip the party switcher to the **obligee**: the same row now says **"Pending your
+acceptance"** with an **Accept** button. Click it, it flips to accepted. Note the manual-entry
+fallback beside the dropzone.
 
 **Narration:**
-"This is the AI-proposes half. I drop a raw invoice. The agent reads it, amount, counterparty, due
-date, reference, and proposes an on-ledger obligation. I approve, and it's on Canton, tagged as
-agent-created. The human stays in the loop, manual entry is always right there. AI does the typing;
-the ledger holds the truth."
+"This is the AI-proposes half. I drop a raw invoice. The agent reads it and proposes an on-ledger
+obligation, tagged agent-created. But watch, it lands *pending*. 'What if someone submits a fake
+invoice?' It can't settle on one party's say-so: the obligation is excluded from netting until the
+*obligee* accepts it on-ledger. I switch to the counterparty, they accept, and only now does it
+count. Bilateral consent, both signatures, enforced by the contract."
 
-**Why judges care:** shows a real ingestion path from a messy document to a signed on-ledger
-obligation, not a hand-typed demo row.
+**Why judges care:** shows a real ingestion path from a messy document to a *mutually consented*
+on-ledger obligation, and answers the obvious fraud question with an on-ledger safeguard, not a promise.
 
 ---
 
@@ -103,10 +107,10 @@ Track 3 without loosening a single Track 1 guarantee.
 **On screen:** Back to the deck, the Devnet / SCU proof slide, then the title.
 
 **Narration:**
-"Everything you saw ran live on Canton Devnet. We even shipped a settlement fix as a live smart
-contract upgrade, v1.0.0 to v1.0.1, without taking the demo down. Confidential netting, atomic
-settlement, a policy the ledger enforces, and an agent that can't overstep it. NetChain. Settle
-everything, reveal nothing."
+"Everything you saw ran live on Canton Devnet. We shipped real features as live smart contract
+upgrades, v1.0.0 through v1.0.3, including today's bilateral confirmation, without taking the demo
+down. Confidential netting, atomic settlement, bilateral consent, a policy the ledger enforces, and
+an agent that can't overstep it. NetChain. Settle everything, reveal nothing."
 
 ---
 
@@ -117,7 +121,7 @@ everything, reveal nothing."
 | Hook + thesis | 0:00 to 0:18 | Set the frame |
 | 1 | 0:18 to 0:52 | Live 404 privacy (C fails, A resolves) |
 | 2 | 0:52 to 1:32 | Atomic settle: over-cap abort (zero movement) then clean settle |
-| 3 | 1:32 to 2:08 | Invoice in, agent-created obligation out |
+| 3 | 1:32 to 2:08 | Invoice in, agent obligation out, obligee accepts (bilateral consent / fake-invoice answer) |
 | 4 | 2:08 to 2:44 | AI agent via MCP, policy-blocked on over-cap settle |
 | Close | 2:44 to 3:00 | Live Devnet + SCU, tagline |
 
@@ -127,7 +131,12 @@ everything, reveal nothing."
   for a beat each.
 - Keep every real artifact visible: the `CONTRACT_NOT_FOUND`, the unchanged balances on the abort,
   the settle tx id, the policy rejection reason.
-- If asked live "is this really on Canton?", the answer is the package id `8d20d87f...6e8254` on
-  Devnet and the live upgrade from `cdd7...55e7`. Have it ready.
+- If asked live "is this really on Canton?", the answer is the current package id `219a350c...61eed0`
+  on Devnet and the live SCU chain from `cdd7...55e7`. Have it ready.
+- If asked "but the operator sees the whole graph, so what's private?": NetChain's guarantee is
+  *counterparty* privacy (A and C never see each other, the live 404), which is exactly what a
+  treasurer needs. The operator is a trusted, regulated intermediary, the same model as CLS today.
+  Removing even operator visibility (operator-blind netting via MPC/ZK) is named as roadmap, honestly,
+  in `docs/SETTLEMENT_DESIGN.md` §6, not faked. Do not overclaim the operator is blind today.
 - Truthful framing: settlement is on a placeholder Cash token today; USDCx via CIP-56 is an adapter,
   not a rewrite (`docs/USDCX_SPIKE.md`). Do not claim real USDCx moved.
