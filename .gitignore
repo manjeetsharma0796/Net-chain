@@ -47,3 +47,7 @@ next-env.d.ts
 
 # playwright mcp scratch
 .playwright-mcp/
+
+# NetChain MCP server: track source, ignore build artifacts
+mcp/node_modules/
+mcp/dist/
