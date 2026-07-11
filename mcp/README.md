@@ -25,12 +25,22 @@ already-deployed HTTP API (`${NETCHAIN_API_BASE}/api/ledger/<op>`, default
 | `get_balances` | `GET balance?party=` / `GET balances` | One party's balance, or all three |
 | `get_net_positions` | `GET net-position?party=` / `GET net-positions` | One party's net position, or all |
 | `get_policy` | `GET policy?party=` | A party's `TreasuryPolicy`, incl. `maxSettlementPerCycle` |
-| `create_obligation` | `POST obligation` | Record a new obligation (invoice) |
+| `create_obligation` | `POST obligation` | Record a new obligation (invoice); `source` defaults to `agent` |
 | `check_policy` | `POST policy-check` | Dry-run whether an amount would pass a party's cap |
 | `run_netting_cycle` | `POST run-cycle` | Open a cycle and compute net positions |
 | `settle` | `POST settle` | Execute settlement for the current cycle (see below) |
 | `get_activity` | `GET activity` | Full chronological activity feed / audit trail |
 | `query_contract` | `GET contract?party=&contractId=` | Fetch a contract as a party would see it (privacy check) |
+| `verify_transaction` | `GET verify?updateId=` | Confirm a `settle`/transaction `updateId` is real, on the live validator |
+
+### Provenance and proof
+
+Obligations created through this server are stamped `source: "agent"` on-ledger by default
+(pass `source: "manual"` to override), so anyone auditing the ledger can see which
+obligations an AI agent recorded versus a human. And `verify_transaction` lets an agent
+re-fetch any `updateId` it produced (e.g. from `settle`) straight from the live Canton
+validator, proving the transaction is genuinely on-chain, not a mock, without exposing its
+private content to anyone who isn't a party to it.
 
 ### The property that matters: `settle` is bounded by the ledger, not by the agent
 
@@ -89,6 +99,9 @@ A typical session an agent would run against this server:
    order; `query_contract({ party: "company-c", contractId: <company-a/b's obligation> })`
    returns 404 `CONTRACT_NOT_FOUND`, demonstrating that `company-c` was never a stakeholder
    and genuinely cannot see it.
+6. **Prove it's real.** `verify_transaction({ updateId: <settle's updateId> })` re-fetches
+   that transaction from the live Canton validator, confirming it exists on-ledger without
+   exposing its private content.
 
 ## Development
 

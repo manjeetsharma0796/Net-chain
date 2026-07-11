@@ -29,7 +29,13 @@ this, do not guess at ledger state, always read it first.
 6. **Audit with `get_activity`** to confirm what actually happened, and use
    `query_contract` if you need to demonstrate or verify that a party genuinely cannot see
    a contract it isn't a stakeholder on (a 404 there is expected privacy behavior, not a
-   bug).
+   bug). Use `verify_transaction` if you need to prove a `settle`/transaction `updateId` is
+   real, it re-fetches it from the live Canton validator without exposing its private
+   content.
+
+Obligations you create are stamped `source: "agent"` on-ledger by default, pass
+`source: "manual"` to `create_obligation` if you are recording something on a human's
+behalf instead of acting autonomously.
 
 ## Bounded authority
 

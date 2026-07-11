@@ -130,13 +130,16 @@ server.registerTool(
     description:
       "Record a new obligation on the ledger: `obligor` owes `obligee` `amount` USDCx by " +
       "`dueDate`, tagged with `reference` (e.g. an invoice number). Use this to enter a new " +
-      "invoice or payable before it is picked up by a netting cycle.",
+      "invoice or payable before it is picked up by a netting cycle. `source` stamps " +
+      "provenance on-ledger and defaults to `agent`, since a tool call from an AI agent is " +
+      "exactly what that label is for.",
     inputSchema: {
       obligor: PartyId,
       obligee: PartyId,
       amount: z.number().positive(),
       reference: z.string().min(1),
       dueDate: z.string().describe("ISO date, e.g. 2026-08-01"),
+      source: z.enum(["agent", "manual"]).default("agent"),
     },
   },
   async (input) => apiPost("obligation", input),
@@ -212,6 +215,21 @@ server.registerTool(
     inputSchema: { party: PartyId, contractId: z.string().min(1) },
   },
   async ({ party, contractId }) => apiGet("contract", { party, contractId }),
+);
+
+server.registerTool(
+  "verify_transaction",
+  {
+    title: "Verify transaction (prove it's real, not a mock)",
+    description:
+      "Re-fetch a `settle`/transaction `updateId` from the real Canton validator to PROVE " +
+      "it is a genuine on-ledger transaction, not a mock. Canton keeps transaction CONTENT " +
+      "private to its parties, so this only confirms existence and timing on the validator, " +
+      "fetched live, without exposing that content. Use this to show a user that an action " +
+      "you took (e.g. a `settle` call) really happened on-chain.",
+    inputSchema: { updateId: z.string().min(1) },
+  },
+  async ({ updateId }) => apiGet("verify", { updateId }),
 );
 
 async function main() {
