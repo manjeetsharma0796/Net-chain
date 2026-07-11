@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Download, Landmark, Sigma } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
 import FadeIn from "@/components/motion/FadeIn";
@@ -10,8 +10,9 @@ import MoneyValue from "@/components/ui/MoneyValue";
 import StatusPill from "@/components/ui/StatusPill";
 import { downloadCsv, toSettledLegsCsv } from "@/lib/export";
 import { shortHash } from "@/lib/format";
+import { buildSettlementLegs, getNetPositionsLive, getObligationsFor } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
-import { Obligation, SettlementLeg } from "@/lib/types";
+import { NetPosition, Obligation, SettlementLeg } from "@/lib/types";
 
 /**
  * Audit trail: gross obligations -> net position -> settled legs, scoped to
@@ -28,17 +29,45 @@ export default function AuditPage() {
   const txHash = useNetChain((s) => s.txHash);
   const party = partyById(currentPartyId);
 
+  const [liveObligations, setLiveObligations] = useState<Obligation[] | null>(null);
+  const [liveNetPositions, setLiveNetPositions] = useState<NetPosition[] | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    getObligationsFor(currentPartyId, obligations).then((o) => live && setLiveObligations(o));
+    return () => { live = false; };
+  }, [currentPartyId, obligations]);
+
+  useEffect(() => {
+    let live = true;
+    getNetPositionsLive().then((p) => live && p && setLiveNetPositions(p));
+    return () => { live = false; };
+  }, []);
+
+  const effectiveObligations = liveObligations ?? obligations;
+  const effectiveNetPositions = liveNetPositions ?? netPositions;
+  // Positions recovered from history only exist post-Settle, so the legs
+  // built from them are already cleared, not merely proposed.
+  const liveLegs = useMemo(
+    () =>
+      liveNetPositions
+        ? buildSettlementLegs(liveNetPositions).map((l) => ({ ...l, status: "settled" as const }))
+        : null,
+    [liveNetPositions],
+  );
+  const effectiveLegs = liveLegs ?? legs;
+
   const inScopeObligations = useMemo(
     () =>
-      obligations.filter(
+      effectiveObligations.filter(
         (o) =>
           (o.obligor === currentPartyId || o.obligee === currentPartyId) &&
           (o.status === "netted" || o.status === "settled"),
       ),
-    [obligations, currentPartyId],
+    [effectiveObligations, currentPartyId],
   );
 
-  const myPosition = netPositions?.find((p) => p.party === currentPartyId) ?? null;
+  const myPosition = effectiveNetPositions?.find((p) => p.party === currentPartyId) ?? null;
   const grossPayable = inScopeObligations
     .filter((o) => o.obligor === currentPartyId)
     .reduce((sum, o) => sum + o.amount, 0);
@@ -48,12 +77,12 @@ export default function AuditPage() {
 
   const myLegs = useMemo(
     () =>
-      legs.filter(
+      effectiveLegs.filter(
         (l) =>
           (l.from === currentPartyId || l.to === currentPartyId) &&
           l.status === "settled",
       ),
-    [legs, currentPartyId],
+    [effectiveLegs, currentPartyId],
   );
 
   const obligationColumns: Column<Obligation>[] = [

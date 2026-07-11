@@ -16,10 +16,17 @@ import FadeIn from "@/components/motion/FadeIn";
 import NumberTicker from "@/components/ui/NumberTicker";
 import StatusPill from "@/components/ui/StatusPill";
 import { getScanSnapshot } from "@/lib/api";
-import { getBalanceLive, getScanLive, type ScanLive } from "@/lib/ledger";
+import {
+  getActivityLive,
+  getBalanceLive,
+  getCycleStatusLive,
+  getObligationsFor,
+  getScanLive,
+  type ScanLive,
+} from "@/lib/ledger";
 import { formatCompact, formatDate, formatTime } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
-import { ScanSnapshot } from "@/lib/types";
+import { ActivityEvent, ScanSnapshot } from "@/lib/types";
 
 function StatCard({
   label,
@@ -60,6 +67,12 @@ export default function DashboardPage() {
   const [scan, setScan] = useState<ScanSnapshot | null>(null);
   const [ccLive, setCcLive] = useState<ScanLive | null>(null);
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
+  const [liveActivity, setLiveActivity] = useState<ActivityEvent[] | null>(null);
+  const [liveCycle, setLiveCycle] = useState<{
+    status: "open" | "settled" | "none";
+    ref: string | null;
+  } | null>(null);
+  const [liveObligationsCount, setLiveObligationsCount] = useState<number | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -74,12 +87,37 @@ export default function DashboardPage() {
     return () => { live = false; };
   }, [currentPartyId]);
 
+  useEffect(() => {
+    let live = true;
+    getActivityLive().then((a) => live && a && setLiveActivity(a));
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    getCycleStatusLive().then((c) => live && c && setLiveCycle(c));
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    getObligationsFor(currentPartyId, obligations).then(
+      (o) => live && setLiveObligationsCount(o.length),
+    );
+    return () => { live = false; };
+  }, [currentPartyId]);
+
   const myObligations = obligations.filter(
     (o) => o.obligor === currentPartyId || o.obligee === currentPartyId,
   );
 
-  const cyclePill =
-    cycleStatus === "settled"
+  const cyclePill = liveCycle
+    ? liveCycle.status === "settled"
+      ? ("settled" as const)
+      : liveCycle.status === "open"
+        ? ("open" as const)
+        : ("pending" as const)
+    : cycleStatus === "settled"
       ? ("settled" as const)
       : cycleStatus === "failed"
         ? ("rejected" as const)
@@ -168,9 +206,11 @@ export default function DashboardPage() {
               </p>
               <Landmark size={16} className="text-frost/40" aria-hidden="true" />
             </div>
-            <p className="figures mt-3 text-lg">{cycleId}</p>
+            <p className="figures mt-3 text-lg">
+              {liveCycle ? liveCycle.ref ?? cycleId : cycleId}
+            </p>
             <div className="mt-2">
-              <StatusPill status={cyclePill} label={cycleStatus} />
+              <StatusPill status={cyclePill} label={liveCycle ? liveCycle.status : cycleStatus} />
             </div>
           </div>
 
@@ -181,7 +221,9 @@ export default function DashboardPage() {
               </p>
               <Activity size={16} className="text-frost/40" aria-hidden="true" />
             </div>
-            <p className="figures mt-3 text-3xl">{myObligations.length}</p>
+            <p className="figures mt-3 text-3xl">
+              {liveObligationsCount ?? myObligations.length}
+            </p>
             <p className="mt-1 text-xs text-frost/45">
               visible to {party.shortName}, other parties&apos; contracts are
               not in your projection
@@ -197,7 +239,7 @@ export default function DashboardPage() {
             Recent activity
           </h2>
           <ol className="glass-card divide-y divide-frost/5 rounded-2xl">
-            {activity.slice(0, 7).map((ev) => (
+            {(liveActivity ?? activity).slice(0, 7).map((ev) => (
               <li key={ev.id} className="flex items-start gap-3 px-5 py-4">
                 {ev.actor === "agent" ? (
                   <Bot size={16} className="mt-0.5 shrink-0 text-privacy" aria-hidden="true" />
