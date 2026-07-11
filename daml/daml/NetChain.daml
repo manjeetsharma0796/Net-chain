@@ -36,6 +36,13 @@ template Obligation
     signatory obligor
     observer obligee, operator
 
+    -- Operator marks a netted obligation settled at settlement time. As a choice
+    -- ON the obligation it runs with the obligor's signatory authority, so Settle
+    -- (controlled by the operator) can flip settled without the obligor re-signing.
+    choice MarkSettled : ContractId Obligation
+      controller operator
+      do create this with settled = True
+
 -- 3. TreasuryPolicy, the on-ledger guardrail. `CheckSettlement` is the
 --    non-bypassable gate an agent hits: an over-cap attempt fails inside the
 --    ledger, not in the UI.
@@ -170,8 +177,7 @@ template NettingCycle
           o <- fetch oCid
           if not o.settled && o.obligor `elem` settledParties && o.obligee `elem` settledParties
             then do
-              archive oCid
-              _ <- create (o with settled = True)
+              _ <- exercise oCid MarkSettled
               pure ()
             else pure ()
         -- Consume the NetPositions: single-use, so this cycle cannot be replayed.
