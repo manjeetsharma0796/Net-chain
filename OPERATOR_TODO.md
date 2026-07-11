@@ -81,16 +81,12 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
     Accounts **A=115k, B=130k, C=55k**, all 6 Obligations **settled=true** (the C1 fix, proven live),
     NetPositions archived by Settle, cycle replay-guarded. The old buggy state (which had drifted to
     A=130k/B=160k/C=10k from repeated re-netting) was archived first.
-- [!] **Remaining human action, update Vercel env.** The live Vercel app still points at the old
-  package id. The CLI here is not logged in (no token in `.env`), so you must do this:
-  ```
-  vercel login
-  vercel env rm  NETCHAIN_PKG_ID production
-  printf '8d20d87f559db4870eec133bb9be1c1b0b4a20aa9c2c70f227597f8ffd6e8254' | vercel env add NETCHAIN_PKG_ID production
-  vercel --prod           # redeploy so the new env takes effect
-  ```
-  Until this runs, the deployed site (if in live mode) creates cycles under the old v1.0.0 package
-  and will not show the fix. Local `npm run dev` with the updated `.env` already uses v1.0.1.
+- [x] **Vercel env updated + redeployed (2026-07-11).** You provided a Vercel CLI token, so this is
+  done: `NETCHAIN_PKG_ID` in the production env is now the v1.0.1 id, and a fresh production deploy
+  is live at **https://netchain.vercel.app**. Verified in a real browser: `/api/ledger/balances`
+  returns `{a:115000,b:130000,c:55000}`, company-a's obligations all read `settled`, and the
+  dashboard renders the live 115,000.00 balance with the LIVE badge. (Production already had the full
+  live-path env set: `NEXT_PUBLIC_LEDGER_LIVE`, `CLIENT_SECRET`, party ids, etc.)
 - T34/T40 (privacy refinement, source badge) were the other changes waiting on this redeploy and
   are now unblocked (they ship on the same v1.0.1 package).
 
