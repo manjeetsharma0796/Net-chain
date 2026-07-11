@@ -11,9 +11,13 @@
  */
 
 import * as api from "@/lib/api";
+import { isSandbox } from "@/lib/sandbox";
 import { ActivityEvent, NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "@/lib/types";
 
-const LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
+const LEDGER_LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
+/** Live only when the build flag is on AND this session is not a client-side
+ *  sandbox tenant (a sandbox never touches the shared devnet ledger). */
+const live = () => LEDGER_LIVE && !isSandbox();
 
 /** Warning when a LIVE call falls back (network error or non-ok response). Logged
  *  in all environments, a silent fallback in production is the case with zero
@@ -37,7 +41,7 @@ export {
 
 /** On-ledger Account balance for `party`, or null when not live / unconfigured. */
 export async function getBalanceLive(party: PartyId): Promise<number | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch(`/api/ledger/balance?party=${party}`);
     if (r.ok) return ((await r.json()) as { balance: number | null }).balance;
@@ -50,7 +54,7 @@ export async function getBalanceLive(party: PartyId): Promise<number | null> {
 
 /** All three on-ledger Account balances in one call (operator-scoped ACS). */
 export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>> | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/balances");
     if (r.ok) return (await r.json()) as Partial<Record<PartyId, number>>;
@@ -65,7 +69,7 @@ export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>
 
 /** Real on-chain activity feed from ledger transaction history, or null. */
 export async function getActivityLive(): Promise<ActivityEvent[] | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/activity");
     if (r.ok) return (await r.json()) as ActivityEvent[];
@@ -81,7 +85,7 @@ export async function getCycleStatusLive(): Promise<{
   status: "open" | "settled" | "none";
   ref: string | null;
 } | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/cycle-status");
     if (r.ok)
@@ -95,7 +99,7 @@ export async function getCycleStatusLive(): Promise<{
 
 /** All net positions from the most recent cycle (from history), or null. */
 export async function getNetPositionsLive(): Promise<NetPosition[] | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/net-positions");
     if (r.ok) return (await r.json()) as NetPosition[];
@@ -134,7 +138,7 @@ export async function getObligationsFor(
   party: PartyId,
   ledger: Obligation[],
 ): Promise<Obligation[]> {
-  if (LIVE) {
+  if (live()) {
     try {
       const r = await fetch(`/api/ledger/obligations?party=${party}`);
       if (r.ok) return (await r.json()) as Obligation[];
@@ -151,7 +155,7 @@ export async function queryContract(
   contractId: string,
   ledger: Obligation[],
 ): Promise<Obligation> {
-  if (LIVE) {
+  if (live()) {
     try {
       const r = await fetch(
         `/api/ledger/contract?party=${party}&contractId=${encodeURIComponent(contractId)}`,
@@ -172,7 +176,7 @@ export async function getNetPositionFor(
   party: PartyId,
   positions: NetPosition[],
 ): Promise<NetPosition | null> {
-  if (LIVE) {
+  if (live()) {
     try {
       const r = await fetch(`/api/ledger/net-position?party=${party}`);
       if (r.ok) return (await r.json()) as NetPosition | null;
@@ -190,7 +194,7 @@ export async function getNetPositionFor(
 export async function getPolicyLive(
   party: PartyId,
 ): Promise<{ maxSettlementPerCycle: number } | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch(`/api/ledger/policy?party=${party}`);
     if (r.ok) return (await r.json()) as { maxSettlementPerCycle: number } | null;
@@ -206,7 +210,7 @@ export async function checkPolicy(
   amount: number,
   counterparty: PartyId,
 ): Promise<api.PolicyVerdict> {
-  if (LIVE) {
+  if (live()) {
     try {
       const r = await fetch("/api/ledger/policy-check", {
         method: "POST",
@@ -238,7 +242,7 @@ export async function createObligationLive(input: {
   dueDate: string;
   source?: "agent" | "manual";
 }): Promise<string | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/obligation", {
       method: "POST",
@@ -261,7 +265,7 @@ export async function runCycleLive(): Promise<{
   cycleId: string;
   netPositions: NetPosition[];
 } | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/run-cycle", { method: "POST" });
     if (r.ok) return (await r.json()) as { cycleId: string; netPositions: NetPosition[] };
@@ -277,7 +281,7 @@ export async function settleLive(): Promise<{
   updateId: string | null;
   netPositions: NetPosition[];
 } | null> {
-  if (!LIVE) return null;
+  if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/settle", { method: "POST" });
     if (!r.ok) {

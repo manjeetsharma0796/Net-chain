@@ -107,3 +107,23 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 - Local DPM install in this container was **not** attempted as the source of truth, CI
   (`.github/workflows/daml.yml`) builds and tests the DAR on Linux. Install locally only if you
   want `dpm test` on your own machine.
+
+## Real-user onboarding paths (from the 2026-07-12 wallet/provisioning research)
+
+NetChain today is single-tenant (one shared M2M token acts as all parties). To support REAL users
+with their own on-ledger parties, the options below are blocked on external/infra, not on our code:
+
+1. **Raise `max-rights-per-user` on the shared devnet participant (ask Five North).** The M2M user is
+   at its 1000 user-rights cap (`TOO_MANY_USER_RIGHTS`), which blocks provisioning new parties. Raising
+   this config value (documented, precedented, a Splice validator hit the same cap) unblocks real party
+   provisioning + per-user auth with no wallet work. Pragmatic near-term unlock.
+2. **Loop wallet (Five North) connect** is public (`@fivenorth/loop-sdk`: `connect()` returns the user's
+   `party_id`, per-tx approval), BUT the SDK only submits against Splice + Five North's "Utility app" DAR
+   files, "no plan" for third-party DARs, so it cannot drive NetChain's own contracts today. Needs Five
+   North to open third-party DAR support. Track it.
+3. **CIP-0103 dApp API** (approved Jan 2026, an EIP-1193 analog) plus Canton external-signing / interactive
+   submission is the correct long-term architecture (user signs with their own key), via
+   `splice-wallet-kernel`. A multi-week integration, not a hackathon patch.
+
+Shipped instead (now): a self-serve **sandbox** ("Try it yourself", `/onboard`) that runs the full flow
+client-side per session, so any visitor can experience the product without provisioning.

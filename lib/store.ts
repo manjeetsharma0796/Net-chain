@@ -24,6 +24,9 @@ import {
   SEED_ACTIVITY,
 } from "@/lib/mock/data";
 import { mockHash } from "@/lib/format";
+import { setSandbox } from "@/lib/sandbox";
+
+const shortLabel = (s: string) => (s.trim().length <= 16 ? s.trim() : s.trim().slice(0, 14) + "…");
 
 export interface ToastItem {
   id: number;
@@ -35,6 +38,12 @@ interface NetChainState {
   /* identity */
   currentPartyId: PartyId;
   setParty: (id: PartyId) => void;
+
+  /* sandbox tenant (self-serve "try it yourself", client-side only) */
+  sandboxMode: boolean;
+  partyLabels: Record<PartyId, { name: string; shortName: string }> | null;
+  initSandbox: (input: { companyName: string; counterparties: [string, string] }) => void;
+  exitSandbox: () => void;
 
   /* balances (party id → USDCx), mutated by settlement */
   balances: Record<PartyId, number>;
@@ -84,6 +93,73 @@ let seq = 100;
 export const useNetChain = create<NetChainState>((set, get) => ({
   currentPartyId: "company-a",
   setParty: (id) => set({ currentPartyId: id }),
+
+  sandboxMode: false,
+  partyLabels: null,
+  initSandbox: ({ companyName, counterparties }) => {
+    setSandbox(true); // lib/ledger.ts now skips the live ledger for this session
+    const labels = {
+      "company-a": { name: companyName, shortName: shortLabel(companyName) },
+      "company-b": { name: counterparties[0], shortName: shortLabel(counterparties[0]) },
+      "company-c": { name: counterparties[1], shortName: shortLabel(counterparties[1]) },
+    } as Record<PartyId, { name: string; shortName: string }>;
+    const now = new Date().toISOString();
+    const obl = (
+      obligor: PartyId,
+      obligee: PartyId,
+      amount: number,
+      reference: string,
+      i: number,
+    ): Obligation => ({
+      id: `sbx-${i}`,
+      contractId: `00${mockHash("sbx-" + i)}`,
+      obligor,
+      obligee,
+      amount,
+      currency: "USDCx",
+      reference,
+      dueDate: "2026-07-20",
+      status: "open",
+      source: "manual",
+      createdAt: now,
+    });
+    set({
+      sandboxMode: true,
+      partyLabels: labels,
+      currentPartyId: "company-a",
+      balances: { "company-a": 100000, "company-b": 100000, "company-c": 100000 },
+      // A small starter cycle so netting is meaningful immediately (150k gross).
+      obligations: [
+        obl("company-a", "company-b", 50000, "INV-1001", 1),
+        obl("company-b", "company-c", 30000, "INV-1002", 2),
+        obl("company-c", "company-a", 40000, "INV-1003", 3),
+      ],
+      cycleId: "sandbox-cycle",
+      cycleStatus: "open",
+      netPositions: null,
+      legs: [],
+      txHash: null,
+      policyEvents: [],
+      activity: [],
+    });
+  },
+  exitSandbox: () => {
+    setSandbox(false);
+    set({
+      sandboxMode: false,
+      partyLabels: null,
+      currentPartyId: "company-a",
+      balances: Object.fromEntries(PARTIES.map((p) => [p.id, p.balance])) as Record<PartyId, number>,
+      obligations: OBLIGATIONS,
+      cycleId: OPEN_CYCLE.id,
+      cycleStatus: OPEN_CYCLE.status,
+      netPositions: null,
+      legs: [],
+      txHash: null,
+      policyEvents: [],
+      activity: SEED_ACTIVITY,
+    });
+  },
 
   balances: Object.fromEntries(
     PARTIES.map((p) => [p.id, p.balance]),
@@ -165,7 +241,10 @@ export const useNetChain = create<NetChainState>((set, get) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
-/** Convenience lookup used across the app screens. */
+/** Convenience lookup used across the app screens. In a sandbox session the
+ *  display name/shortName are overridden with the tenant's chosen labels. */
 export function partyById(id: PartyId) {
-  return PARTIES.find((p) => p.id === id)!;
+  const base = PARTIES.find((p) => p.id === id)!;
+  const label = useNetChain.getState().partyLabels?.[id];
+  return label ? { ...base, name: label.name, shortName: label.shortName } : base;
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { PARTIES } from "@/lib/mock/data";
-import { useNetChain } from "@/lib/store";
+import { partyById, useNetChain } from "@/lib/store";
 import { shortHash } from "@/lib/format";
 
 /**
@@ -20,10 +20,12 @@ export default function PartySwitcher({
   const currentPartyId = useNetChain((s) => s.currentPartyId);
   const setParty = useNetChain((s) => s.setParty);
   const pushToast = useNetChain((s) => s.pushToast);
+  // Subscribe to partyLabels so the switcher re-renders with sandbox tenant names.
+  useNetChain((s) => s.partyLabels);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const current = PARTIES.find((p) => p.id === currentPartyId)!;
+  const current = partyById(currentPartyId);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -79,7 +81,7 @@ export default function PartySwitcher({
                     if (p.id !== currentPartyId) {
                       pushToast(
                         "info",
-                        `Now viewing the ledger as ${p.name}, all reads re-scoped.`,
+                        `Now viewing the ledger as ${partyById(p.id).name}, all reads re-scoped.`,
                       );
                     }
                   }}
@@ -91,7 +93,7 @@ export default function PartySwitcher({
                     style={{ backgroundColor: p.color }}
                   />
                   <span className="flex-1">
-                    <span className="block text-sm font-medium">{p.name}</span>
+                    <span className="block text-sm font-medium">{partyById(p.id).name}</span>
                     <span className="figures block text-[11px] text-frost/40">
                       {shortHash(p.ledgerId, 14, 4)}
                     </span>
