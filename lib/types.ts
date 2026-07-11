@@ -39,6 +39,8 @@ export interface Obligation {
   /** How the obligation entered the ledger. */
   source: "agent" | "manual";
   createdAt: string;
+  /** UETR-style on-ledger trace reference (v1.0.2+), when present. */
+  uetr?: string;
 }
 
 export type CycleStatus =

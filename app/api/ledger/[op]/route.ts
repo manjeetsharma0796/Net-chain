@@ -123,6 +123,7 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
             amount: Number(body.amount ?? 0),
             reference: String(body.reference ?? ""),
             dueDate: String(body.dueDate ?? ""),
+            source: body.source === "agent" ? "agent" : "manual",
           }),
         );
       }

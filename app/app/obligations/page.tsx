@@ -97,6 +97,7 @@ function ObligationForm({
       amount,
       reference: fields.reference.trim(),
       dueDate: fields.dueDate,
+      source,
     });
     pushToast(
       "success",
@@ -295,7 +296,16 @@ export default function ObligationsPage() {
     {
       key: "reference",
       header: "Reference",
-      render: (o) => <span className="text-frost/70">{o.reference}</span>,
+      render: (o) => (
+        <div className="flex flex-col">
+          <span className="text-frost/70">{o.reference}</span>
+          {o.uetr && (
+            <span className="figures text-[10px] text-frost/35" title={o.uetr}>
+              UETR {o.uetr.slice(0, 8)}
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       key: "due",

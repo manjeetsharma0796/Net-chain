@@ -469,6 +469,7 @@ export async function createObligation(input: {
   amount: number;
   reference: string;
   dueDate: string;
+  source?: "agent" | "manual";
 }): Promise<{ updateId?: string }> {
   return create(ledgerId(input.obligor), "Obligation", {
     operator: ledgerId("operator"),
@@ -478,6 +479,9 @@ export async function createObligation(input: {
     reference: input.reference,
     dueDate: input.dueDate,
     settled: false,
+    // Provenance + a UETR-style trace ref, stamped at creation (v1.0.2).
+    source: input.source ?? "manual",
+    uetr: crypto.randomUUID(),
   });
 }
 

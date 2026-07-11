@@ -236,6 +236,7 @@ export async function createObligationLive(input: {
   amount: number;
   reference: string;
   dueDate: string;
+  source?: "agent" | "manual";
 }): Promise<string | null> {
   if (!LIVE) return null;
   try {

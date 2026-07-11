@@ -45,8 +45,10 @@ export function toObligation(
     reference: String(p.reference ?? ""),
     dueDate: String(p.dueDate ?? ""),
     status: p.settled === true ? "settled" : "open",
-    source: "manual", // not on-ledger; the store labels agent-created ones
+    // On-ledger provenance (v1.0.2+); older contracts have no source -> manual.
+    source: p.source === "agent" ? "agent" : "manual",
     createdAt: "",
+    uetr: p.uetr ? String(p.uetr) : undefined,
   };
 }
 
