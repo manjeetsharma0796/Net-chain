@@ -97,7 +97,7 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T32 | P2 | FE | Live/mock indicator + fail-loud in dev (no restyle) | Jishnu | ✅ | - |
 | T33 | P1 | DAML | USDCx settlement via CIP-56 Allocation API (spike) | Jishnu | ✅ | T09 |
 | T35 | P2 | FE | TopBar USDCx balance: wire to `getBalanceLive` | Jishnu | ✅ | T11 |
-| T36 | P2 | DAML | Optional: shape-only `Holding`/`Allocation` refactor mirroring CIP-56 (interim; real USDCx is no-go per `docs/USDCX_SPIKE.md`) | | 🔲 | T33 |
+| T36 | P2 | DAML | Optional: shape-only `Holding`/`Allocation` refactor mirroring CIP-56 (interim; real USDCx is no-go per `docs/USDCX_SPIKE.md`). Won't do, pure YAGNI (see triage below) | | ⛔ | T33 |
 | T37 | P1 | FE | Cycle operator cards gross 0/0 in live mode: compute client-side | Jishnu | ✅ | T28 |
 | T38 | P1 | FE | Policy page: cap is live; off-ledger fields (counterparties, instrument, approval-above) marked illustrative (not on the deployed `TreasuryPolicy`) | Jishnu | ✅ | T31 |
 | T39 | P1 | FE | Fail-loud: `lib/ledger.ts` should tag live-vs-fallback and drive the LIVE badge + a dev warn (badge is build-flag-only today) | Jishnu | ✅ | T32 |
@@ -115,16 +115,40 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 | T51 | P2 | FE | Fail-loud in prod too; fix jina proxy envelope parse in /api/scan; penalize extract confidence on default counterparty | Jishnu | ✅ | T27 |
 | T52 | P1 | SHIP | CI publishes the built DAR artifact; redeploy the fixed contract (unblocks T48/T34/T40 going live) | Jishnu | ✅ | T48 |
 | T53 | P2 | DOCS | Update daml/README frozen model + docs/CONTRACT_GUIDE for MarkSettled + cycleId (Compute/Settle choices take a cycleId arg; NettingCycle has no cycleId field) | Jishnu | ✅ | T48 |
-| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle. Redeploy path now proven (T52), but this changes operator ACS visibility (obligations reads would need rework) and needs its own SCU upgrade + re-seed, deferred as pre-deadline risk | | 🔲 | - |
+| T34 | P2 | DAML | Privacy: operator not observer on `Obligation` until cycle. Redeploy path now proven (T52), but this changes operator ACS visibility (obligations reads would need rework) and needs its own SCU upgrade + re-seed. Won't do for the demo (see triage below) | | ⛔ | - |
 | T54 | P2 | FE | Fixed SSR hydration mismatches: formatDate/formatTime now pin `timeZone:"UTC"` (server rendered activity timestamps in UTC, browser in local tz, so React #418/#423/#425). Verified 0 console errors in a prod build | | ✅ | - |
 | T55 | P1 | FE | Audit page live: gross obligations + net position + settled legs now from the ledger; net positions recovered from tx history (survive Settle), cycle label uses the live on-ledger ref. Verified in-browser | | ✅ | T30 |
 | T56 | P2 | FE | Dashboard "Current cycle" (live `getCycleStatusLive`) + "Your obligations" count (live `getObligationsFor`) wired. Verified in-browser | | ✅ | T30 |
 | T57 | P2 | FE | Recent-activity feed now real on-chain events via `getActivityLive` over `/v2/updates` (settle/compute/cycle/obligation), mock fallback kept. Verified in-browser | | ✅ | - |
-| T58 | P2 | FE | Live obligation status collapses netted->open on refetch (`ledger-map.ts:47` maps only open/settled); infer "netted" client-side by cross-referencing the latest cycle's obligationCids (no redeploy) | | 🔲 | T30 |
+| T58 | P2 | FE | Live obligation status collapses netted->open on refetch (`ledger-map.ts:47` maps only open/settled); infer "netted" client-side by cross-referencing the latest cycle's obligationCids. Won't do, cosmetic transient state (see triage below) | | ⛔ | T30 |
 | T59 | P1 | FE | ISO 20022 pain.001.001.09 export of settled legs (one PmtInf per debtor), alongside the CSV. Honest placeholders (Ccy=USD, Othr ids). "Export ISO 20022" button on audit page; output verified well-formed in-browser | | ✅ | T45 |
 | T60 | P2 | DOCS | Positioning refresh. Factual 2026 update (GENIUS/PPSI, Cycles Protocol, UNIDROIT, DTCC/Canton July-2026 scale, ISO 20022 cutover, UETR) documented in `docs/PRODUCT_RESEARCH.md` §4. Remaining: fold into the deck/README pitch copy (judgment-heavy messaging, left for a human pass) | | 🔲 | T26,T47 |
-| T61 | P3 | DAML | Add a UETR-style traceable reference to `Obligation`/settled leg (gpi baseline; SCU-safe only as `Optional Text`); plus a design note on strategic under-funding of the pre-cycle funding check (Garratt et al. 2026) | | 🔲 | T48 |
-| T62 | P2 | FE | Dashboard network-topology stats (validators, governance, rounds/day, CC burnt) are the last mock: the Canton Scan API is unreachable from our setup (global devnet scan returns 403, validator scan URL does not resolve). Needs operator-provisioned Scan API access; today mock and honestly labeled "via the Scan API (mocked)". CC price/market-cap already live via CoinGecko | | 🔲 | - |
+| T61 | P3 | DAML | Add a UETR-style traceable reference to `Obligation`/settled leg (gpi baseline; SCU-safe only as `Optional Text`); plus a design note on strategic under-funding of the pre-cycle funding check (Garratt et al. 2026). Won't do, YAGNI (net legs, not obligations, settle; see triage below) | | ⛔ | T48 |
+| T62 | P2 | FE | Dashboard network-topology stats (validators, governance, rounds/day, CC burnt) are the last mock: the Canton Scan API is unreachable from our setup (global devnet scan returns 403, validator scan URL does not resolve). Needs operator-provisioned Scan API access; today mock and honestly labeled "via the Scan API (mocked)". CC price/market-cap already live via CoinGecko. Blocked, needs operator-provisioned Scan API access (see triage below) | | ⛔ | - |
+
+> **Ponytail triage of remaining tasks (2026-07-12, day before the deadline).** Applying YAGNI: the
+> core product is complete, live, and verified, so the open items below are resolved on their merits
+> rather than force-built via a risky day-before redeploy.
+> - **T34** (operator not observer on `Obligation` until cycle): **won't do for the demo.** Completing
+>   it would break the operator-scoped reads the app relies on, the activity feed (`/v2/updates` over
+>   the operator projection), `deploy.sh`'s obligation collection, and the audit page, for a marginal
+>   privacy refinement. Negative net value here.
+> - **T36** (shape-only Holding/Allocation CIP-56 mimicry): **won't do.** Explicitly optional and real
+>   USDCx is a no-go (`docs/USDCX_SPIKE.md`); shape-only mimicry with no payoff is pure YAGNI.
+> - **T40** (real Agent/Manual source badge): **deferred, not closed.** The fix is a trivial
+>   `Optional Text` field on `Obligation`, but it needs a contract redeploy, not worth a dedicated one
+>   for a cosmetic badge the day before the deadline. Bundle it into the next redeploy done for a real
+>   reason (the Optional field is SCU-safe and needs no re-seed).
+> - **T58** (transient netted status): **won't do.** Status is correct at rest (open before a cycle,
+>   settled after); the brief "netted" window between compute and settle would need cycle-membership
+>   plumbing for a cosmetic gain.
+> - **T61** (per-obligation UETR): **won't do (YAGNI).** The netting model settles NET legs, not
+>   individual obligations, so a per-obligation UETR has no settlement consumer here. Documented as a
+>   real future need in `docs/PRODUCT_RESEARCH.md` §4.
+> - **T62** (live Scan topology): **blocked.** The Canton Scan API is unreachable from this setup
+>   (403 / no DNS); needs operator-provisioned access. Honestly labeled "(mocked)" in the UI.
+> - **T19** (video pitch) and **T60**'s deck/README pitch rewrite: **human.** A recorded demo and the
+>   pitch messaging are the user's to make; T60's factual research is already documented (§4).
 
 > **DAML-interaction spine (branch `daml-interaction`, 2026-07-10), LIVE:**
 > `daml/deploy.sh` ran end-to-end on the 5N devnet → settled **A=115k/B=130k/C=55k**,
