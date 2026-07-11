@@ -7,6 +7,7 @@ import PageHeader from "@/components/app/PageHeader";
 import FadeIn from "@/components/motion/FadeIn";
 import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
+import NettingGraph from "@/components/app/NettingGraph";
 import NumberTicker from "@/components/ui/NumberTicker";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
@@ -199,6 +200,10 @@ export default function CyclePage() {
       {view === "operator" ? (
         <>
           <FadeIn>
+            <NettingGraph obligations={openObligations} />
+          </FadeIn>
+
+          <FadeIn className="mt-6">
             <section
               aria-label="Operator console"
               className="glass-card rounded-2xl p-6"
