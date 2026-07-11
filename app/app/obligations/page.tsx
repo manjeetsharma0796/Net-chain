@@ -12,7 +12,7 @@ import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { ExtractedInvoice, getObligationsFor } from "@/lib/ledger";
-import { createObligationLive } from "@/lib/ledger";
+import { acceptObligationLive, createObligationLive } from "@/lib/ledger";
 import { formatDate, shortHash } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { Obligation, PartyId } from "@/lib/types";
@@ -239,6 +239,18 @@ export default function ObligationsPage() {
   // Bumped after a create finishes on-ledger, to force one more refetch
   // (the ledger write lands after addObligation's optimistic store update).
   const [refreshTick, setRefreshTick] = useState(0);
+  // contractId of the obligation whose Accept click is in flight (bilateral
+  // consent, v1.0.3), so we can disable just that row's button.
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+
+  // Obligee accepts a pending obligation; refetch either way so the row flips
+  // (mock/not-live returns null and simply has no pending state).
+  const onAccept = async (o: Obligation) => {
+    setAcceptingId(o.contractId);
+    await acceptObligationLive({ obligee: o.obligee, contractId: o.contractId });
+    setRefreshTick((t) => t + 1);
+    setAcceptingId(null);
+  };
 
   // Party-scoped read, the filter happens in lib/api, not here.
   useEffect(() => {
@@ -327,19 +339,42 @@ export default function ObligationsPage() {
     {
       key: "status",
       header: "Status",
-      render: (o) => (
-        <StatusPill
-          status={
-            o.status === "settled"
-              ? "settled"
-              : o.status === "netted"
-                ? "netted"
-                : o.status === "rejected"
-                  ? "rejected"
-                  : "open"
-          }
-        />
-      ),
+      render: (o) => {
+        // Pending the obligee's bilateral consent (v1.0.3): excluded from netting
+        // until accepted. `true`/`undefined` render as the normal status below.
+        if (o.accepted === false) {
+          const isObligee = o.obligee === currentPartyId;
+          return (
+            <div className="flex items-center gap-2">
+              <StatusPill
+                status="pending"
+                label={isObligee ? "Pending your acceptance" : "Awaiting counterparty acceptance"}
+              />
+              {isObligee && (
+                <GhostButton
+                  onClick={() => onAccept(o)}
+                  disabled={acceptingId === o.contractId}
+                >
+                  {acceptingId === o.contractId ? "Accepting…" : "Accept"}
+                </GhostButton>
+              )}
+            </div>
+          );
+        }
+        return (
+          <StatusPill
+            status={
+              o.status === "settled"
+                ? "settled"
+                : o.status === "netted"
+                  ? "netted"
+                  : o.status === "rejected"
+                    ? "rejected"
+                    : "open"
+            }
+          />
+        );
+      },
     },
   ];
 
