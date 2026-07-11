@@ -175,15 +175,19 @@ export const POLICIES: TreasuryPolicy[] = [
 export const AGENT_OVERREACH_AMOUNT = 250_000;
 
 /* ------------------------------------------------------------------ */
-/* Canton network snapshot (Scan API shape, mocked)                   */
+/* Canton network context (the Scan API isn't reachable from this      */
+/* setup; CC price/market cap are live via CoinGecko, see              */
+/* app/api/scan/route.ts). superValidators (~13) and governanceState   */
+/* are the figures shown on the dashboard; validators/roundsPerDay     */
+/* aren't surfaced, kept here for the ScanSnapshot shape.               */
 /* ------------------------------------------------------------------ */
 export const SCAN_SNAPSHOT: ScanSnapshot = {
-  validators: 417,
+  validators: 13,
   superValidators: 13,
-  governanceState: "CIP-56 vote open",
-  ccPriceUsd: 0.0842,
-  roundsPerDay: 8_640,
-  totalAmuletBurnt: 14_382_912,
+  governanceState: "Live on the Global Synchronizer",
+  ccPriceUsd: 0.133,
+  roundsPerDay: 144,
+  totalAmuletBurnt: 14_000_000,
 };
 
 /* ------------------------------------------------------------------ */
@@ -224,7 +228,7 @@ export const SEED_ACTIVITY: ActivityEvent[] = [
     id: "ev-005",
     at: "2026-07-04T16:00:00Z",
     actor: "operator",
-    message: "USDCx onboarding via xReserve confirmed for all three parties",
+    message: "USDCx settlement accounts opened for all three parties",
     kind: "network",
   },
 ];

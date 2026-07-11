@@ -74,7 +74,7 @@ export default function SettlementPage() {
       logActivity({
         actor: leg.from,
         kind: "settlement",
-        message: `${partyById(leg.from).shortName} allocated ${leg.amount.toLocaleString()} USDCx for ${cycleId}`,
+        message: `${partyById(leg.from).shortName} allocated ${leg.amount.toLocaleString("en-US")} USDCx for ${cycleId}`,
       });
     }
     setBusy(false);

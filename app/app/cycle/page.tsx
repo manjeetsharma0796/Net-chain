@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { GitMerge, Lock, Sigma, UserCog, Users } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
@@ -11,10 +11,10 @@ import NumberTicker from "@/components/ui/NumberTicker";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { buildSettlementLegs, computeNetPositions } from "@/lib/api";
-import { getNetPositionFor, runCycleLive } from "@/lib/ledger";
+import { getNetPositionFor, getObligationsFor, runCycleLive } from "@/lib/ledger";
 import { PARTY_IDS as ALL_PARTY_IDS } from "@/lib/ledger-map";
 import { partyById, useNetChain } from "@/lib/store";
-import type { NetPosition, PartyId } from "@/lib/types";
+import type { NetPosition, Obligation, PartyId } from "@/lib/types";
 
 const IS_LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
@@ -38,13 +38,43 @@ export default function CyclePage() {
   const logActivity = useNetChain((s) => s.logActivity);
   const pushToast = useNetChain((s) => s.pushToast);
 
+  // Operator projection: every obligation on the ledger, not just this
+  // party's. getObligationsFor is per-party scoped, so fetch it for all
+  // three parties and merge; falls back to the mock store when the ledger
+  // isn't live (the wrapper already resolves to the mock in that case).
+  const [liveObligations, setLiveObligations] = useState<Obligation[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    Promise.all(ALL_PARTY_IDS.map((pid) => getObligationsFor(pid, obligations))).then(
+      (lists) => {
+        if (!live) return;
+        const merged = new Map<string, Obligation>();
+        for (const list of lists) for (const o of list) merged.set(o.id, o);
+        setLiveObligations(Array.from(merged.values()));
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [obligations]);
+  const effectiveObligations = liveObligations ?? obligations;
+
   const openObligations = useMemo(
-    () => obligations.filter((o) => o.status === "open"),
-    [obligations],
+    () => effectiveObligations.filter((o) => o.status === "open"),
+    [effectiveObligations],
   );
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(openObligations.map((o) => o.id)),
   );
+  // Real contract ids differ from the store's illustrative ones, so
+  // re-seed the selection once the live merge lands.
+  useEffect(() => {
+    if (liveObligations) {
+      setSelected(
+        new Set(liveObligations.filter((o) => o.status === "open").map((o) => o.id)),
+      );
+    }
+  }, [liveObligations]);
   const [view, setView] = useState<"operator" | "party">("operator");
   const [liveMyPosition, setLiveMyPosition] = useState<NetPosition | null>(null);
 
@@ -57,7 +87,7 @@ export default function CyclePage() {
     });
 
   const runCycle = async () => {
-    const inScope = obligations.filter((o) => selected.has(o.id));
+    const inScope = effectiveObligations.filter((o) => selected.has(o.id));
     if (!IS_LIVE && inScope.length < 2) {
       pushToast("error", "Select at least two obligations to net.");
       return;
@@ -108,7 +138,7 @@ export default function CyclePage() {
     }
   };
 
-  const inScopeObligations = obligations.filter((o) => selected.has(o.id));
+  const inScopeObligations = effectiveObligations.filter((o) => selected.has(o.id));
   const grossTotal = inScopeObligations.reduce((sum, o) => sum + o.amount, 0);
   // Live NetPosition contracts carry no gross fields (mapped to 0 in
   // lib/ledger-map.ts), so gross out/in is derived here from the same
@@ -185,7 +215,7 @@ export default function CyclePage() {
                 </div>
                 <p className="figures text-xs text-frost/50">
                   in scope: {selected.size} · gross{" "}
-                  {grossTotal.toLocaleString()} USDCx
+                  {grossTotal.toLocaleString("en-US")} USDCx
                 </p>
               </div>
 
@@ -287,17 +317,17 @@ export default function CyclePage() {
                         {p.net > 0 ? "net receiver" : p.net < 0 ? "net payer" : "flat"}
                       </p>
                       <p className="figures mt-3 text-[11px] text-frost/40">
-                        gross out {payable.toLocaleString()} · gross in{" "}
-                        {receivable.toLocaleString()}
+                        gross out {payable.toLocaleString("en-US")} · gross in{" "}
+                        {receivable.toLocaleString("en-US")}
                       </p>
                     </motion.div>
                     );
                   })}
                 </div>
                 <p className="figures mt-5 text-xs text-frost/55">
-                  Σ nets = {sumOfNets?.toLocaleString()} (zero by construction) ·
-                  gross {grossTotal.toLocaleString()} → net{" "}
-                  {netTotal?.toLocaleString()} USDCx ·{" "}
+                  Σ nets = {sumOfNets?.toLocaleString("en-US")} (zero by construction) ·
+                  gross {grossTotal.toLocaleString("en-US")} → net{" "}
+                  {netTotal?.toLocaleString("en-US")} USDCx ·{" "}
                   {grossTotal > 0 && netTotal !== null
                     ? `${(100 - (netTotal / grossTotal) * 100).toFixed(1)}% compression`
                     : ""}

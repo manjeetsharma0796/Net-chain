@@ -87,7 +87,7 @@ function ObligationForm({
     logActivity({
       actor: source === "agent" ? "agent" : currentPartyId,
       kind: "obligation",
-      message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${created.amount.toLocaleString()} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
+      message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${created.amount.toLocaleString("en-US")} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
     });
     // Live path: also create the Obligation on-ledger (null when the flag is
     // off / ledger unconfigured, the local demo obligation still stands).

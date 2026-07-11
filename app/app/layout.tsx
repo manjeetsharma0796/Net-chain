@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/app/Sidebar";
 import TopBar from "@/components/app/TopBar";
+import HowItWorks from "@/components/app/HowItWorks";
 import Toaster from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function AppLayout({
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
       <Toaster />
+      <HowItWorks />
     </div>
   );
 }

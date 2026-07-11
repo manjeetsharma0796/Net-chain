@@ -129,17 +129,17 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Dashboard"
-        subtitle={`Canton network overview and ${party.name}'s treasury position. CC price live via CoinGecko; network topology via the Scan API (mocked).`}
+        subtitle={`Canton network context and ${party.name}'s treasury position. CC price live via CoinGecko.`}
       />
 
       {/* network stats */}
       <FadeIn>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Validators"
+            label="Super Validators"
             Icon={Network}
-            value={scan ? <NumberTicker value={scan.validators} /> : "-"}
-            hint={scan ? `${scan.superValidators} super validators` : "loading…"}
+            value={scan ? <NumberTicker value={scan.superValidators} /> : "-"}
+            hint={scan ? "founding network operators" : "loading…"}
           />
           <StatCard
             label="Governance"
@@ -173,9 +173,13 @@ export default function DashboardPage() {
             }
           />
           <StatCard
-            label="Rounds / day"
+            label="Consensus"
             Icon={RefreshCcw}
-            value={scan ? <NumberTicker value={scan.roundsPerDay} /> : "-"}
+            value={
+              <span className="text-lg md:text-xl">
+                {scan ? "Round-based" : "-"}
+              </span>
+            }
           />
         </div>
       </FadeIn>
@@ -195,7 +199,7 @@ export default function DashboardPage() {
               <span className="figures ml-1.5 text-sm opacity-60">USDCx</span>
             </p>
             <p className="mt-1 text-xs text-frost/45">
-              {liveBalance !== null ? "Live on-ledger balance" : "Onboarded via Circle xReserve"}
+              {liveBalance !== null ? "Live on-ledger balance" : "Starting balance"}
             </p>
           </div>
 

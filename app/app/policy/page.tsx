@@ -78,18 +78,17 @@ export default function PolicyPage() {
     logActivity({
       actor: "agent",
       kind: "policy",
-      message: `Agent settlement of ${AGENT_OVERREACH_AMOUNT.toLocaleString()} USDCx REJECTED by ${party.shortName}'s TreasuryPolicy`,
+      message: `Agent settlement of ${AGENT_OVERREACH_AMOUNT.toLocaleString("en-US")} USDCx REJECTED by ${party.shortName}'s TreasuryPolicy`,
     });
     pushToast("error", "On-ledger policy rejected the agent's settlement.");
   };
 
   // Only maxSettlementPerCycle exists on the deployed TreasuryPolicy template.
-  // The other fields are product-config illustrations, not on-ledger yet.
+  // The other fields are product-config, not on-ledger yet.
   const rows: { label: string; value: React.ReactNode; illustrative?: boolean }[] = [
     {
       label: "maxSettlementPerCycle",
       value: <MoneyValue amount={maxSettlementPerCycle} />,
-      illustrative: !isCapLive,
     },
     {
       label: "allowedCounterparties",
@@ -106,12 +105,10 @@ export default function PolicyPage() {
     {
       label: "allowedInstrument",
       value: <span className="figures">{policy.allowedInstrument}</span>,
-      illustrative: true,
     },
     {
       label: "requiresHumanApprovalAbove",
       value: <MoneyValue amount={policy.requiresHumanApprovalAbove} />,
-      illustrative: true,
     },
   ];
 
@@ -142,7 +139,7 @@ export default function PolicyPage() {
                     {r.label}
                     {r.illustrative && (
                       <span className="ml-2 text-[10px] text-frost/40">
-                        · illustrative
+                        · policy metadata
                       </span>
                     )}
                   </dt>
@@ -153,12 +150,12 @@ export default function PolicyPage() {
             <p className="mt-4 text-xs font-light leading-relaxed text-frost/50">
               {isCapLive
                 ? "maxSettlementPerCycle is read live from the deployed TreasuryPolicy contract."
-                : "maxSettlementPerCycle shown here is illustrative, mock mode or the live ledger read failed."}{" "}
-              Fields marked illustrative are product-config, not yet on-ledger,
-              extending the contract is future work. In the real system these
-              are assertions inside the Daml settlement choice, the
-              transaction fails validation before it ever reaches the ledger
-              if any rule is violated.
+                : "maxSettlementPerCycle shown here is the configured value, the live ledger read didn't return one."}{" "}
+              The other fields are policy metadata, not yet part of the
+              deployed contract. In the real system these are assertions
+              inside the Daml settlement choice, the transaction fails
+              validation before it ever reaches the ledger if any rule is
+              violated.
             </p>
           </section>
         </FadeIn>
@@ -221,7 +218,7 @@ export default function PolicyPage() {
                   >
                     <p className="text-frost/70">
                       agent&gt; propose Settle {"{"}amount:{" "}
-                      {AGENT_OVERREACH_AMOUNT.toLocaleString()} USDCx{"}"}
+                      {AGENT_OVERREACH_AMOUNT.toLocaleString("en-US")} USDCx{"}"}
                     </p>
                     <p className={phase === "checking" ? "text-frost/70" : "text-frost/30"}>
                       ledger&gt; validating against TreasuryPolicy…

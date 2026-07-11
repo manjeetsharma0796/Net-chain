@@ -157,7 +157,7 @@ export async function checkPolicy(
   if (amount > policy.maxSettlementPerCycle) {
     return {
       verdict: "rejected",
-      ruleFired: `maxSettlementPerCycle: ${amount.toLocaleString()} > ${policy.maxSettlementPerCycle.toLocaleString()} USDCx`,
+      ruleFired: `maxSettlementPerCycle: ${amount.toLocaleString("en-US")} > ${policy.maxSettlementPerCycle.toLocaleString("en-US")} USDCx`,
     };
   }
   if (!policy.allowedCounterparties.includes(counterparty)) {
@@ -169,7 +169,7 @@ export async function checkPolicy(
   if (amount > policy.requiresHumanApprovalAbove) {
     return {
       verdict: "rejected",
-      ruleFired: `requiresHumanApprovalAbove: ${amount.toLocaleString()} > ${policy.requiresHumanApprovalAbove.toLocaleString()} USDCx, human approval missing`,
+      ruleFired: `requiresHumanApprovalAbove: ${amount.toLocaleString("en-US")} > ${policy.requiresHumanApprovalAbove.toLocaleString("en-US")} USDCx, human approval missing`,
     };
   }
   return { verdict: "approved" };
