@@ -50,5 +50,14 @@ jobs:
       - name: Build DAR
         run: dpm build
 
+      # Only way to get the built DAR off CI for redeploy (see docs/REDEPLOY.md);
+      # dpm build's output otherwise doesn't survive the runner.
+      - name: Upload DAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: netchain-dar
+          path: daml/.daml/dist/netchain-1.0.0.dar
+          retention-days: 7
+
       - name: Run Daml Script tests
         run: dpm test
