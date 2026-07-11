@@ -8,6 +8,11 @@
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "netchain": {
+      "command": "node",
+      "args": ["mcp/dist/index.js"],
+      "env": { "NETCHAIN_API_BASE": "https://netchain.vercel.app" }
     }
   }
 }
