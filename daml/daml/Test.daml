@@ -204,6 +204,15 @@ test_partial_settlement = do
   [(_, cObl)] <- query @Obligation c
   cObl.settled === False
 
+-- Read the net figure off a NetPosition contract (operator is signatory, so it
+-- can always see it). Used by the bilateral-consent test below.
+netOf : Party -> ContractId NetPosition -> Script Decimal
+netOf reader cid = do
+  mnp <- queryContractId reader cid
+  case mnp of
+    Some np -> pure np.net
+    None -> abort "NetPosition not visible"
+
 -- WIN 8 (v1.0.3), bilateral consent: an obligation the obligee has NOT accepted
 -- (accepted = None) is excluded from netting, so it can move no balance. Once the
 -- obligee exercises Accept, the same obligation nets. This is the fake-invoice
@@ -212,19 +221,17 @@ test_bilateral_consent : Script ()
 test_bilateral_consent = do
   Setup{operator, a, b} <- parties
   -- B owes A 40k, signed by B (obligor) but not yet accepted by A (obligee).
-  pending <- submit b $ createCmd Obligation with
-    operator, obligor = b, obligee = a, amount = 40000.0, reference = "INV-40",
-    dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = None
+  pending <- submit b $ createCmd Obligation with operator, obligor = b, obligee = a, amount = 40000.0, reference = "INV-40", dueDate = "2026-07-20", settled = False, source = None, uetr = None, accepted = None
   cyc <- submit operator $ createCmd NettingCycle with
     operator, participants = [a, b], obligationCids = [pending], settled = False
-  -- Unaccepted → excluded from the net → every participant nets to zero.
+  -- Unaccepted -> excluded from the net -> every participant nets to zero.
   nps0 <- submit operator $ exerciseCmd cyc ComputeNetPositions with cycleId = "cyc-pending"
-  n0 <- mapA (\cid -> do Some np <- queryContractId operator cid; pure np.net) nps0
+  n0 <- mapA (netOf operator) nps0
   n0 === [0.0, 0.0]
-  -- A (obligee) accepts; the SAME obligation now nets +40k / -40k.
+  -- A (obligee) accepts; the SAME obligation now nets +40k / -40k (order [a, b]).
   accepted <- submit a $ exerciseCmd pending Accept
   cyc2 <- submit operator $ createCmd NettingCycle with
     operator, participants = [a, b], obligationCids = [accepted], settled = False
   nps1 <- submit operator $ exerciseCmd cyc2 ComputeNetPositions with cycleId = "cyc-accepted"
-  n1 <- mapA (\cid -> do Some np <- queryContractId operator cid; pure np.net) nps1
+  n1 <- mapA (netOf operator) nps1
   n1 === [40000.0, -40000.0]
