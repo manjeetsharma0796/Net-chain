@@ -8,7 +8,7 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import StatusPill from "@/components/ui/StatusPill";
-import { downloadCsv, toSettledLegsCsv } from "@/lib/export";
+import { downloadCsv, downloadXml, toIso20022Xml, toSettledLegsCsv } from "@/lib/export";
 import { shortHash } from "@/lib/format";
 import {
   buildSettlementLegs,
@@ -173,6 +173,12 @@ export default function AuditPage() {
     downloadCsv(`${ref}-${currentPartyId}-audit.csv`, csv);
   };
 
+  const exportXml = () => {
+    const ref = liveCycleRef ?? cycleId;
+    const xml = toIso20022Xml(myLegs, { cycleId: ref, txHash: txHash ?? "" });
+    downloadXml(`${ref}-${currentPartyId}-pain001.xml`, xml);
+  };
+
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
@@ -242,13 +248,22 @@ export default function AuditPage() {
               Settled legs
             </h2>
             {myLegs.length > 0 && (
-              <GhostButton
-                onClick={exportCsv}
-                className="!min-h-[34px] !px-3.5 !text-xs"
-              >
-                <Download size={13} aria-hidden="true" />
-                Export CSV
-              </GhostButton>
+              <div className="flex items-center gap-2">
+                <GhostButton
+                  onClick={exportCsv}
+                  className="!min-h-[34px] !px-3.5 !text-xs"
+                >
+                  <Download size={13} aria-hidden="true" />
+                  Export CSV
+                </GhostButton>
+                <GhostButton
+                  onClick={exportXml}
+                  className="!min-h-[34px] !px-3.5 !text-xs"
+                >
+                  <Download size={13} aria-hidden="true" />
+                  Export ISO 20022
+                </GhostButton>
+              </div>
             )}
           </div>
           <DataTable
