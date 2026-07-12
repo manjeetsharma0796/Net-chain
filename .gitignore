@@ -51,3 +51,4 @@ next-env.d.ts
 # NetChain MCP server: track source, ignore build artifacts
 mcp/node_modules/
 mcp/dist/
+~$*.pptx
