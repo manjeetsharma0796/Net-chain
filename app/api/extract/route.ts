@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getPartiesLive, isLive } from "@/lib/ledger-server";
 import { PARTIES } from "@/lib/mock/data";
 import { PartyId } from "@/lib/types";
 
@@ -40,8 +41,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "expected a data:image/* URL" }, { status: 400 });
   }
 
+  // Name the counterparties by their REAL on-chain identity in live mode (Carol/
+  // Investor/SME), so the vision model matches the actual invoice, not the mock
+  // labels. Falls back to the mock names when the ledger isn't configured.
+  const nameById = new Map<string, string>(
+    isLive()
+      ? getPartiesLive().map((p) => [p.id, p.baseName])
+      : PARTIES.map((p) => [p.id, p.name]),
+  );
+  const displayName = (id: string) => nameById.get(id) ?? id;
+
   const candidates = PARTIES.filter((p) => p.id !== body.currentParty);
-  const list = candidates.map((p) => `${p.id} = ${p.name}`).join("; ");
+  const list = candidates.map((p) => `${p.id} = ${displayName(p.id)}`).join("; ");
   const ids = candidates.map((p) => p.id).join(", ");
   const prompt =
     `Extract the single invoice in this image. The counterparty is one of these known ` +
@@ -96,7 +107,7 @@ export async function POST(req: NextRequest) {
   let forcedLowConfidence = false;
   if (!candidates.some((p) => p.id === counterparty)) {
     const low = raw.toLowerCase();
-    const matched = candidates.find((p) => low.includes(p.name.toLowerCase()))?.id;
+    const matched = candidates.find((p) => low.includes(displayName(p.id).toLowerCase()))?.id;
     counterparty = matched ?? candidates[0].id;
     forcedLowConfidence = !matched;
   }
