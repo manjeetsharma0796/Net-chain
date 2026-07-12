@@ -614,7 +614,9 @@ export async function getPolicy(
   party: PartyId,
 ): Promise<{ maxSettlementPerCycle: number } | null> {
   const pols = await queryAcs(ledgerId("operator"), "TreasuryPolicy");
-  const pol = pols.find((c) => c.payload.party === ledgerId(party));
+  // Use the LATEST policy for the party (matches proposeCapChange and settle's
+  // onePerParty), so a maker-checker cap change is read back consistently.
+  const pol = pols.filter((c) => c.payload.party === ledgerId(party)).at(-1);
   return pol ? { maxSettlementPerCycle: Number(pol.payload.maxSettlementPerCycle ?? 0) } : null;
 }
 
@@ -625,7 +627,9 @@ export async function checkPolicy(
 ): Promise<{ ok: boolean; ruleFired?: string }> {
   const op = ledgerId("operator");
   const pols = await queryAcs(op, "TreasuryPolicy");
-  const pol = pols.find((c) => c.payload.party === ledgerId(party));
+  // Use the LATEST policy for the party (matches proposeCapChange and settle's
+  // onePerParty), so a maker-checker cap change is read back consistently.
+  const pol = pols.filter((c) => c.payload.party === ledgerId(party)).at(-1);
   if (!pol) throw new LedgerError(`no TreasuryPolicy on-ledger for ${party}`);
   try {
     await exercise(op, "TreasuryPolicy", pol.contractId, "CheckSettlement", {
@@ -714,23 +718,23 @@ export async function reseedOpenLedger(): Promise<{ accounts: number; obligation
     ...cycles.map((c) => exercise(op, "NettingCycle", c.contractId, "Archive", {})),
     ...accs.map((c) => exercise(op, "Account", c.contractId, "Archive", {})),
     ...obls.map((c) => exercise(String(c.payload.obligor ?? ""), "Obligation", c.contractId, "Archive", {})),
+    // Archive ALL policies too (party is signatory), so reseed collapses any
+    // accumulated duplicates back to exactly one policy per party below.
+    ...pols.map((c) => exercise(String(c.payload.party ?? ""), "TreasuryPolicy", c.contractId, "Archive", {})),
   ]);
 
-  // Recreate accounts, policies (only if missing), and the 6 accepted
-  // obligations concurrently.
+  // Recreate accounts, exactly-3 policies, and the 6 accepted obligations.
   await Promise.all([
     ...PARTY_IDS.map((pid) =>
       create(op, "Account", { operator: op, owner: ledgerId(pid), balance: "100000.0" }),
     ),
-    ...(pols.length < 3
-      ? PARTY_IDS.map((pid) =>
-          create(ledgerId(pid), "TreasuryPolicy", {
-            operator: op,
-            party: ledgerId(pid),
-            maxSettlementPerCycle: caps[pid],
-          }),
-        )
-      : []),
+    ...PARTY_IDS.map((pid) =>
+      create(ledgerId(pid), "TreasuryPolicy", {
+        operator: op,
+        party: ledgerId(pid),
+        maxSettlementPerCycle: caps[pid],
+      }),
+    ),
     ...OBS.map(([o, e, amt, ref]) =>
       create(ledgerId(o), "Obligation", {
         operator: op,

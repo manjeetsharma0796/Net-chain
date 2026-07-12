@@ -97,15 +97,17 @@ for owner in "$CA" "$CB" "$CC"; do
   create "$OP" Account "{\"operator\":\"$OP\",\"owner\":\"$owner\",\"balance\":\"100000.0\"}"
 done
 
-# --- 3. ensure policies (caps A=200k B=500k C=350k) -------------------------
-if [ "$(acs TreasuryPolicy | grep -c . || true)" -ge 3 ]; then
-  say "TreasuryPolicies present, keeping"
-else
-  say "Seeding TreasuryPolicies (A=200k B=500k C=350k)"
-  create "$CA" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CA\",\"maxSettlementPerCycle\":\"200000.0\"}"
-  create "$CB" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CB\",\"maxSettlementPerCycle\":\"500000.0\"}"
-  create "$CC" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CC\",\"maxSettlementPerCycle\":\"350000.0\"}"
-fi
+# --- 3. reset policies to exactly one per party (archive all + recreate) -----
+# Collapses any accumulated duplicate policies, which otherwise make the read
+# cap ambiguous (and a maker-checker cap change appear to not take effect).
+say "Resetting TreasuryPolicies (archive all + recreate: A=200k B=500k C=350k)"
+acs TreasuryPolicy | while IFS=$'\t' read -r cid payload; do
+  [ -n "$cid" ] || continue
+  archive "$(field "$payload" party)" TreasuryPolicy "$cid"
+done
+create "$CA" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CA\",\"maxSettlementPerCycle\":\"200000.0\"}"
+create "$CB" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CB\",\"maxSettlementPerCycle\":\"500000.0\"}"
+create "$CC" TreasuryPolicy "{\"operator\":\"$OP\",\"party\":\"$CC\",\"maxSettlementPerCycle\":\"350000.0\"}"
 
 # --- 4. seed the 6 canonical obligations, ACCEPTED so they net --------------
 say "Seeding 6 Obligations (gross 460k, accepted=true)"
