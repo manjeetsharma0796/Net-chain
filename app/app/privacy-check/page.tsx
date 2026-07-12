@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Eye, Lock, SearchX, ShieldCheck, Terminal } from "lucide-react";
+import { Eye, Lock, SearchX, Terminal } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
 import FadeIn from "@/components/motion/FadeIn";
 import GhostButton from "@/components/ui/GhostButton";
@@ -69,7 +69,7 @@ export default function PrivacyCheckPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Privacy Check"
-        subtitle={`Logged in as ${party.name}. Below: your projection of the current cycle vs. what the ledger refuses to show you. Switch party in the top bar and watch both sides flip.`}
+        subtitle={`${party.name}'s projection vs. what the ledger hides.`}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -140,13 +140,6 @@ export default function PrivacyCheckPage() {
                   );
                 })}
             </ul>
-
-            <p className="mt-5 text-xs font-light leading-relaxed text-frost/50">
-              Locked rows exist only because this demo page juxtaposes the full
-              cycle scope for teaching purposes, the ledger API never returns
-              them to {party.shortName} at all, as the query on the right
-              proves.
-            </p>
           </section>
         </FadeIn>
 
@@ -163,10 +156,8 @@ export default function PrivacyCheckPage() {
               </h2>
             </div>
 
-            <p className="text-sm font-light leading-relaxed text-frost/70">
-              Ask the ledger for a contract between the other two parties -
-              by exact contract ID, while authenticated as{" "}
-              <span className="figures text-xs">{shortHash(party.ledgerId, 14, 4)}</span>.
+            <p className="text-sm text-frost/70">
+              Fetch a contract between the other two parties.
             </p>
 
             <div className="mt-5">
@@ -217,26 +208,9 @@ export default function PrivacyCheckPage() {
                     <p className="figures mt-3 break-all text-xs leading-relaxed text-frost/70">
                       {queryState.error.message}
                     </p>
-                    <p className="mt-4 text-xs font-light leading-relaxed text-frost/55">
-                      The ledger does not even confirm the contract exists.
-                      This is Canton&apos;s per-party projection, enforced at
-                      the data layer, not hidden by the UI.
-                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-
-            <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-settled/25 bg-settled/[0.06] px-4 py-3">
-              <ShieldCheck
-                size={15}
-                className="mt-0.5 shrink-0 text-settled"
-                aria-hidden="true"
-              />
-              <p className="text-xs font-light leading-relaxed text-frost/70">
-                Net positions are scoped the same way: on the Netting Cycle
-                screen, {party.shortName} sees exactly one figure, its own.
-              </p>
             </div>
           </section>
         </FadeIn>

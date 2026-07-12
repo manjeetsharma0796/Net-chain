@@ -10,7 +10,6 @@ import {
   ShieldAlert,
   ShieldX,
   UserCheck,
-  Users,
   X,
 } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
@@ -117,7 +116,6 @@ export default function PolicyPage() {
     setRefreshTick((t) => t + 1);
   };
 
-  const isCapLive = liveCap !== null;
   const maxSettlementPerCycle = liveCap ?? policy.maxSettlementPerCycle;
 
   const runAttempt = async () => {
@@ -145,31 +143,10 @@ export default function PolicyPage() {
   };
 
   // Only maxSettlementPerCycle exists on the deployed TreasuryPolicy template.
-  // The other fields are product-config, not on-ledger yet.
-  const rows: { label: string; value: React.ReactNode; illustrative?: boolean }[] = [
+  const rows: { label: string; value: React.ReactNode }[] = [
     {
       label: "maxSettlementPerCycle",
       value: <MoneyValue amount={maxSettlementPerCycle} />,
-    },
-    {
-      label: "allowedCounterparties",
-      value: (
-        <span className="inline-flex items-center gap-1.5">
-          <Users size={13} className="text-frost/50" aria-hidden="true" />
-          {policy.allowedCounterparties
-            .map((p) => partyById(p).shortName)
-            .join(", ")}
-        </span>
-      ),
-      illustrative: true,
-    },
-    {
-      label: "allowedInstrument",
-      value: <span className="figures">{policy.allowedInstrument}</span>,
-    },
-    {
-      label: "requiresHumanApprovalAbove",
-      value: <MoneyValue amount={policy.requiresHumanApprovalAbove} />,
     },
   ];
 
@@ -177,7 +154,7 @@ export default function PolicyPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Treasury Policy"
-        subtitle={`${party.name}'s TreasuryPolicy lives on the ledger. The agent operates through it, never around it.`}
+        subtitle="On-ledger policy the agent cannot bypass."
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -196,28 +173,11 @@ export default function PolicyPage() {
                   key={r.label}
                   className="flex flex-wrap items-center justify-between gap-2 py-3.5"
                 >
-                  <dt className="figures text-xs text-frost/55">
-                    {r.label}
-                    {r.illustrative && (
-                      <span className="ml-2 text-[10px] text-frost/40">
-                        · policy metadata
-                      </span>
-                    )}
-                  </dt>
+                  <dt className="figures text-xs text-frost/55">{r.label}</dt>
                   <dd className="text-sm">{r.value}</dd>
                 </div>
               ))}
             </dl>
-            <p className="mt-4 text-xs font-light leading-relaxed text-frost/50">
-              {isCapLive
-                ? "maxSettlementPerCycle is read live from the deployed TreasuryPolicy contract."
-                : "maxSettlementPerCycle shown here is the configured value, the live ledger read didn't return one."}{" "}
-              The other fields are policy metadata, not yet part of the
-              deployed contract. In the real system these are assertions
-              inside the Daml settlement choice, the transaction fails
-              validation before it ever reaches the ledger if any rule is
-              violated.
-            </p>
           </section>
         </FadeIn>
 
@@ -230,17 +190,14 @@ export default function PolicyPage() {
             <div className="mb-5 flex items-center gap-2.5">
               <ShieldAlert size={18} className="text-rejected" aria-hidden="true" />
               <h2 className="text-sm font-semibold uppercase tracking-widest">
-                Required demo moment
+                Agent over-threshold attempt
               </h2>
             </div>
 
-            <p className="text-sm font-light leading-relaxed text-frost/70">
+            <p className="text-sm text-frost/70">
               Make the agent attempt a{" "}
               <MoneyValue amount={AGENT_OVERREACH_AMOUNT} className="text-sm" />{" "}
-              settlement, past a threshold in {party.shortName}&apos;s
-              TreasuryPolicy. The policy is on-ledger, so the rejection is not
-              a UI guardrail: the agent cannot bypass it. The exact rule that
-              fires is shown below, live.
+              settlement, past {party.shortName}&apos;s cap.
             </p>
 
             <div className="mt-5">
@@ -309,10 +266,6 @@ export default function PolicyPage() {
                         rule fired → {ruleFired}
                       </p>
                     )}
-                    <p className="text-xs font-light text-frost/55">
-                      The transaction never reached the ledger. No override
-                      flag exists for the agent to set.
-                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -354,9 +307,8 @@ export default function PolicyPage() {
               Cap governance · maker-checker
             </h2>
           </div>
-          <p className="mb-5 text-xs font-light leading-relaxed text-frost/50">
-            On-ledger four-eyes control over maxSettlementPerCycle. The operator
-            must approve. Neither party can change a cap alone (four-eyes).
+          <p className="mb-5 text-xs text-frost/50">
+            The operator must approve every cap change.
           </p>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

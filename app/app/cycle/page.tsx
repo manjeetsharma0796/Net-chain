@@ -166,7 +166,7 @@ export default function CyclePage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Netting Cycle"
-        subtitle={`${cycleId}, the operator observes in-scope obligations, computes each party's single net position, and never needs anything more.`}
+        subtitle="Compute each party's net position."
         actions={
           <div
             role="group"
@@ -330,7 +330,7 @@ export default function CyclePage() {
                   })}
                 </div>
                 <p className="figures mt-5 text-xs text-frost/55">
-                  Σ nets = {sumOfNets?.toLocaleString("en-US")} (zero by construction) ·
+                  Σ nets = {sumOfNets?.toLocaleString("en-US")} ·
                   gross {grossTotal.toLocaleString("en-US")} → net{" "}
                   {netTotal?.toLocaleString("en-US")} USDCx ·{" "}
                   {grossTotal > 0 && netTotal !== null
@@ -355,8 +355,7 @@ export default function CyclePage() {
           >
           {!computed ? (
             <div className="glass-card col-span-full rounded-2xl p-10 text-center text-sm text-frost/50">
-              Cycle not yet computed, the operator hasn&apos;t run it. Switch
-              to the operator view to run the netting cycle.
+              Cycle not yet computed. Run it from the operator view.
             </div>
           ) : (
             ALL_PARTY_IDS.map((pid) => {

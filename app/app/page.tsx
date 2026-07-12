@@ -129,7 +129,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Dashboard"
-        subtitle={`Canton network context and ${party.name}'s treasury position. CC price live via CoinGecko.`}
+        subtitle={`${party.name}'s treasury position.`}
       />
 
       {/* network stats */}
@@ -227,10 +227,6 @@ export default function DashboardPage() {
             </div>
             <p className="figures mt-3 text-3xl">
               {liveObligationsCount ?? myObligations.length}
-            </p>
-            <p className="mt-1 text-xs text-frost/45">
-              visible to {party.shortName}, other parties&apos; contracts are
-              not in your projection
             </p>
           </div>
         </div>

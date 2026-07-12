@@ -183,7 +183,7 @@ export default function AuditPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Audit"
-        subtitle={`${displayCycle}: tracing ${party.name}'s gross obligations to the computed net position and the settled legs that cleared them.`}
+        subtitle={`${displayCycle} · gross to net to settled legs.`}
       />
 
       <FadeIn>

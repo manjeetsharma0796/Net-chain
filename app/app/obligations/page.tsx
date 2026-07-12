@@ -382,7 +382,7 @@ export default function ObligationsPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Obligations"
-        subtitle={`Contracts where ${party.name} is obligor or obligee, nothing else exists in your projection.`}
+        subtitle={`Contracts where ${party.name} is obligor or obligee.`}
         actions={
           <GhostButton onClick={() => setManualOpen((v) => !v)}>
             <PenLine size={14} aria-hidden="true" />
@@ -399,7 +399,7 @@ export default function ObligationsPage() {
         <FadeIn className="mt-6">
           <div className="glass-card rounded-2xl p-6">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-frost/60">
-              Manual entry, the always-works fallback
+              Manual entry
             </h2>
             <ObligationForm
               initial={EMPTY_DRAFT}
@@ -439,7 +439,7 @@ export default function ObligationsPage() {
               <span className="figures text-privacy">
                 {(reviewMeta.confidence * 100).toFixed(0)}%
               </span>{" "}
-              confidence. Review before it goes on-ledger.
+              confidence.
             </p>
           </div>
         )}

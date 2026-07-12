@@ -199,7 +199,7 @@ export default function HowItWorks() {
 
               <p className="mt-6 flex items-start gap-2 border-t border-frost/10 pt-4 text-xs text-frost/50">
                 <Bot size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-                The whole flow is also drivable by an AI agent through the NetChain MCP server. AI proposes, the ledger disposes.
+                The whole flow is also drivable by an AI agent through the NetChain MCP server.
               </p>
             </motion.div>
           </motion.div>
