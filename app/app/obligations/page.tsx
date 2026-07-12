@@ -118,7 +118,7 @@ function ObligationForm({
             </option>
             {PARTIES.filter((p) => p.id !== currentPartyId).map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name}
+                {partyById(p.id).name}
               </option>
             ))}
           </select>
