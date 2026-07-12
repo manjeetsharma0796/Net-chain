@@ -125,6 +125,16 @@ an agent that can't overstep it. NetChain. Settle everything, reveal nothing."
 | 4 | 2:08 to 2:44 | AI agent via MCP, policy-blocked on over-cap settle |
 | Close | 2:44 to 3:00 | Live Devnet + SCU, tagline |
 
+### Before judging (operational)
+
+- **The public URL is live and writable**, so a visitor could mutate the seeded numbers. Reset to the
+  clean open state in one command right before recording / judging:
+  `cd daml && source ../.env && ./reseed.sh` (balances 100k, 6 accepted obligations, gross 460k, not
+  settled). Re-run it any time the demo gets dirtied.
+- **Verify live before recording.** The client silently falls back to the mock on a validator hiccup
+  (logs `[ledger] live … fell back to mock` in the console). Watch for that warning and cross-check one
+  `curl /api/ledger/balances` so you never record fabricated numbers as "live".
+
 ### Delivery notes
 
 - One thesis line, then show, do not narrate over dead air. Let the 404 and the tx id sit on screen
