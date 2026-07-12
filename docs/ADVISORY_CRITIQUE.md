@@ -5,7 +5,7 @@ not to praise the demo (it is a good demo). It is to tell you what breaks the mo
 being a hackathon submission and tries to become a company.
 
 Frameworks used: the CEO and CTO advisor skills from `alirezarezvani/claude-skills`
-(`c-level-advisor/ceo-advisor` and `c-level-advisor/cto-advisor`, MIT), fetched from GitHub and
+(`c-level-advisor/skills/ceo-advisor` and `c-level-advisor/skills/cto-advisor`, MIT), fetched from GitHub and
 applied to this repo. That library has no CFO skill, so the CFO lens below uses standard
 corporate-finance frameworks (business model, unit economics, monetization, burn/runway), not a
 packaged skill. Every claim is tied to a file or a feature in this codebase, not a generic startup
