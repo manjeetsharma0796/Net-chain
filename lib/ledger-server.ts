@@ -604,31 +604,11 @@ export async function runAndSettle(): Promise<{
  */
 export async function reseedOpenLedger(): Promise<{ accounts: number; obligations: number }> {
   const op = ledgerId("operator");
-  // Archive stale netting artifacts (operator is signatory).
-  for (const t of ["NetPosition", "NettingCycle"] as const)
-    for (const c of await queryAcs(op, t)) await exercise(op, t, c.contractId, "Archive", {});
-  // Archive every obligation as its obligor (the signatory).
-  for (const c of await queryAcs(op, "Obligation"))
-    await exercise(String(c.payload.obligor ?? ""), "Obligation", c.contractId, "Archive", {});
-  // Reset accounts to 100k.
-  for (const c of await queryAcs(op, "Account")) await exercise(op, "Account", c.contractId, "Archive", {});
-  for (const pid of PARTY_IDS)
-    await create(op, "Account", { operator: op, owner: ledgerId(pid), balance: "100000.0" });
-  // Ensure the three treasury policies exist.
-  if ((await queryAcs(op, "TreasuryPolicy")).length < 3) {
-    const caps: Record<PartyId, string> = {
-      "company-a": "200000.0",
-      "company-b": "500000.0",
-      "company-c": "350000.0",
-    };
-    for (const pid of PARTY_IDS)
-      await create(ledgerId(pid), "TreasuryPolicy", {
-        operator: op,
-        party: ledgerId(pid),
-        maxSettlementPerCycle: caps[pid],
-      });
-  }
-  // Seed the 6 canonical obligations, accepted so they net.
+  const caps: Record<PartyId, string> = {
+    "company-a": "200000.0",
+    "company-b": "500000.0",
+    "company-c": "350000.0",
+  };
   const OBS: [PartyId, PartyId, string, string][] = [
     ["company-a", "company-b", "120000.0", "AB"],
     ["company-b", "company-c", "95000.0", "BC"],
@@ -637,19 +617,56 @@ export async function reseedOpenLedger(): Promise<{ accounts: number; obligation
     ["company-b", "company-a", "25000.0", "BA"],
     ["company-c", "company-b", "30000.0", "CB"],
   ];
-  for (const [o, e, amt, ref] of OBS)
-    await create(ledgerId(o), "Obligation", {
-      operator: op,
-      obligor: ledgerId(o),
-      obligee: ledgerId(e),
-      amount: amt,
-      reference: ref,
-      dueDate: "2026-07-20",
-      settled: false,
-      source: null,
-      uetr: crypto.randomUUID(),
-      accepted: true,
-    });
+
+  // Snapshot everything in parallel.
+  const [nps, cycles, obls, accs, pols] = await Promise.all([
+    queryAcs(op, "NetPosition"),
+    queryAcs(op, "NettingCycle"),
+    queryAcs(op, "Obligation"),
+    queryAcs(op, "Account"),
+    queryAcs(op, "TreasuryPolicy"),
+  ]);
+
+  // Archive stale state concurrently (each contract is independent). Obligations
+  // are archived as their obligor (the signatory); the rest as operator.
+  await Promise.all([
+    ...nps.map((c) => exercise(op, "NetPosition", c.contractId, "Archive", {})),
+    ...cycles.map((c) => exercise(op, "NettingCycle", c.contractId, "Archive", {})),
+    ...accs.map((c) => exercise(op, "Account", c.contractId, "Archive", {})),
+    ...obls.map((c) => exercise(String(c.payload.obligor ?? ""), "Obligation", c.contractId, "Archive", {})),
+  ]);
+
+  // Recreate accounts, policies (only if missing), and the 6 accepted
+  // obligations concurrently.
+  await Promise.all([
+    ...PARTY_IDS.map((pid) =>
+      create(op, "Account", { operator: op, owner: ledgerId(pid), balance: "100000.0" }),
+    ),
+    ...(pols.length < 3
+      ? PARTY_IDS.map((pid) =>
+          create(ledgerId(pid), "TreasuryPolicy", {
+            operator: op,
+            party: ledgerId(pid),
+            maxSettlementPerCycle: caps[pid],
+          }),
+        )
+      : []),
+    ...OBS.map(([o, e, amt, ref]) =>
+      create(ledgerId(o), "Obligation", {
+        operator: op,
+        obligor: ledgerId(o),
+        obligee: ledgerId(e),
+        amount: amt,
+        reference: ref,
+        dueDate: "2026-07-20",
+        settled: false,
+        source: null,
+        uetr: crypto.randomUUID(),
+        accepted: true,
+      }),
+    ),
+  ]);
+
   return { accounts: PARTY_IDS.length, obligations: OBS.length };
 }
 
