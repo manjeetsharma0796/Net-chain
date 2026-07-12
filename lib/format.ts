@@ -46,10 +46,16 @@ export function shortHash(hash: string, head = 6, tail = 4): string {
  */
 export function mockHash(seed: string, length = 40): string {
   let h = 0x811c9dc5;
+  // Fold the WHOLE seed first, so every emitted digit depends on all of it.
+  // Otherwise seeds differing only in a late char (e.g. "ob-001" vs "ob-006")
+  // collide: the differing char isn't consumed before `length` is reached and
+  // its influence lands past the slice, yielding identical hashes.
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ (seed.charCodeAt(i) + i), 0x01000193) >>> 0;
+  }
   const out: string[] = [];
   for (let i = 0; out.join("").length < length; i++) {
-    const c = seed.charCodeAt(i % seed.length) + i;
-    h = Math.imul(h ^ c, 0x01000193) >>> 0;
+    h = Math.imul(h ^ (seed.charCodeAt(i % seed.length) + i), 0x01000193) >>> 0;
     out.push(h.toString(16));
   }
   return out.join("").slice(0, length);

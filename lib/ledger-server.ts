@@ -219,8 +219,10 @@ function extractContracts(res: unknown): LedgerContract[] {
 /* high-level API used by the route handlers                                  */
 /* -------------------------------------------------------------------------- */
 
-/** Obligations in `party`'s ledger projection (privacy enforced by the node). */
-export async function listObligations(party: PartyId): Promise<Obligation[]> {
+/** Obligations in `party`'s ledger projection (privacy enforced by the node).
+ *  Pass "operator" for the ground-truth set: the operator is observer on every
+ *  Obligation, so its ACS returns all of them with their real contract ids. */
+export async function listObligations(party: PartyId | "operator"): Promise<Obligation[]> {
   const rows = await queryAcs(ledgerId(party), "Obligation");
   return rows.map((c) => toObligation(c, toPartyId)).filter((o): o is Obligation => o !== null);
 }

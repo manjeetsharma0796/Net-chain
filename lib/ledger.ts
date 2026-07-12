@@ -418,3 +418,14 @@ export interface LivePartyIdentity {
 export async function getPartiesLive(): Promise<LivePartyIdentity[] | null> {
   return liveGet<LivePartyIdentity[]>("parties", "getPartiesLive");
 }
+
+/* ---- privacy check ground truth (WR6) ----------------------------------- */
+
+/** Every Obligation on-ledger with its REAL contract id (operator is observer
+ *  on all of them), the ground-truth set the privacy page renders and joins the
+ *  per-party projection against. Live: null on failure. Mock: the demo set, so
+ *  the contractId join still matches the mock per-party projection. */
+export async function getAllObligationsLive(): Promise<Obligation[] | null> {
+  if (live()) return liveGet<Obligation[]>("obligations-all", "getAllObligationsLive");
+  return OBLIGATIONS;
+}

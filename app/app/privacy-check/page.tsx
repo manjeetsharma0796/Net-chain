@@ -8,7 +8,7 @@ import FadeIn from "@/components/motion/FadeIn";
 import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import StatusPill from "@/components/ui/StatusPill";
-import { getObligationsFor, queryContract } from "@/lib/ledger";
+import { getAllObligationsLive, getObligationsFor, queryContract } from "@/lib/ledger";
 import { shortHash } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { Obligation, PrivacyError } from "@/lib/types";
@@ -20,11 +20,15 @@ import { Obligation, PrivacyError } from "@/lib/types";
  */
 export default function PrivacyCheckPage() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
-  const ledger = useNetChain((s) => s.obligations);
   const party = partyById(currentPartyId);
 
-  const [visible, setVisible] = useState<Obligation[]>([]);
+  // Ground truth: every Obligation with its REAL contract id (operator ACS).
+  const [all, setAll] = useState<Obligation[]>([]);
+  // The subset the current party may actually see (its per-party projection),
+  // keyed strictly on the real contractId so the join matches the live ids.
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [queryState, setQueryState] = useState<
     | { phase: "idle" }
     | { phase: "querying"; contractId: string }
@@ -34,28 +38,38 @@ export default function PrivacyCheckPage() {
   useEffect(() => {
     let live = true;
     setLoading(true);
+    setFailed(false);
     setQueryState({ phase: "idle" });
-    getObligationsFor(currentPartyId, ledger).then((rows) => {
+    Promise.all([
+      getAllObligationsLive(),
+      getObligationsFor(currentPartyId, []),
+    ]).then(([groundTruth, visible]) => {
       if (!live) return;
-      setVisible(rows);
+      if (!groundTruth) {
+        setFailed(true);
+        setAll([]);
+        setVisibleIds(new Set());
+      } else {
+        setAll(groundTruth);
+        setVisibleIds(new Set(visible.map((o) => o.contractId)));
+      }
       setLoading(false);
     });
     return () => {
       live = false;
     };
-  }, [currentPartyId, ledger]);
+  }, [currentPartyId]);
 
-  const foreign = ledger.filter(
+  const foreign = all.filter(
     (o) => o.obligor !== currentPartyId && o.obligee !== currentPartyId,
   );
-  const visibleIds = new Set(visible.map((o) => o.id));
 
   const attemptForeignQuery = async () => {
     const target = foreign[0];
     if (!target) return;
     setQueryState({ phase: "querying", contractId: target.contractId });
     try {
-      await queryContract(currentPartyId, target.contractId, ledger);
+      await queryContract(currentPartyId, target.contractId, all);
     } catch (e) {
       if (e instanceof PrivacyError) {
         setQueryState({ phase: "denied", error: e });
@@ -94,12 +108,26 @@ export default function PrivacyCheckPage() {
                     className="h-14 animate-pulse rounded-xl bg-frost/[0.06]"
                   />
                 ))}
+              {!loading && failed && (
+                <li
+                  role="alert"
+                  className="rounded-xl border border-rejected/40 bg-rejected/[0.07] px-4 py-3 text-sm text-frost/70"
+                >
+                  Could not read the ledger projection. The validator did not
+                  respond, so nothing is shown.
+                </li>
+              )}
+              {!loading && !failed && all.length === 0 && (
+                <li className="rounded-xl border border-frost/15 px-4 py-3 text-sm text-frost/60">
+                  No obligations on the ledger yet.
+                </li>
+              )}
               {!loading &&
-                ledger.map((o) => {
-                  const canSee = visibleIds.has(o.id);
+                all.map((o) => {
+                  const canSee = visibleIds.has(o.contractId);
                   return (
                     <li
-                      key={o.id}
+                      key={o.contractId}
                       className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
                         canSee
                           ? "border-frost/15"

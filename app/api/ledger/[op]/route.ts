@@ -103,6 +103,15 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
       return fail(e);
     }
   }
+  // Ground truth for the privacy check: every Obligation with its real contract
+  // id (operator is observer on all of them), independent of the viewing party.
+  if (params.op === "obligations-all") {
+    try {
+      return NextResponse.json(await listObligations("operator"));
+    } catch (e) {
+      return fail(e);
+    }
+  }
 
   const q = req.nextUrl.searchParams;
   const party = asParty(q.get("party"));
