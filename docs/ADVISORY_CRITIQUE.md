@@ -4,9 +4,12 @@ A hard, honest board-style review from three seats: a founder/CEO, a CTO, and a 
 not to praise the demo (it is a good demo). It is to tell you what breaks the moment NetChain stops
 being a hackathon submission and tries to become a company.
 
-Frameworks used: the CEO, CTO, and CFO advisor skills from `alirezarezvani/claude-skills`
-(`c-level-advisor/skills/*`, MIT), applied to this repo specifically. Every claim below is tied to a
-file or a feature in this codebase, not a generic startup platitude.
+Frameworks used: the CEO and CTO advisor skills from `alirezarezvani/claude-skills`
+(`c-level-advisor/ceo-advisor` and `c-level-advisor/cto-advisor`, MIT), fetched from GitHub and
+applied to this repo. That library has no CFO skill, so the CFO lens below uses standard
+corporate-finance frameworks (business model, unit economics, monetization, burn/runway), not a
+packaged skill. Every claim is tied to a file or a feature in this codebase, not a generic startup
+platitude.
 
 ---
 
