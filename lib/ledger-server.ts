@@ -266,35 +266,8 @@ type HistoryTx = {
   events: HistoryEvent[];
 };
 
-/** Flat transactions from the operator's projection, newest-first. */
-async function updateHistory(): Promise<HistoryTx[]> {
-  const end = await ledgerEnd();
-  const filter = {
-    filtersByParty: {
-      [ledgerId("operator")]: {
-        cumulative: [
-          { identifierFilter: { WildcardFilter: { value: { includeCreatedEventBlob: false } } } },
-        ],
-      },
-    },
-  };
-  // /v2/updates/flats errors once more than 200 elements match (the JSON API
-  // node limit), which a long-lived ledger crosses. Widen a TAIL window until it
-  // would exceed the limit, then use the widest window that fit. Both consumers
-  // (the activity feed and last-cycle net-position recovery) want the most
-  // recent updates, so a tail window is the right shape, and a full-history
-  // scan (the old behavior) silently broke everything past 200 updates.
-  let res: unknown = null;
-  for (const frac of [0.003, 0.01, 0.03, 0.1, 0.3, 1]) {
-    const beginExclusive = Math.max(0, Math.floor(end - end * frac));
-    try {
-      res = await post("/v2/updates/flats", { beginExclusive, endInclusive: end, filter, verbose: true });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (/node limit|matching elements/i.test(msg)) break; // widest window that fit is in `res`
-      throw e;
-    }
-  }
+/** Parse a /v2/updates/flats response into HistoryTx[], ledger order (oldest-first). */
+function parseHistoryTxs(res: unknown): HistoryTx[] {
   const items: unknown[] = res === null ? [] : Array.isArray(res) ? res : [res];
   const txs: HistoryTx[] = [];
   for (const item of items) {
@@ -322,7 +295,57 @@ async function updateHistory(): Promise<HistoryTx[]> {
       events,
     });
   }
-  return txs.reverse(); // ledger returns oldest-first
+  return txs;
+}
+
+/**
+ * Recent flat transactions from the operator's projection, newest-first.
+ * /v2/updates/flats errors past the JSON API's ~200-element node limit, so we
+ * never scan full history. Instead we page backwards from ledgerEnd in fixed
+ * offset windows (each well under the limit) and accumulate matching
+ * Transactions until we have `want` of them or a bounded number of windows are
+ * exhausted. If a window still trips the limit, we halve it and retry, so this
+ * stays reliable on a busy shared devnet where the old fraction-widening loop
+ * yielded empty.
+ */
+async function updateHistory(want = 25): Promise<HistoryTx[]> {
+  const end = await ledgerEnd();
+  const filter = {
+    filtersByParty: {
+      [ledgerId("operator")]: {
+        cumulative: [
+          { identifierFilter: { WildcardFilter: { value: { includeCreatedEventBlob: false } } } },
+        ],
+      },
+    },
+  };
+  const CHUNK = 150; // offsets/window: at most ~150 updates, safely under ~200
+  const MAX_WINDOWS = 10; // bound the backward scan (~1500 offsets of recent history)
+  const out: HistoryTx[] = [];
+  let hi = end;
+  for (let i = 0; i < MAX_WINDOWS && hi > 0 && out.length < want; i++) {
+    let lo = Math.max(0, hi - CHUNK);
+    let res: unknown;
+    for (;;) {
+      try {
+        res = await post("/v2/updates/flats", { beginExclusive: lo, endInclusive: hi, filter, verbose: true });
+        break;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // Window still too wide: shrink it and retry rather than bail to empty.
+        if (/node limit|matching elements/i.test(msg) && hi - lo > 1) {
+          lo = hi - Math.ceil((hi - lo) / 2);
+          continue;
+        }
+        throw e;
+      }
+    }
+    // Ledger returns oldest-first within a window; reverse to newest-first so
+    // `out` stays newest-first as we walk to successively older windows.
+    out.push(...parseHistoryTxs(res).reverse());
+    hi = lo;
+  }
+  return out;
 }
 
 const PARTY_LABEL: Record<string, string> = {
@@ -385,14 +408,14 @@ function mapTx(tx: HistoryTx): ActivityEvent | null {
   return null;
 }
 
-/** Real on-chain activity feed from transaction history, newest-first (max 8). */
-export async function getActivityLive(): Promise<ActivityEvent[]> {
-  const txs = await updateHistory();
+/** Real on-chain activity feed from transaction history, newest-first (max `limit`). */
+export async function getActivityLive(limit = 8): Promise<ActivityEvent[]> {
+  const txs = await updateHistory(limit);
   const out: ActivityEvent[] = [];
   for (const tx of txs) {
     const ev = mapTx(tx);
     if (ev) out.push(ev);
-    if (out.length >= 8) break;
+    if (out.length >= limit) break;
   }
   return out;
 }

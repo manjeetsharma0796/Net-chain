@@ -63,7 +63,8 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
   }
   if (params.op === "activity") {
     try {
-      return NextResponse.json(await getActivityLive());
+      const n = Number(req.nextUrl.searchParams.get("limit"));
+      return NextResponse.json(await getActivityLive(n > 0 ? n : undefined));
     } catch (e) {
       return fail(e);
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Download, Landmark, Sigma } from "lucide-react";
+import { ClipboardList, Download, ExternalLink, History, Landmark, Sigma } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
 import FadeIn from "@/components/motion/FadeIn";
 import DataTable, { Column } from "@/components/ui/DataTable";
@@ -9,15 +9,20 @@ import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import StatusPill from "@/components/ui/StatusPill";
 import { downloadCsv, downloadXml, toIso20022Xml, toSettledLegsCsv } from "@/lib/export";
-import { shortHash } from "@/lib/format";
+import { formatDate, formatTime, shortHash } from "@/lib/format";
 import {
   buildSettlementLegs,
+  getActivityLive,
   getCycleStatusLive,
   getNetPositionsLive,
   getObligationsFor,
 } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
-import { NetPosition, Obligation, SettlementLeg } from "@/lib/types";
+import { ActivityEvent, NetPosition, Obligation, SettlementLeg } from "@/lib/types";
+
+// Lighthouse resolves an updateId to its on-chain transaction envelope on a
+// public Canton explorer, matching the settlement page's proof link.
+const LIGHTHOUSE_TX = "https://lighthouse.devnet.cantonloop.com/transactions/";
 
 /**
  * Audit trail: gross obligations -> net position -> settled legs, scoped to
@@ -37,6 +42,7 @@ export default function AuditPage() {
   const [liveObligations, setLiveObligations] = useState<Obligation[] | null>(null);
   const [liveNetPositions, setLiveNetPositions] = useState<NetPosition[] | null>(null);
   const [liveCycleRef, setLiveCycleRef] = useState<string | null>(null);
+  const [liveActivity, setLiveActivity] = useState<ActivityEvent[] | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -58,6 +64,23 @@ export default function AuditPage() {
     getNetPositionsLive().then((p) => live && p && setLiveNetPositions(p));
     return () => { live = false; };
   }, []);
+
+  // Full recent on-ledger transaction log (real updateIds), re-read from the
+  // validator on every load, so it persists across sessions with no DB.
+  useEffect(() => {
+    let live = true;
+    getActivityLive(25).then((a) => live && a && setLiveActivity(a));
+    return () => { live = false; };
+  }, []);
+
+  // The real Settle transaction's updateId, used as the settled-legs ref.
+  const settleUpdateId = useMemo(
+    () => liveActivity?.find((e) => e.kind === "settlement")?.id ?? null,
+    [liveActivity],
+  );
+
+  const actorLabel = (a: ActivityEvent["actor"]) =>
+    a === "operator" ? "Operator" : a === "agent" ? "Agent" : partyById(a).shortName;
 
   const effectiveObligations = liveObligations ?? obligations;
   const effectiveNetPositions = liveNetPositions ?? netPositions;
@@ -161,9 +184,46 @@ export default function AuditPage() {
       header: "Settlement ref",
       render: () => (
         <span className="figures text-xs text-frost/60">
-          {txHash ? shortHash(txHash, 10, 4) : "n/a"}
+          {settleUpdateId ? shortHash(settleUpdateId, 10, 4) : "-"}
         </span>
       ),
+    },
+  ];
+
+  const activityColumns: Column<ActivityEvent>[] = [
+    {
+      key: "id",
+      header: "Update ID",
+      render: (e) => (
+        <a
+          href={`${LIGHTHOUSE_TX}${e.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="figures inline-flex items-center gap-1 text-xs text-frost/70 underline decoration-frost/25 underline-offset-2 transition-colors hover:text-frost/90"
+        >
+          {shortHash(e.id, 10, 4)}
+          <ExternalLink size={11} aria-hidden="true" />
+        </a>
+      ),
+    },
+    {
+      key: "at",
+      header: "Time",
+      render: (e) => (
+        <span className="text-xs text-frost/60">
+          {formatDate(e.at)} {formatTime(e.at)}
+        </span>
+      ),
+    },
+    {
+      key: "actor",
+      header: "Actor",
+      render: (e) => <span className="text-frost/80">{actorLabel(e.actor)}</span>,
+    },
+    {
+      key: "message",
+      header: "Event",
+      render: (e) => <span className="text-frost/70">{e.message}</span>,
     },
   ];
 
@@ -275,6 +335,24 @@ export default function AuditPage() {
           />
         </section>
       </FadeIn>
+
+      {liveActivity && liveActivity.length > 0 && (
+        <FadeIn delay={0.2} className="mt-8">
+          <section aria-label="Recent on-ledger activity">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-frost/60">
+              <History size={16} className="text-frost/50" aria-hidden="true" />
+              Recent on-ledger activity
+            </h2>
+            <DataTable
+              columns={activityColumns}
+              rows={liveActivity}
+              rowKey={(e) => e.id}
+              caption="Recent transactions from the validator's update stream, with verifiable updateIds"
+              emptyMessage="No on-ledger activity yet."
+            />
+          </section>
+        </FadeIn>
+      )}
     </div>
   );
 }

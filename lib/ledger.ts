@@ -82,9 +82,10 @@ export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>
 
 /* ---- activity feed + cycle status (live transaction history) ------------- */
 
-/** Real on-chain activity feed from ledger transaction history, or null. */
-export async function getActivityLive(): Promise<ActivityEvent[] | null> {
-  return liveGet<ActivityEvent[]>("activity", "getActivityLive");
+/** Real on-chain activity feed from ledger transaction history, or null. `limit`
+ *  (optional) pulls fuller history, e.g. the audit page's tracked tx log. */
+export async function getActivityLive(limit?: number): Promise<ActivityEvent[] | null> {
+  return liveGet<ActivityEvent[]>(limit ? `activity?limit=${limit}` : "activity", "getActivityLive");
 }
 
 /** Live netting-cycle status (open/settled/none + short ref), or null. */
