@@ -7,11 +7,11 @@ against the code in this repo (`lib/ledger.ts`, `app/api/ledger/[op]/route.ts`,
 not aspirational.
 
 **Live app:** https://netchain.vercel.app
-**Package:** v1.0.4 (pkg id: see TASKS.md), on the 5N Devnet (Canton Protocol Version 35). v1.0.4
-adds maker-checker (four-eyes) governance for treasury-cap changes (Scenario G); it is a valid Smart
-Contract Upgrade of v1.0.3 `219a350c3940b76031a2d8c55b29a6bb9f8923f307918fa107b974bc3361eed0`, which
-itself added bilateral confirmation (Scenario F) as an upgrade of v1.0.2 `afd2a89d…be2c57e`. (The
-orchestrator fills in the v1.0.4 package hash on deploy.)
+**Package:** v1.0.4, `8ae58d7ccd979213f10c78a328da0f7edfa3614060a4cf7250216837a7768cbb`, on the 5N
+Devnet (Canton Protocol Version 35). v1.0.4 adds maker-checker (four-eyes) governance for treasury-cap
+changes (Scenario G); it is a valid Smart Contract Upgrade of v1.0.3
+`219a350c3940b76031a2d8c55b29a6bb9f8923f307918fa107b974bc3361eed0`, which itself added bilateral
+confirmation (Scenario F) as an upgrade of v1.0.2 `afd2a89d…be2c57e`.
 
 ---
 

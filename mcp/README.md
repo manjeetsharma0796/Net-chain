@@ -28,6 +28,10 @@ already-deployed HTTP API (`${NETCHAIN_API_BASE}/api/ledger/<op>`, default
 | `create_obligation` | `POST obligation` | Record a new obligation (invoice), starts PENDING; `source` defaults to `agent` |
 | `accept_obligation` | `POST accept` | Obligee confirms a pending obligation (bilateral consent); only accepted obligations net |
 | `check_policy` | `POST policy-check` | Dry-run whether an amount would pass a party's cap |
+| `propose_cap_change` | `POST propose-cap` | Maker: party proposes a new cap on its own policy (needs approval) |
+| `list_cap_proposals` | `GET cap-proposals` | List pending cap-change proposals |
+| `approve_cap_change` | `POST approve-cap` | Checker: operator approves a proposal, enacting the new cap |
+| `reject_cap_change` | `POST reject-cap` | Checker: operator rejects a proposal |
 | `run_netting_cycle` | `POST run-cycle` | Open a cycle and compute net positions |
 | `settle` | `POST settle` | Execute settlement for the current cycle (see below) |
 | `get_activity` | `GET activity` | Full chronological activity feed / audit trail |

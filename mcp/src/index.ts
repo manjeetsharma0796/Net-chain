@@ -117,7 +117,8 @@ server.registerTool(
     description:
       "Get `party`'s on-ledger TreasuryPolicy, in particular `maxSettlementPerCycle`, the " +
       "hard cap the ledger enforces on `settle`. Use this to predict whether a settlement " +
-      "will be accepted before attempting it.",
+      "will be accepted before attempting it. The cap is changeable only via maker-checker " +
+      "governance (`propose_cap_change` then operator `approve_cap_change`), never unilaterally.",
     inputSchema: { party: PartyId },
   },
   async ({ party }) => apiGet("policy", { party }),
@@ -178,6 +179,57 @@ server.registerTool(
     inputSchema: { party: PartyId, amount: z.number().positive() },
   },
   async (input) => apiPost("policy-check", input),
+);
+
+server.registerTool(
+  "propose_cap_change",
+  {
+    title: "Propose a treasury-cap change (maker)",
+    description:
+      "As `party` (the maker), propose changing its own `maxSettlementPerCycle` cap to `newCap`. " +
+      "This does NOT change the cap yet: it creates a proposal the operator must approve " +
+      "(maker-checker / four-eyes). No party, and no agent, can change a cap alone, and the " +
+      "operator still cannot unilaterally RAISE a party's cap, it can only approve what the party " +
+      "proposed. Use `approve_cap_change` (as the operator) to enact it.",
+    inputSchema: { party: PartyId, newCap: z.number().positive() },
+  },
+  async (input) => apiPost("propose-cap", input),
+);
+
+server.registerTool(
+  "list_cap_proposals",
+  {
+    title: "List pending cap-change proposals",
+    description:
+      "List all pending treasury-cap-change proposals (`{ proposalCid, party, newCap }`). Use this " +
+      "as the operator to find a `proposalCid` to approve or reject.",
+    inputSchema: {},
+  },
+  async () => apiGet("cap-proposals"),
+);
+
+server.registerTool(
+  "approve_cap_change",
+  {
+    title: "Approve a cap-change proposal (checker)",
+    description:
+      "As the operator (the checker), approve a pending proposal by `proposalCid`. This atomically " +
+      "retires the old policy and issues the new cap on-ledger. The second signature that makes a " +
+      "cap change take effect. Find the id with `list_cap_proposals`.",
+    inputSchema: { proposalCid: z.string().min(1) },
+  },
+  async (input) => apiPost("approve-cap", input),
+);
+
+server.registerTool(
+  "reject_cap_change",
+  {
+    title: "Reject a cap-change proposal (checker)",
+    description:
+      "As the operator, reject a pending proposal by `proposalCid`; the current cap stands.",
+    inputSchema: { proposalCid: z.string().min(1) },
+  },
+  async (input) => apiPost("reject-cap", input),
 );
 
 server.registerTool(
