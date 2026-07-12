@@ -69,19 +69,26 @@ function buildEdges(obligations: Obligation[]): Edge[] {
     const dir = unit(b.x - a.x, b.y - a.y);
     const start = { x: a.x + dir.x * (RADIUS + 2), y: a.y + dir.y * (RADIUS + 2) };
     const end = { x: b.x - dir.x * (RADIUS + 10), y: b.y - dir.y * (RADIUS + 10) };
+    // Bow is a CONSTANT sign: the normal is already derived from this edge's
+    // own direction, so reversing obligor/obligee flips the normal and bows the
+    // two anti-parallel edges to opposite sides on its own. A direction-dependent
+    // sign here would cancel that flip, collapsing both edges (and their amount
+    // labels) onto the same curve, the "overlapping numbers" bug.
     const normal = { x: -dir.y, y: dir.x };
-    const bow = from < to ? BOW : -BOW;
     const cp = {
-      x: (start.x + end.x) / 2 + normal.x * bow,
-      y: (start.y + end.y) / 2 + normal.y * bow,
+      x: (start.x + end.x) / 2 + normal.x * BOW,
+      y: (start.y + end.y) / 2 + normal.y * BOW,
     };
     edges.push({
       from,
       to,
       amount,
       path: `M ${start.x} ${start.y} Q ${cp.x} ${cp.y} ${end.x} ${end.y}`,
-      labelX: 0.25 * start.x + 0.5 * cp.x + 0.25 * end.x,
-      labelY: 0.25 * start.y + 0.5 * cp.y + 0.25 * end.y,
+      // Label at the control point (full bow offset), so the two directions'
+      // labels sit ~2·BOW apart on opposite sides of the chord, not on top of
+      // each other at the shallow curve midpoint (0.5·BOW).
+      labelX: cp.x,
+      labelY: cp.y,
     });
   }
   return edges;
