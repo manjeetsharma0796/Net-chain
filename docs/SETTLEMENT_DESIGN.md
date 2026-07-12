@@ -99,6 +99,17 @@ single-operator model keeps everyone on one synchronizer, so atomicity holds tod
 settles against a separate cash or asset app, all parties must share a synchronizer or use the Global
 Synchronizer as common ground.
 
+### 8. Treasury-cap changes: maker-checker (four-eyes), not unilateral
+A spending limit is a control, so changing it must itself be controlled. NetChain governs
+`TreasuryPolicy.maxSettlementPerCycle` changes with on-ledger maker-checker (four-eyes)
+segregation of duties: the party proposes a new cap on its own policy
+(`TreasuryPolicyProposal`, the maker), and the operator approves it (`ApproveCapChange`,
+the checker), which atomically archives the old policy and issues the new cap. Neither
+party can change a cap alone, and the operator cannot unilaterally raise a party's cap, it
+can only approve, reject, or let the party withdraw what the party itself proposed. This
+mirrors the standard SOX/Basel/treasury requirement that limit changes are dual-controlled,
+so a single compromised or rogue actor (party or operator) cannot loosen its own guardrail.
+
 ## Build order
 
 Phase 1 (buildable now, high value, closes the honest gaps):

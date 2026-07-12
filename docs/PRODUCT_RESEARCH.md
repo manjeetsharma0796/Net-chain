@@ -239,6 +239,13 @@ treasury buyer already assumes any serious product has.
 3. **On-ledger, non-bypassable policy enforcement** (`TreasuryPolicy.maxSettlementPerCycle`,
    `requiresHumanApprovalAbove`) that a rogue or AI-driven agent cannot exceed by construction, verified
    live on Devnet (250k rejected, 150k accepted) [README.md, ARCHITECTURE.md].
+4. **Maker-checker (four-eyes) governance of the cap itself, on-ledger.** Changing a spending limit is
+   dual-controlled: the party proposes a new cap on its own policy (`TreasuryPolicyProposal`), the operator
+   approves it (`ApproveCapChange` archives the old policy and issues the new cap atomically), and neither
+   party can move a cap alone, nor can the operator unilaterally raise a party's cap. This is the
+   segregation-of-duties control for limit changes that corporate-treasury and risk functions require
+   (SOX/Basel), and it is table-stakes governance incumbents assume, NetChain now models it as an
+   enforced ledger property rather than an application-level workflow.
 
 ### What is table stakes (real treasuries assume it; NetChain does not have it yet)
 Prioritized by how directly each gates real adoption, each tied to the cited demand/competitive research

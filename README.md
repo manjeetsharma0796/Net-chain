@@ -43,6 +43,11 @@ Not slideware. Each of these is reproducible against the deployed package:
   does. A forced abort moves zero funds.
 - **A non-bypassable on-ledger `TreasuryPolicy` cap.** An over-cap settle is rejected inside the
   transaction; no caller, human or agent, can route around it.
+- **Maker-checker (four-eyes) governance of the cap.** Changing the cap is dual-controlled on-ledger:
+  the party proposes a new cap (`TreasuryPolicyProposal`), the operator approves it (`ApproveCapChange`
+  archives the old policy and issues the new cap atomically). Neither party can change a cap alone, and
+  the operator cannot unilaterally raise a party's cap, the segregation-of-duties control treasury and
+  risk functions require.
 - **A live Smart Contract Upgrade of a running contract**, v1.0.0 `cdd7...55e7` to v1.0.1
   `8d20d87f...6e8254`, carrying a settlement-correctness fix. The demo stayed live through it.
 - **Real Canton Devnet deployment** (5N Sandbox validator, PV35), not a local sandbox.

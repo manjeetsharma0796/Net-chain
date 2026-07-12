@@ -128,7 +128,10 @@ real.
 - **Only one of four policy controls is real.** The on-ledger `TreasuryPolicy` has only
   `maxSettlementPerCycle`. `allowedCounterparties`, `allowedInstrument`, and `requiresHumanApprovalAbove`
   are UI metadata, not enforced on-ledger (`docs/VERIFICATION.md` Scenario C, T38). The "non-bypassable
-  policy" claim is true but narrower than the UI implies.
+  policy" claim is true but narrower than the UI implies. [Update (v1.0.4): the one real control, the cap,
+  now also has on-ledger maker-checker (four-eyes) governance, the party proposes a cap change and the
+  operator approves it (`TreasuryPolicyProposal`/`ApproveCapChange`), so no single party can move a cap
+  alone; the other three fields remain UI metadata.]
 - **No real per-user signing.** The Loop/CIP-0103 path is blocked on a vendor opening third-party DAR
   submission (`docs/LOOP_INTEGRATION_BRIEF.md`). Today no user signs their own transaction.
 

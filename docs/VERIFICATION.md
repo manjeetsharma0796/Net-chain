@@ -7,9 +7,11 @@ against the code in this repo (`lib/ledger.ts`, `app/api/ledger/[op]/route.ts`,
 not aspirational.
 
 **Live app:** https://netchain.vercel.app
-**Package:** v1.0.3, `219a350c3940b76031a2d8c55b29a6bb9f8923f307918fa107b974bc3361eed0`, on the 5N Devnet
-(Canton Protocol Version 35). v1.0.3 adds bilateral confirmation (Scenario F); it is a valid Smart
-Contract Upgrade of v1.0.2 `afd2a89d…be2c57e`.
+**Package:** v1.0.4 (pkg id: see TASKS.md), on the 5N Devnet (Canton Protocol Version 35). v1.0.4
+adds maker-checker (four-eyes) governance for treasury-cap changes (Scenario G); it is a valid Smart
+Contract Upgrade of v1.0.3 `219a350c3940b76031a2d8c55b29a6bb9f8923f307918fa107b974bc3361eed0`, which
+itself added bilateral confirmation (Scenario F) as an upgrade of v1.0.2 `afd2a89d…be2c57e`. (The
+orchestrator fills in the v1.0.4 package hash on deploy.)
 
 ---
 
@@ -45,7 +47,17 @@ Contract Upgrade of v1.0.2 `afd2a89d…be2c57e`.
   invoice") obligation settling, an unaccepted obligation nets to zero.
 - **`TreasuryPolicy` cap**: an on-ledger spending limit (`maxSettlementPerCycle`)
   written into the contract itself. An agent, or a human, cannot exceed it by
-  crafting a cleverer request, the ledger itself refuses the transaction.
+  crafting a cleverer request, the ledger itself refuses the transaction. The cap is
+  not frozen, but neither party can change it alone: changes go through maker-checker
+  (four-eyes) governance, the party proposes a new cap and the operator approves it
+  on-ledger (Scenario G).
+- **Maker-checker / four-eyes** (v1.0.4): a segregation-of-duties control where the
+  action one party proposes (the maker) only takes effect when a second party approves
+  it (the checker). NetChain applies it to cap changes: the party is the maker
+  (proposes a new `maxSettlementPerCycle` on its own policy), the operator is the
+  checker (approves, rejects, or the party withdraws). This is the SOX/Basel/treasury
+  standard for limit changes, and the operator still cannot unilaterally raise a
+  party's cap, it can only approve what the party itself proposed.
 - **`updateId`**: the ledger's receipt for a committed transaction, the equivalent
   of a bank transfer reference number, proof a specific write actually happened.
 - **Smart Contract Upgrade (SCU)**: upgrading the code behind a contract that is
@@ -271,7 +283,9 @@ The policy page reads `maxSettlementPerCycle` live from the deployed contract
 (`allowedCounterparties`, `allowedInstrument`, `requiresHumanApprovalAbove`) are
 explicitly marked "policy metadata" in the UI because they are not yet on the
 deployed `TreasuryPolicy` template, only the cap itself is enforced on-ledger today.
-Do not present those other fields as on-ledger enforcement, they are illustrative.
+Do not present those other fields as on-ledger enforcement, they are illustrative. The
+cap is enforced but not frozen: it is changed only through maker-checker governance
+(party proposes, operator approves), never by either party alone, see Scenario G.
 
 ### Scenario D: The AI agent via MCP (`mcp/`)
 
@@ -374,6 +388,53 @@ all filter to `accepted == Some True`, and the `Accept` choice is controlled by 
 obligee (`controller obligee`), so only the obligee can consent. The test
 `test_bilateral_consent` in `daml/daml/Test.daml` proves a pending obligation nets to
 zero and the same obligation nets +40k/-40k once accepted.
+
+### Scenario G: Maker-checker cap change (four-eyes governance)
+
+This answers "who can change a party's spending limit?" A cap change needs two parties:
+the **party** proposes a new cap on its own `TreasuryPolicy` (the maker), and the
+**operator** approves it (the checker). Neither can change a cap alone, and the
+operator cannot unilaterally raise a party's cap, it can only approve what the party
+proposed. This is the SOX/Basel/treasury segregation-of-duties standard.
+
+**What to click:**
+1. As the **party**, propose a new cap on your own policy. This creates a
+   `TreasuryPolicyProposal` that is still pending, the live cap has not moved yet.
+2. Switch to the **operator** and approve the proposal. `ApproveCapChange` atomically
+   archives the old policy and issues the new cap in one commit. (The operator can also
+   `RejectCapChange`; the party can `WithdrawCapChange` before approval.)
+3. Re-read the party's policy, `maxSettlementPerCycle` now reflects the new cap.
+
+**What to expect:** between propose and approve, the party's on-ledger cap is unchanged
+(a proposal is not a policy). Only after the operator approves does the live cap change.
+
+**How to verify it is real (on-ledger, not a UI flag):**
+```bash
+# Read the current cap
+curl -s "https://netchain.vercel.app/api/ledger/policy?party=company-a"
+
+# As the party (maker): propose a new cap
+curl -s -X POST https://netchain.vercel.app/api/ledger/propose-cap \
+  -H "Content-Type: application/json" \
+  -d '{"party":"company-a","newCap":250000}'
+
+# List pending proposals; copy the proposalCid of the new proposal
+curl -s https://netchain.vercel.app/api/ledger/cap-proposals
+
+# As the operator (checker): approve it
+curl -s -X POST https://netchain.vercel.app/api/ledger/approve-cap \
+  -H "Content-Type: application/json" \
+  -d '{"proposalCid":"<CID>"}'
+
+# Re-read the policy; maxSettlementPerCycle now shows the new cap
+curl -s "https://netchain.vercel.app/api/ledger/policy?party=company-a"
+```
+Enforcement is in the Daml contract, not the UI: `TreasuryPolicyProposal.ApproveCapChange`
+archives the old `TreasuryPolicy` and creates the new cap in the same transaction, so
+there is no window where both exist or neither does. The controllers make segregation of
+duties real, propose is controlled by the party, approve/reject by the operator, so
+neither party can move a cap on its own. The test `test_cap_change_maker_checker` in
+`daml/daml/Test.daml` proves a proposed cap only takes effect after the operator approves.
 
 ---
 

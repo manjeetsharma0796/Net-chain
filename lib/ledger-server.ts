@@ -269,25 +269,33 @@ type HistoryTx = {
 /** Flat transactions from the operator's projection, newest-first. */
 async function updateHistory(): Promise<HistoryTx[]> {
   const end = await ledgerEnd();
-  const res = await post("/v2/updates/flats", {
-    beginExclusive: 0,
-    endInclusive: end,
-    filter: {
-      filtersByParty: {
-        [ledgerId("operator")]: {
-          cumulative: [
-            {
-              identifierFilter: {
-                WildcardFilter: { value: { includeCreatedEventBlob: false } },
-              },
-            },
-          ],
-        },
+  const filter = {
+    filtersByParty: {
+      [ledgerId("operator")]: {
+        cumulative: [
+          { identifierFilter: { WildcardFilter: { value: { includeCreatedEventBlob: false } } } },
+        ],
       },
     },
-    verbose: true,
-  });
-  const items: unknown[] = Array.isArray(res) ? res : [res];
+  };
+  // /v2/updates/flats errors once more than 200 elements match (the JSON API
+  // node limit), which a long-lived ledger crosses. Widen a TAIL window until it
+  // would exceed the limit, then use the widest window that fit. Both consumers
+  // (the activity feed and last-cycle net-position recovery) want the most
+  // recent updates, so a tail window is the right shape, and a full-history
+  // scan (the old behavior) silently broke everything past 200 updates.
+  let res: unknown = null;
+  for (const frac of [0.003, 0.01, 0.03, 0.1, 0.3, 1]) {
+    const beginExclusive = Math.max(0, Math.floor(end - end * frac));
+    try {
+      res = await post("/v2/updates/flats", { beginExclusive, endInclusive: end, filter, verbose: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/node limit|matching elements/i.test(msg)) break; // widest window that fit is in `res`
+      throw e;
+    }
+  }
+  const items: unknown[] = res === null ? [] : Array.isArray(res) ? res : [res];
   const txs: HistoryTx[] = [];
   for (const item of items) {
     if (!isRecord(item) || !isRecord(item.update)) continue;
@@ -403,11 +411,38 @@ export async function verifyUpdate(updateId: string): Promise<{
   } catch {
     /* keep BASE */
   }
+  if (!updateId) return { confirmed: false, effectiveAt: null, validator };
   try {
-    const txs = await updateHistory();
-    const tx = txs.find((t) => t.updateId === updateId);
-    return { confirmed: Boolean(tx), effectiveAt: tx?.effectiveAt ?? null, validator };
+    // Fetch this exact update by id (O(1)). This must NOT scan the update
+    // history: /v2/updates/flats caps at 200 elements and errors once the
+    // ledger has more, so a history scan silently fails on a busy validator.
+    const res = await post("/v2/updates/update-by-id", {
+      updateId,
+      updateFormat: {
+        includeTransactions: {
+          eventFormat: {
+            filtersByParty: {
+              [ledgerId("operator")]: {
+                cumulative: [
+                  { identifierFilter: { WildcardFilter: { value: { includeCreatedEventBlob: false } } } },
+                ],
+              },
+            },
+            verbose: false,
+          },
+          transactionShape: "TRANSACTION_SHAPE_ACS_DELTA",
+        },
+      },
+    });
+    const wrap =
+      isRecord(res) && isRecord(res.update) ? (res.update.Transaction as unknown) : null;
+    const tx = isRecord(wrap) && isRecord(wrap.value) ? wrap.value : null;
+    const foundId = tx && typeof tx.updateId === "string" ? tx.updateId : null;
+    const effectiveAt = tx && typeof tx.effectiveAt === "string" ? tx.effectiveAt : null;
+    return { confirmed: foundId === updateId, effectiveAt, validator };
   } catch {
+    // A non-existent update id returns NOT_FOUND (post throws): a real "not
+    // confirmed", exactly what we want to report for a bogus/forged id.
     return { confirmed: false, effectiveAt: null, validator };
   }
 }

@@ -1,24 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bot,
+  Check,
   Gavel,
   Scale,
   ShieldAlert,
   ShieldX,
+  UserCheck,
   Users,
+  X,
 } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
 import FadeIn from "@/components/motion/FadeIn";
+import GhostButton from "@/components/ui/GhostButton";
 import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
-import { checkPolicy, getPolicyLive } from "@/lib/ledger";
+import {
+  approveCapLive,
+  checkPolicy,
+  getCapProposalsLive,
+  getPolicyLive,
+  proposeCapLive,
+  rejectCapLive,
+} from "@/lib/ledger";
 import { formatTime } from "@/lib/format";
 import { AGENT_OVERREACH_AMOUNT, POLICIES } from "@/lib/mock/data";
 import { partyById, useNetChain } from "@/lib/store";
+import { PartyId } from "@/lib/types";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -42,6 +54,16 @@ export default function PolicyPage() {
   const [ruleFired, setRuleFired] = useState<string | null>(null);
   const [liveCap, setLiveCap] = useState<number | null>(null);
 
+  // Cap governance (maker-checker): proposals list + in-flight flags.
+  const [proposals, setProposals] = useState<
+    { proposalCid: string; party: PartyId; newCap: number }[]
+  >([]);
+  const [capInput, setCapInput] = useState("");
+  const [proposing, setProposing] = useState(false);
+  const [actingCid, setActingCid] = useState<string | null>(null);
+  // Bumped after any propose/approve/reject to refetch cap + proposals.
+  const [refreshTick, setRefreshTick] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     getPolicyLive(currentPartyId)
@@ -54,7 +76,46 @@ export default function PolicyPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentPartyId]);
+  }, [currentPartyId, refreshTick]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCapProposalsLive()
+      .then((p) => {
+        if (!cancelled) setProposals(p ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setProposals([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTick]);
+
+  const onPropose = async (e: FormEvent) => {
+    e.preventDefault();
+    const cap = Number(capInput);
+    if (!cap || cap <= 0) return;
+    setProposing(true);
+    await proposeCapLive({ party: currentPartyId, newCap: cap });
+    setCapInput("");
+    setProposing(false);
+    setRefreshTick((t) => t + 1);
+  };
+
+  const onApprove = async (cid: string) => {
+    setActingCid(cid);
+    await approveCapLive(cid);
+    setActingCid(null);
+    setRefreshTick((t) => t + 1);
+  };
+
+  const onReject = async (cid: string) => {
+    setActingCid(cid);
+    await rejectCapLive(cid);
+    setActingCid(null);
+    setRefreshTick((t) => t + 1);
+  };
 
   const isCapLive = liveCap !== null;
   const maxSettlementPerCycle = liveCap ?? policy.maxSettlementPerCycle;
@@ -280,6 +341,87 @@ export default function PolicyPage() {
           </section>
         </FadeIn>
       </div>
+
+      {/* cap governance, on-ledger maker-checker (four-eyes) */}
+      <FadeIn delay={0.2} className="mt-6">
+        <section
+          aria-label="Cap governance"
+          className="glass-card rounded-2xl p-6"
+        >
+          <div className="mb-1.5 flex items-center gap-2.5">
+            <UserCheck size={18} className="text-frost/60" aria-hidden="true" />
+            <h2 className="text-sm font-semibold uppercase tracking-widest">
+              Cap governance · maker-checker
+            </h2>
+          </div>
+          <p className="mb-5 text-xs font-light leading-relaxed text-frost/50">
+            On-ledger four-eyes control over maxSettlementPerCycle. The operator
+            must approve. Neither party can change a cap alone (four-eyes).
+          </p>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* maker: current party proposes */}
+            <form onSubmit={onPropose} className="space-y-3" noValidate>
+              <label className="block text-xs font-medium uppercase tracking-wider text-frost/60">
+                Propose new cap · {party.shortName}
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={capInput}
+                  onChange={(e) => setCapInput(e.target.value)}
+                  placeholder="0.00"
+                  className="figures mt-1.5 w-full rounded-xl border border-frost/20 bg-ink px-3.5 py-2.5 text-sm text-frost placeholder:text-frost/30 focus:border-accent focus:outline-none"
+                />
+              </label>
+              <GhostButton type="submit" disabled={proposing || !capInput}>
+                {proposing ? "Proposing…" : "Propose new cap"}
+              </GhostButton>
+            </form>
+
+            {/* checker: operator approves / rejects pending proposals */}
+            <div>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-frost/50">
+                Pending proposals · operator approves
+              </h3>
+              {proposals.length === 0 ? (
+                <p className="text-xs text-frost/40">
+                  No pending cap proposals.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {proposals.map((p) => (
+                    <li
+                      key={p.proposalCid}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-frost/15 bg-black/30 px-3 py-2.5"
+                    >
+                      <span className="inline-flex items-center gap-1.5 text-xs text-frost/70">
+                        {partyById(p.party).shortName} →{" "}
+                        <MoneyValue amount={p.newCap} className="text-xs" />
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <GhostButton
+                          onClick={() => onApprove(p.proposalCid)}
+                          disabled={actingCid === p.proposalCid}
+                        >
+                          <Check size={13} aria-hidden="true" /> Approve
+                        </GhostButton>
+                        <GhostButton
+                          onClick={() => onReject(p.proposalCid)}
+                          disabled={actingCid === p.proposalCid}
+                        >
+                          <X size={13} aria-hidden="true" /> Reject
+                        </GhostButton>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
+      </FadeIn>
     </div>
   );
 }
