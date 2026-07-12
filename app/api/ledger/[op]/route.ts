@@ -16,6 +16,7 @@ import {
   getLastCycleNetPositionsLive,
   getNetPosition,
   getPartiesLive,
+  getSettledLegsLive,
   getPolicy,
   isLive,
   listObligations,
@@ -82,6 +83,14 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
   if (params.op === "net-positions") {
     try {
       return NextResponse.json(await getLastCycleNetPositionsLive());
+    } catch (e) {
+      return fail(e);
+    }
+  }
+  // Complete settled net-leg history (all settled cycles), for the audit export.
+  if (params.op === "settled-legs") {
+    try {
+      return NextResponse.json(await getSettledLegsLive());
     } catch (e) {
       return fail(e);
     }

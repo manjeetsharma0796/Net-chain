@@ -88,6 +88,12 @@ export async function getActivityLive(limit?: number): Promise<ActivityEvent[] |
   return liveGet<ActivityEvent[]>(limit ? `activity?limit=${limit}` : "activity", "getActivityLive");
 }
 
+/** Complete settled net-leg history (all settled cycles), each leg carrying its
+ *  real cycleId + Settle updateId, for the audit table + export. Null when not live. */
+export async function getSettledLegsLive(): Promise<SettlementLeg[] | null> {
+  return liveGet<SettlementLeg[]>("settled-legs", "getSettledLegsLive");
+}
+
 /** Live netting-cycle status (open/settled/none + short ref), or null. */
 export async function getCycleStatusLive(): Promise<{
   status: "open" | "settled" | "none";

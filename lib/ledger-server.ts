@@ -11,8 +11,9 @@ import "server-only";
  * back to the mock. Mirrors the proven flow in daml/deploy.sh.
  */
 
+import { buildSettlementLegs } from "@/lib/api";
 import { LedgerContract, PARTY_IDS, toAccount, toNetPosition, toObligation } from "@/lib/ledger-map";
-import { ActivityEvent, NetPosition, Obligation, PartyId } from "@/lib/types";
+import { ActivityEvent, NetPosition, Obligation, PartyId, SettlementLeg } from "@/lib/types";
 
 const env = process.env;
 const BASE = env.BASE ?? "";
@@ -509,6 +510,50 @@ export async function getLastCycleNetPositionsLive(): Promise<NetPosition[]> {
     }
   }
   return [];
+}
+
+/**
+ * Complete settled net-leg history, newest settlement first. `Settle` archives
+ * its cycle's NetPositions, so every transaction that archives NetPositions IS a
+ * settlement: the tx `updateId` is the real Settle id, and each archived contract
+ * id resolves (via the earlier ComputeNetPositions create) to that cycle's net
+ * positions, from which the net legs are rebuilt. Replaces the last-cycle-only
+ * recovery, which left every party outside the most recent settle with an empty
+ * audit export. Each leg carries its own cycleId + updateId so a multi-cycle CSV
+ * is still verifiable row by row.
+ */
+export async function getSettledLegsLive(): Promise<SettlementLeg[]> {
+  const txs = await updateHistory(60); // newest-first
+  // Index every NetPosition create by contract id, keeping its cycleId.
+  const created = new Map<string, { np: NetPosition; cycleId: string }>();
+  for (const tx of txs) {
+    for (const e of tx.events) {
+      if (e.kind === "created" && e.template === "NetPosition") {
+        const np = toNetPosition({ contractId: e.contractId, payload: e.payload }, toPartyId);
+        if (np) created.set(e.contractId, { np, cycleId: String(e.payload.cycleId ?? "") });
+      }
+    }
+  }
+  const out: SettlementLeg[] = [];
+  const seen = new Set<string>();
+  for (const tx of txs) {
+    const archived = tx.events.filter((e) => e.kind === "archived" && e.template === "NetPosition");
+    const nps: NetPosition[] = [];
+    let cycleId = "";
+    for (const e of archived) {
+      const c = created.get(e.contractId);
+      if (c) {
+        nps.push(c.np);
+        cycleId = c.cycleId;
+      }
+    }
+    if (!nps.length || seen.has(cycleId)) continue; // not a settlement, or already emitted
+    seen.add(cycleId);
+    for (const leg of buildSettlementLegs(nps)) {
+      out.push({ ...leg, status: "settled", cycleId, updateId: tx.updateId });
+    }
+  }
+  return out;
 }
 
 /**

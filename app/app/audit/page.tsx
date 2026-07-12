@@ -11,11 +11,11 @@ import StatusPill from "@/components/ui/StatusPill";
 import { downloadCsv, downloadXml, toIso20022Xml, toSettledLegsCsv } from "@/lib/export";
 import { formatDate, formatTime, shortHash } from "@/lib/format";
 import {
-  buildSettlementLegs,
   getActivityLive,
   getCycleStatusLive,
   getNetPositionsLive,
   getObligationsFor,
+  getSettledLegsLive,
 } from "@/lib/ledger";
 import { partyById, useNetChain } from "@/lib/store";
 import { ActivityEvent, NetPosition, Obligation, SettlementLeg } from "@/lib/types";
@@ -43,6 +43,7 @@ export default function AuditPage() {
   const [liveNetPositions, setLiveNetPositions] = useState<NetPosition[] | null>(null);
   const [liveCycleRef, setLiveCycleRef] = useState<string | null>(null);
   const [liveActivity, setLiveActivity] = useState<ActivityEvent[] | null>(null);
+  const [liveSettledLegs, setLiveSettledLegs] = useState<SettlementLeg[] | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -73,6 +74,15 @@ export default function AuditPage() {
     return () => { live = false; };
   }, []);
 
+  // Complete settled net-leg history (all settled cycles), each leg carrying its
+  // real Settle updateId. This is the audit export's source, so a party outside
+  // the most recent settle still gets its full history, not an empty file.
+  useEffect(() => {
+    let live = true;
+    getSettledLegsLive().then((l) => live && l && setLiveSettledLegs(l));
+    return () => { live = false; };
+  }, []);
+
   // The real Settle transaction's updateId, used as the settled-legs ref.
   const settleUpdateId = useMemo(
     () => liveActivity?.find((e) => e.kind === "settlement")?.id ?? null,
@@ -84,16 +94,10 @@ export default function AuditPage() {
 
   const effectiveObligations = liveObligations ?? obligations;
   const effectiveNetPositions = liveNetPositions ?? netPositions;
-  // Positions recovered from history only exist post-Settle, so the legs
-  // built from them are already cleared, not merely proposed.
-  const liveLegs = useMemo(
-    () =>
-      liveNetPositions
-        ? buildSettlementLegs(liveNetPositions).map((l) => ({ ...l, status: "settled" as const }))
-        : null,
-    [liveNetPositions],
-  );
-  const effectiveLegs = liveLegs ?? legs;
+  // Settled legs come from the COMPLETE on-ledger settled history (every settled
+  // cycle, each leg tagged with its real Settle updateId), not just the last
+  // cycle, so the export is full for any party that has ever settled.
+  const effectiveLegs = liveSettledLegs ?? legs;
 
   const inScopeObligations = useMemo(
     () =>
@@ -162,6 +166,20 @@ export default function AuditPage() {
     },
   ];
 
+  // A verifiable updateId, rendered as a Lighthouse explorer link. Shared by the
+  // settled-legs ref column and the activity feed.
+  const lighthouseLink = (id: string) => (
+    <a
+      href={`${LIGHTHOUSE_TX}${id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="figures inline-flex items-center gap-1 text-xs text-frost/70 underline decoration-frost/25 underline-offset-2 transition-colors hover:text-frost/90"
+    >
+      {shortHash(id, 10, 4)}
+      <ExternalLink size={11} aria-hidden="true" />
+    </a>
+  );
+
   const legColumns: Column<SettlementLeg>[] = [
     {
       key: "from",
@@ -182,11 +200,10 @@ export default function AuditPage() {
     {
       key: "ref",
       header: "Settlement ref",
-      render: () => (
-        <span className="figures text-xs text-frost/60">
-          {settleUpdateId ? shortHash(settleUpdateId, 10, 4) : "-"}
-        </span>
-      ),
+      render: (l) => {
+        const uid = l.updateId ?? settleUpdateId;
+        return uid ? lighthouseLink(uid) : <span className="figures text-xs text-frost/60">-</span>;
+      },
     },
   ];
 
@@ -194,17 +211,7 @@ export default function AuditPage() {
     {
       key: "id",
       header: "Update ID",
-      render: (e) => (
-        <a
-          href={`${LIGHTHOUSE_TX}${e.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="figures inline-flex items-center gap-1 text-xs text-frost/70 underline decoration-frost/25 underline-offset-2 transition-colors hover:text-frost/90"
-        >
-          {shortHash(e.id, 10, 4)}
-          <ExternalLink size={11} aria-hidden="true" />
-        </a>
-      ),
+      render: (e) => lighthouseLink(e.id),
     },
     {
       key: "at",
@@ -227,16 +234,17 @@ export default function AuditPage() {
     },
   ];
 
+  // Each leg carries its own cycleId + updateId; meta is only the fallback for
+  // legs without them (the mock path), so use the real settle id there too.
+  const exportMeta = { cycleId: liveCycleRef ?? cycleId, txHash: settleUpdateId ?? txHash ?? "" };
   const exportCsv = () => {
-    const ref = liveCycleRef ?? cycleId;
-    const csv = toSettledLegsCsv(myLegs, { cycleId: ref, txHash: txHash ?? "" });
-    downloadCsv(`${ref}-${currentPartyId}-audit.csv`, csv);
+    const csv = toSettledLegsCsv(myLegs, exportMeta);
+    downloadCsv(`${exportMeta.cycleId}-${currentPartyId}-audit.csv`, csv);
   };
 
   const exportXml = () => {
-    const ref = liveCycleRef ?? cycleId;
-    const xml = toIso20022Xml(myLegs, { cycleId: ref, txHash: txHash ?? "" });
-    downloadXml(`${ref}-${currentPartyId}-pain001.xml`, xml);
+    const xml = toIso20022Xml(myLegs, exportMeta);
+    downloadXml(`${exportMeta.cycleId}-${currentPartyId}-pain001.xml`, xml);
   };
 
   return (

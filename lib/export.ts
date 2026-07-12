@@ -28,13 +28,13 @@ export function toSettledLegsCsv(legs: SettlementLeg[], meta: ExportMeta): strin
     .filter((leg) => leg.status === "settled")
     .map((leg) =>
       [
-        meta.cycleId,
+        leg.cycleId ?? meta.cycleId,
         partyById(leg.from).shortName,
         partyById(leg.to).shortName,
         leg.amount.toFixed(2),
         "USDCx",
         leg.status,
-        meta.txHash,
+        leg.updateId ?? meta.txHash,
       ]
         .map(csvCell)
         .join(","),
@@ -84,14 +84,16 @@ export function toIso20022Xml(legs: SettlementLeg[], meta: ExportMeta): string {
       const sum = group.reduce((s, l) => s + l.amount, 0).toFixed(2);
       const txs = group
         .map((l) => {
-          const e2e = xmlEscape(`${meta.cycleId}-${l.id}`);
+          const cyc = l.cycleId ?? meta.cycleId;
+          const legTxRef = l.updateId ? `, tx ${xmlEscape(l.updateId)}` : txRef;
+          const e2e = xmlEscape(`${cyc}-${l.id}`);
           return `        <CdtTrfTxInf>
           <PmtId><EndToEndId>${e2e}</EndToEndId></PmtId>
           <Amt><InstdAmt Ccy="USD">${l.amount.toFixed(2)}</InstdAmt></Amt>
           <CdtrAgt>${AGENT}</CdtrAgt>
           <Cdtr><Nm>${xmlEscape(partyById(l.to).name)}</Nm></Cdtr>
           <CdtrAcct>${acctId(l.to)}</CdtrAcct>
-          <RmtInf><Ustrd>NetChain cycle ${xmlEscape(meta.cycleId)} settled net leg${txRef}</Ustrd></RmtInf>
+          <RmtInf><Ustrd>NetChain cycle ${xmlEscape(cyc)} settled net leg${legTxRef}</Ustrd></RmtInf>
         </CdtTrfTxInf>`;
         })
         .join("\n");

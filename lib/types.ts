@@ -89,6 +89,11 @@ export interface SettlementLeg {
   to: PartyId;
   amount: number;
   status: LegStatus;
+  /** Audit export: the cycle and real Settle updateId this leg cleared in. Set
+   *  when the leg is reconstructed from settled on-ledger history; optional so
+   *  the mock/live settle paths that build proposed legs stay unchanged. */
+  cycleId?: string;
+  updateId?: string;
 }
 
 /** Snapshot of Canton network stats (mirrors the Scan API shape). */
