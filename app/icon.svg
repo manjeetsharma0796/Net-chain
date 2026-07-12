@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="40" fill="#0B0B0F" />
+  <g transform="translate(20 20) scale(0.8)" fill="none" stroke="#FFFFFF">
+    <path d="M100,30 L160.6,65 L160.6,135 L100,170 L39.4,135 L39.4,65 Z" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" />
+    <path d="M100,30 L160.6,135 L39.4,135 Z" stroke-width="6" stroke-linejoin="round" />
+    <path d="M160.6,65 L100,170 L39.4,65 Z" stroke-width="6" stroke-linejoin="round" />
+    <circle cx="100" cy="30" r="9" fill="#FFFFFF" />
+    <circle cx="160.6" cy="65" r="9" fill="#FFFFFF" />
+    <circle cx="160.6" cy="135" r="9" fill="#FFFFFF" />
+    <circle cx="100" cy="170" r="9" fill="#FFFFFF" />
+    <circle cx="39.4" cy="135" r="9" fill="#FFFFFF" />
+    <circle cx="39.4" cy="65" r="9" fill="#FFFFFF" />
+    <circle cx="130.3" cy="47.5" r="5.5" fill="#FFFFFF" />
+    <circle cx="160.6" cy="100" r="5.5" fill="#FFFFFF" />
+    <circle cx="130.3" cy="152.5" r="5.5" fill="#FFFFFF" />
+    <circle cx="69.7" cy="152.5" r="5.5" fill="#FFFFFF" />
+    <circle cx="39.4" cy="100" r="5.5" fill="#FFFFFF" />
+    <circle cx="69.7" cy="47.5" r="5.5" fill="#FFFFFF" />
+    <path d="M100,77 L118,85 L118,104 C118,122 100,131 100,131 C100,131 82,122 82,104 L82,85 Z" fill="#FFFFFF" stroke-width="1" />
+  </g>
+</svg>

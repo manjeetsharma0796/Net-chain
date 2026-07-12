@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
+import NetChainMark from "@/components/ui/NetChainMark";
 
 export default function Footer() {
   return (
@@ -8,9 +9,10 @@ export default function Footer() {
         <div className="max-w-md space-y-4">
           <Link
             href="/"
-            className="text-lg font-bold tracking-[-0.02em] text-frost"
+            className="inline-flex items-center text-lg font-bold tracking-[-0.02em] text-frost"
           >
-            Net<span className="text-accent">Chain</span>
+            <NetChainMark className="mr-2 h-6 w-6 shrink-0" />
+            <span>Net<span className="text-accent">Chain</span></span>
           </Link>
           <p className="text-sm leading-relaxed text-frost/60">
             One net payment per cycle. Counterparties stay blind.

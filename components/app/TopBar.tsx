@@ -9,6 +9,7 @@ import MoneyValue from "@/components/ui/MoneyValue";
 import { getBalanceLive, getPartiesLive } from "@/lib/ledger";
 import { PartyId } from "@/lib/types";
 import { useNetChain } from "@/lib/store";
+import NetChainMark from "@/components/ui/NetChainMark";
 
 export default function TopBar() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
@@ -47,9 +48,10 @@ export default function TopBar() {
     <header className="flex items-center justify-between gap-3 border-b border-frost/10 px-4 py-3 md:px-6">
       <Link
         href="/"
-        className="text-base font-bold tracking-[-0.02em] text-frost"
+        className="inline-flex items-center text-base font-bold tracking-[-0.02em] text-frost"
       >
-        Net<span className="text-accent">Chain</span>
+        <NetChainMark className="mr-2 h-[22px] w-[22px] shrink-0" />
+        <span>Net<span className="text-accent">Chain</span></span>
         <span className="ml-2 hidden rounded-full border border-frost/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-frost/50 sm:inline">
           Demo
         </span>

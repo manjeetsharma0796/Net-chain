@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import PartySwitcher from "@/components/PartySwitcher";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
+import NetChainMark from "@/components/ui/NetChainMark";
 
 const LINKS = [
   { label: "Overview", href: "#overview" },
@@ -37,9 +38,10 @@ export default function TopNav() {
     >
       <Link
         href="/"
-        className="text-lg font-bold tracking-[-0.02em] text-frost"
+        className="inline-flex items-center text-lg font-bold tracking-[-0.02em] text-frost"
       >
-        Net<span className="text-accent">Chain</span>
+        <NetChainMark className="mr-2 h-6 w-6 shrink-0" />
+        <span>Net<span className="text-accent">Chain</span></span>
       </Link>
 
       <nav aria-label="Primary" className="hidden items-center gap-8 lg:flex">
