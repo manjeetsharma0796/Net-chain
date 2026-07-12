@@ -235,3 +235,26 @@ test_bilateral_consent = do
   nps1 <- submit operator $ exerciseCmd cyc2 ComputeNetPositions with cycleId = "cyc-accepted"
   n1 <- mapA (netOf operator) nps1
   n1 === [40000.0, -40000.0]
+
+-- WIN 9 (v1.0.4), maker-checker cap governance: an over-cap settle is blocked at
+-- the current cap; the party (maker) PROPOSES a higher cap and the operator
+-- (checker) APPROVES, neither can change it alone; the same amount then passes
+-- under the new cap, and exactly one policy remains.
+test_cap_change_maker_checker : Script ()
+test_cap_change_maker_checker = do
+  Setup{operator, a} <- parties
+  polA <- submit a $ createCmd TreasuryPolicy with operator, party = a, maxSettlementPerCycle = 200000.0
+  -- 250k exceeds the 200k cap: blocked on-ledger.
+  submitMustFail operator $ exerciseCmd polA CheckSettlement with amount = 250000.0
+  -- Maker proposes raising the cap to 300k on its own policy.
+  prop <- submit a $ createCmd TreasuryPolicyProposal with
+    operator, party = a, currentPolicyCid = polA, newCap = 300000.0
+  -- Checker approves: old policy retired, new 300k cap issued atomically.
+  polA2 <- submit operator $ exerciseCmd prop ApproveCapChange
+  -- The same 250k now passes under the new cap.
+  submit operator $ exerciseCmd polA2 CheckSettlement with amount = 250000.0
+  -- Exactly one policy remains for A, at the new cap.
+  pols <- query @TreasuryPolicy a
+  length pols === 1
+  let [(_, p)] = pols
+  p.maxSettlementPerCycle === 300000.0

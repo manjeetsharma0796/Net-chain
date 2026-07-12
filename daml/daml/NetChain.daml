@@ -78,6 +78,44 @@ template TreasuryPolicy
           ("TreasuryPolicy breach: " <> show amount <> " > cap " <> show maxSettlementPerCycle)
           (amount <= maxSettlementPerCycle)
 
+-- 3b. TreasuryPolicyProposal, maker-checker (four-eyes) governance for cap
+--     changes (v1.0.4). A cap is never self-approved: the party (maker) proposes
+--     a new cap on its own policy, the operator (checker) approves. Neither can
+--     change a cap alone, which is the segregation-of-duties control every
+--     corporate-treasury / risk function requires (SOX four-eyes, Basel limit
+--     governance), and it preserves the property that the operator cannot
+--     unilaterally raise a party's cap. Adding a template is a valid SCU.
+template TreasuryPolicyProposal
+  with
+    operator : Party
+    party : Party
+    currentPolicyCid : ContractId TreasuryPolicy
+    newCap : Decimal
+  where
+    signatory party
+    observer operator
+
+    -- Checker approves: atomically archive the old policy and issue the new cap.
+    -- Runs with both the party's (from this proposal) and the operator's
+    -- authority, so it can retire the party-signed policy and create its successor.
+    choice ApproveCapChange : ContractId TreasuryPolicy
+      controller operator
+      do
+        old <- fetch currentPolicyCid
+        assertMsg "proposal targets a different party's policy" (old.party == party)
+        archive currentPolicyCid
+        create TreasuryPolicy with operator, party, maxSettlementPerCycle = newCap
+
+    -- Checker declines the change; the current cap stands.
+    choice RejectCapChange : ()
+      controller operator
+      do pure ()
+
+    -- Maker withdraws the request before the operator decides.
+    choice WithdrawCapChange : ()
+      controller party
+      do pure ()
+
 -- 4. NetPosition, one party's single net figure for a cycle. Observed only
 --    by that party, so A cannot read B's net from the ledger.
 template NetPosition
