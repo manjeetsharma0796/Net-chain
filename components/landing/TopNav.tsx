@@ -59,7 +59,7 @@ export default function TopNav() {
           <PartySwitcher compact />
         </div>
         <PrimaryCTAButton href="/app" className="!min-h-[40px] !px-5 !py-2">
-          Launch Demo
+          Launch demo
         </PrimaryCTAButton>
       </div>
     </header>

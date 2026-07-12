@@ -187,8 +187,8 @@ export default function Hero() {
           className="mt-5 max-w-[46ch] text-[clamp(0.95rem,1.5vw,1.2rem)] leading-relaxed text-frost/65 opacity-0 animate-fade-up"
           style={{ animationDelay: "0.5s" }}
         >
-          Confidential settlement, atomic in USDCx.
-          Counterparties see nothing.
+          Multilateral netting where every net leg settles atomically on
+          Canton, and counterparties see nothing.
         </p>
 
         <div
@@ -199,9 +199,25 @@ export default function Hero() {
           <GhostButton href="#how-it-works">How it works</GhostButton>
         </div>
 
+        {/* Trust row: real, verifiable credibility next to the CTA, plus the
+            no-signup objection handled up front. Kept honest, no fake proof. */}
+        <div
+          className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-frost/45 opacity-0 animate-fade-up"
+          style={{ animationDelay: "0.75s" }}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-settled animate-pulse" aria-hidden="true" />
+            Live on Canton Devnet
+          </span>
+          <span className="text-frost/25" aria-hidden="true">·</span>
+          <span>Protocol Version 35</span>
+          <span className="text-frost/25" aria-hidden="true">·</span>
+          <span>No signup, opens instantly</span>
+        </div>
+
         <p
-          className="figures mt-8 text-xs tracking-wide text-frost/40 opacity-0 animate-fade-up"
-          style={{ animationDelay: "0.8s" }}
+          className="figures mt-6 text-xs tracking-wide text-frost/40 opacity-0 animate-fade-up"
+          style={{ animationDelay: "0.85s" }}
         >
           460,000.00 gross&ensp;→&ensp;45,000.00 settled&ensp;·&ensp;Σ nets =
           0&ensp;·&ensp;one atomic transaction

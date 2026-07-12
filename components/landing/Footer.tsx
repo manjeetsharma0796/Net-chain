@@ -32,7 +32,7 @@ export default function Footer() {
               className="h-4 w-auto opacity-90"
             />
           </span>
-          <PrimaryCTAButton href="/app">Launch Demo</PrimaryCTAButton>
+          <PrimaryCTAButton href="/app">Launch demo</PrimaryCTAButton>
         </div>
       </div>
     </footer>
