@@ -11,6 +11,7 @@
  */
 
 import * as api from "@/lib/api";
+import { OBLIGATIONS } from "@/lib/mock/data";
 import { isSandbox } from "@/lib/sandbox";
 import { ActivityEvent, NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "@/lib/types";
 
@@ -148,11 +149,16 @@ export async function getObligationsFor(
       const r = await fetch(`/api/ledger/obligations?party=${party}`);
       if (r.ok) return (await r.json()) as Obligation[];
     } catch {
-      /* fall through to mock */
+      /* fall through */
     }
-    warnFallback("getObligationsFor", "mock");
+    // Live: NEVER fall back to the mock ledger, that was the phantom-obligation
+    // source. A failed read yields an empty projection, not fabricated rows.
+    warnFallback("getObligationsFor", "null");
+    return [];
   }
-  return api.getObligationsFor(party, ledger);
+  // Mock mode only (LEDGER_LIVE off): the store no longer seeds obligations, so
+  // use the demo set when the caller's (store) ledger is empty.
+  return api.getObligationsFor(party, ledger.length ? ledger : OBLIGATIONS);
 }
 
 export async function queryContract(

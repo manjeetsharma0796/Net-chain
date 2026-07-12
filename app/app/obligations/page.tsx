@@ -50,7 +50,6 @@ function ObligationForm({
   onDone: () => void;
 }) {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
-  const addObligation = useNetChain((s) => s.addObligation);
   const logActivity = useNetChain((s) => s.logActivity);
   const pushToast = useNetChain((s) => s.pushToast);
   const [fields, setFields] = useState<DraftFields>(initial);
@@ -75,22 +74,14 @@ function ObligationForm({
       fields.direction === "payable" ? currentPartyId : fields.counterparty;
     const obligee =
       fields.direction === "payable" ? fields.counterparty : currentPartyId;
-    const created = addObligation({
-      obligor,
-      obligee,
-      amount,
-      currency: "USDCx",
-      reference: fields.reference.trim(),
-      dueDate: fields.dueDate,
-      source,
-    });
     logActivity({
       actor: source === "agent" ? "agent" : currentPartyId,
       kind: "obligation",
-      message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${created.amount.toLocaleString("en-US")} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
+      message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${amount.toLocaleString("en-US")} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
     });
-    // Live path: also create the Obligation on-ledger (null when the flag is
-    // off / ledger unconfigured, the local demo obligation still stands).
+    // Create the Obligation on-ledger only. No optimistic store row, the table
+    // refetches from the ledger (onDone) so the row carries its REAL contractId
+    // and ledger-reported status, never a fabricated twin.
     const updateId = await createObligationLive({
       obligor,
       obligee,
@@ -103,7 +94,7 @@ function ObligationForm({
       "success",
       updateId
         ? `Obligation created on-ledger · tx ${shortHash(updateId, 10, 4)}`
-        : `Obligation created · ${shortHash(created.contractId, 10, 4)}`,
+        : "Obligation created.",
     );
     onDone();
   };
@@ -208,7 +199,9 @@ function ObligationForm({
 // added optimistically, once from the live ledger read. Prefer the ledger
 // contractId as the identity; fall back to content when it's missing.
 function obligationKey(o: Obligation): string {
-  return o.contractId || `${o.reference}|${o.obligor}|${o.obligee}|${o.amount}`;
+  // Key strictly on the ledger contractId; there are no more optimistic/store
+  // rows to fall back for, so a row without a real contractId cannot survive.
+  return o.contractId;
 }
 
 function dedupeObligations(list: Obligation[]): Obligation[] {

@@ -18,7 +18,6 @@ import {
   SettlementLeg,
 } from "@/lib/types";
 import {
-  OBLIGATIONS,
   OPEN_CYCLE,
   PARTIES,
   SEED_ACTIVITY,
@@ -150,7 +149,7 @@ export const useNetChain = create<NetChainState>((set, get) => ({
       partyLabels: null,
       currentPartyId: "company-a",
       balances: Object.fromEntries(PARTIES.map((p) => [p.id, p.balance])) as Record<PartyId, number>,
-      obligations: OBLIGATIONS,
+      obligations: [],
       cycleId: OPEN_CYCLE.id,
       cycleStatus: OPEN_CYCLE.status,
       netPositions: null,
@@ -166,7 +165,7 @@ export const useNetChain = create<NetChainState>((set, get) => ({
   ) as Record<PartyId, number>,
   setBalances: (b) => set((s) => ({ balances: { ...s.balances, ...b } })),
 
-  obligations: OBLIGATIONS,
+  obligations: [],
   addObligation: (draft) => {
     const id = `ob-${++seq}`;
     const created: Obligation = {

@@ -28,7 +28,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 export default function CyclePage() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
-  const obligations = useNetChain((s) => s.obligations);
   const cycleId = useNetChain((s) => s.cycleId);
   const cycleStatus = useNetChain((s) => s.cycleStatus);
   const netPositions = useNetChain((s) => s.netPositions);
@@ -46,19 +45,21 @@ export default function CyclePage() {
   const [liveObligations, setLiveObligations] = useState<Obligation[] | null>(null);
   useEffect(() => {
     let live = true;
-    Promise.all(ALL_PARTY_IDS.map((pid) => getObligationsFor(pid, obligations))).then(
+    Promise.all(ALL_PARTY_IDS.map((pid) => getObligationsFor(pid, []))).then(
       (lists) => {
         if (!live) return;
         const merged = new Map<string, Obligation>();
-        for (const list of lists) for (const o of list) merged.set(o.id, o);
+        for (const list of lists) for (const o of list) merged.set(o.contractId, o);
         setLiveObligations(Array.from(merged.values()));
       },
     );
     return () => {
       live = false;
     };
-  }, [obligations]);
-  const effectiveObligations = liveObligations ?? obligations;
+  }, []);
+  // Source obligations from the live ledger only; never the client store (which
+  // no longer holds a mock ledger). Empty until the live fetch resolves.
+  const effectiveObligations = liveObligations ?? [];
 
   const openObligations = useMemo(
     () => effectiveObligations.filter((o) => o.status === "open"),
