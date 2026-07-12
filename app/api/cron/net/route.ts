@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
       settledUpdateId: settled.updateId ?? null,
       netPositions: settled.netPositions,
       reseeded,
-      at: req.headers.get("x-vercel-deployment-url") ? "vercel-cron" : "manual",
     });
   } catch (e) {
     return NextResponse.json(

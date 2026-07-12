@@ -26,6 +26,20 @@ function warnFallback(name: string, fellBackTo: "mock" | "null"): void {
   console.warn(`[ledger] live ${name} fell back to ${fellBackTo}`);
 }
 
+/** Shared body for the live-only GET wrappers: null when not live, parsed JSON
+ *  when the `/api/ledger/<path>` route answers ok, else a logged null fallback. */
+async function liveGet<T>(path: string, name: string): Promise<T | null> {
+  if (!live()) return null;
+  try {
+    const r = await fetch(`/api/ledger/${path}`);
+    if (r.ok) return (await r.json()) as T;
+  } catch {
+    /* fall through */
+  }
+  warnFallback(name, "null");
+  return null;
+}
+
 export type { PolicyVerdict, ExtractedInvoice } from "@/lib/api";
 // Pure/mock-only helpers pass straight through, no ledger equivalent needed.
 export {
@@ -69,15 +83,7 @@ export async function getBalancesLive(): Promise<Partial<Record<PartyId, number>
 
 /** Real on-chain activity feed from ledger transaction history, or null. */
 export async function getActivityLive(): Promise<ActivityEvent[] | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch("/api/ledger/activity");
-    if (r.ok) return (await r.json()) as ActivityEvent[];
-  } catch {
-    /* fall through */
-  }
-  warnFallback("getActivityLive", "null");
-  return null;
+  return liveGet<ActivityEvent[]>("activity", "getActivityLive");
 }
 
 /** Live netting-cycle status (open/settled/none + short ref), or null. */
@@ -85,16 +91,10 @@ export async function getCycleStatusLive(): Promise<{
   status: "open" | "settled" | "none";
   ref: string | null;
 } | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch("/api/ledger/cycle-status");
-    if (r.ok)
-      return (await r.json()) as { status: "open" | "settled" | "none"; ref: string | null };
-  } catch {
-    /* fall through */
-  }
-  warnFallback("getCycleStatusLive", "null");
-  return null;
+  return liveGet<{ status: "open" | "settled" | "none"; ref: string | null }>(
+    "cycle-status",
+    "getCycleStatusLive",
+  );
 }
 
 /** Re-verify a settle updateId against the live validator (proves it is real,
@@ -104,29 +104,15 @@ export async function verifyUpdateLive(updateId: string): Promise<{
   effectiveAt: string | null;
   validator: string;
 } | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch(`/api/ledger/verify?updateId=${encodeURIComponent(updateId)}`);
-    if (r.ok)
-      return (await r.json()) as { confirmed: boolean; effectiveAt: string | null; validator: string };
-  } catch {
-    /* fall through */
-  }
-  warnFallback("verifyUpdateLive", "null");
-  return null;
+  return liveGet<{ confirmed: boolean; effectiveAt: string | null; validator: string }>(
+    `verify?updateId=${encodeURIComponent(updateId)}`,
+    "verifyUpdateLive",
+  );
 }
 
 /** All net positions from the most recent cycle (from history), or null. */
 export async function getNetPositionsLive(): Promise<NetPosition[] | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch("/api/ledger/net-positions");
-    if (r.ok) return (await r.json()) as NetPosition[];
-  } catch {
-    /* fall through */
-  }
-  warnFallback("getNetPositionsLive", "null");
-  return null;
+  return liveGet<NetPosition[]>("net-positions", "getNetPositionsLive");
 }
 
 /* ---- market data (T27, CoinGecko via /api/scan) -------------------------- */
@@ -256,15 +242,10 @@ export async function checkPolicy(
 export async function getCapProposalsLive(): Promise<
   { proposalCid: string; party: PartyId; newCap: number }[] | null
 > {
-  if (!live()) return null;
-  try {
-    const r = await fetch("/api/ledger/cap-proposals");
-    if (r.ok) return (await r.json()) as { proposalCid: string; party: PartyId; newCap: number }[];
-  } catch {
-    /* fall through */
-  }
-  warnFallback("getCapProposalsLive", "null");
-  return null;
+  return liveGet<{ proposalCid: string; party: PartyId; newCap: number }[]>(
+    "cap-proposals",
+    "getCapProposalsLive",
+  );
 }
 
 /** Maker: the party proposes a new cap. Returns the update id, or null. */

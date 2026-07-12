@@ -16,7 +16,6 @@ const C = {
   white: "FFFFFF",
 };
 const FONT = "Segoe UI";
-const FONT_L = "Segoe UI Light";
 
 const pptx = new pptxgen();
 pptx.defineLayout({ name: "W", width: 13.333, height: 7.5 });
