@@ -799,6 +799,27 @@ export async function reseedOpenLedger(): Promise<{ accounts: number; obligation
   return { accounts: PARTY_IDS.length, obligations: OBS.length };
 }
 
+/**
+ * Clear the netting slate: archive every obligation and any open cycle/net
+ * state, but keep accounts and policies so the operator can create obligations
+ * by hand and still settle. The "start from empty" twin of reseedOpenLedger,
+ * for the console's manual "Clear all" control.
+ */
+export async function clearObligations(): Promise<{ archived: number }> {
+  const op = ledgerId("operator");
+  const [nps, cycles, obls] = await Promise.all([
+    queryAcs(op, "NetPosition"),
+    queryAcs(op, "NettingCycle"),
+    queryAcs(op, "Obligation"),
+  ]);
+  await Promise.all([
+    ...nps.map((c) => exercise(op, "NetPosition", c.contractId, "Archive", {})),
+    ...cycles.map((c) => exercise(op, "NettingCycle", c.contractId, "Archive", {})),
+    ...obls.map((c) => exercise(String(c.payload.obligor ?? ""), "Obligation", c.contractId, "Archive", {})),
+  ]);
+  return { archived: obls.length };
+}
+
 function latestUnsettled(rows: LedgerContract[]): string | null {
   const open = rows.filter((c) => c.payload.settled !== true);
   return open.length ? open[open.length - 1].contractId : null;

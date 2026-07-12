@@ -429,3 +429,27 @@ export async function getAllObligationsLive(): Promise<Obligation[] | null> {
   if (live()) return liveGet<Obligation[]>("obligations-all", "getAllObligationsLive");
   return OBLIGATIONS;
 }
+
+/* ---- operator demo-state controls (console Seed / Clear) ----------------- */
+
+/** POST helper for the two operator reset ops. Returns the parsed result, or
+ *  null when not live / on failure (logged), so the caller can toast a failure. */
+async function livePost<T>(op: string, name: string): Promise<T | null> {
+  if (!live()) return null;
+  try {
+    const r = await fetch(`/api/ledger/${op}`, { method: "POST" });
+    if (r.ok) return (await r.json()) as T;
+  } catch {
+    /* fall through */
+  }
+  warnFallback(name, "null");
+  return null;
+}
+
+/** Seed the 6 canonical demo obligations on-ledger (clean OPEN state). */
+export const seedDemoLive = () =>
+  livePost<{ accounts: number; obligations: number }>("seed", "seedDemoLive");
+
+/** Archive every obligation + open cycle state, keeping accounts and policies. */
+export const clearObligationsLive = () =>
+  livePost<{ archived: number }>("clear", "clearObligationsLive");

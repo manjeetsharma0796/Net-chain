@@ -19,6 +19,8 @@ import {
   getPolicy,
   isLive,
   listObligations,
+  reseedOpenLedger,
+  clearObligations,
   runAndSettle,
   verifyUpdate,
 } from "@/lib/ledger-server";
@@ -200,6 +202,12 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
         const res = await runAndSettle(asCids(body.obligationCids));
         return NextResponse.json({ ...res, legs: buildSettlementLegs(res.netPositions) });
       }
+      // Operator demo-state controls (console Seed / Clear buttons): seed the 6
+      // canonical obligations, or clear the slate to build them by hand.
+      case "seed":
+        return NextResponse.json(await reseedOpenLedger());
+      case "clear":
+        return NextResponse.json(await clearObligations());
       default:
         return NextResponse.json({ error: "unknown op" }, { status: 404 });
     }

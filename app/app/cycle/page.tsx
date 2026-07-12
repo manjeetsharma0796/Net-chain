@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { GitMerge, Lock, Sigma, UserCog, Users } from "lucide-react";
+import { GitMerge, Lock, RefreshCw, Sigma, Trash2, UserCog, Users } from "lucide-react";
 import PageHeader from "@/components/app/PageHeader";
 import FadeIn from "@/components/motion/FadeIn";
 import GhostButton from "@/components/ui/GhostButton";
@@ -12,7 +12,13 @@ import NumberTicker from "@/components/ui/NumberTicker";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { buildSettlementLegs, computeNetPositions } from "@/lib/api";
-import { getNetPositionFor, getObligationsFor, runCycleLive } from "@/lib/ledger";
+import {
+  clearObligationsLive,
+  getNetPositionFor,
+  getObligationsFor,
+  runCycleLive,
+  seedDemoLive,
+} from "@/lib/ledger";
 import { PARTY_IDS as ALL_PARTY_IDS } from "@/lib/ledger-map";
 import { partyById, useNetChain } from "@/lib/store";
 import type { NetPosition, Obligation, PartyId } from "@/lib/types";
@@ -44,20 +50,15 @@ export default function CyclePage() {
   // three parties and merge; falls back to the mock store when the ledger
   // isn't live (the wrapper already resolves to the mock in that case).
   const [liveObligations, setLiveObligations] = useState<Obligation[] | null>(null);
-  useEffect(() => {
-    let live = true;
-    Promise.all(ALL_PARTY_IDS.map((pid) => getObligationsFor(pid, []))).then(
-      (lists) => {
-        if (!live) return;
-        const merged = new Map<string, Obligation>();
-        for (const list of lists) for (const o of list) merged.set(o.contractId, o);
-        setLiveObligations(Array.from(merged.values()));
-      },
-    );
-    return () => {
-      live = false;
-    };
+  const loadObligations = useCallback(async () => {
+    const lists = await Promise.all(ALL_PARTY_IDS.map((pid) => getObligationsFor(pid, [])));
+    const merged = new Map<string, Obligation>();
+    for (const list of lists) for (const o of list) merged.set(o.contractId, o);
+    setLiveObligations(Array.from(merged.values()));
   }, []);
+  useEffect(() => {
+    loadObligations();
+  }, [loadObligations]);
   // Source obligations from the live ledger only; never the client store (which
   // no longer holds a mock ledger). Empty until the live fetch resolves.
   const effectiveObligations = liveObligations ?? [];
@@ -145,6 +146,26 @@ export default function CyclePage() {
     }
   };
 
+  // Operator demo-state controls: seed the 6 canonical obligations on demand, or
+  // clear the slate to build them by hand. On-ledger; the daily auto-seed is off.
+  const [busy, setBusy] = useState<null | "seed" | "clear">(null);
+  const seed = async () => {
+    setBusy("seed");
+    const res = await seedDemoLive();
+    await loadObligations();
+    setBusy(null);
+    pushToast(res ? "success" : "error", res ? `Seeded ${res.obligations} obligations.` : "Seed failed.");
+  };
+  const clear = async () => {
+    setBusy("clear");
+    const res = await clearObligationsLive();
+    await loadObligations();
+    setCycleStatus("open");
+    setNetPositions(null);
+    setBusy(null);
+    pushToast(res ? "success" : "error", res ? `Cleared ${res.archived} obligations.` : "Clear failed.");
+  };
+
   const inScopeObligations = effectiveObligations.filter((o) => selected.has(o.id));
   const grossTotal = inScopeObligations.reduce((sum, o) => sum + o.amount, 0);
   // Live NetPosition contracts carry no gross fields (mapped to 0 in
@@ -230,9 +251,31 @@ export default function CyclePage() {
                 </p>
               </div>
 
+              {IS_LIVE && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <GhostButton
+                    onClick={seed}
+                    disabled={busy !== null}
+                    className="min-h-0 px-4 py-2 text-xs"
+                  >
+                    <RefreshCw size={13} aria-hidden="true" />
+                    {busy === "seed" ? "Seeding…" : "Seed demo obligations"}
+                  </GhostButton>
+                  <GhostButton
+                    onClick={clear}
+                    disabled={busy !== null || openObligations.length === 0}
+                    className="min-h-0 px-4 py-2 text-xs"
+                  >
+                    <Trash2 size={13} aria-hidden="true" />
+                    {busy === "clear" ? "Clearing…" : "Clear all"}
+                  </GhostButton>
+                </div>
+              )}
+
               {openObligations.length === 0 && !computed && (
                 <p className="py-6 text-center text-sm text-frost/50">
-                  No open obligations, this cycle has already been netted.
+                  No open obligations. Seed the demo set or create them on the
+                  Obligations page.
                 </p>
               )}
 
