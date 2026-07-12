@@ -7,6 +7,11 @@ Everything an agent **cannot** do itself lives here. Check items off as you go.
 
 ## Live status (2026-07-10)
 
+- [x] **`CRON_SECRET` set in Vercel prod env (T64, not in the repo).** Gates `/api/cron/net`
+      (automated netting). The daily Vercel Cron sends it automatically. To trigger the auto-net
+      cycle manually (e.g. to demo it live): `curl -H "Authorization: Bearer $CRON_SECRET"
+      https://netchain.vercel.app/api/cron/net` (it settles one cycle, then self-heals the demo to
+      the clean open state). Keep the value out of git; it lives only in Vercel and your notes.
 - [x] **`CLIENT_SECRET` provided and working.** Token exchange + authenticated calls succeed.
 - [x] **T09 is LIVE.** `deploy.sh` ran end-to-end: settled balances **A=115k, B=130k, C=55k**
       and NetPositions **A +15k, B +30k, C −45k (sum 0)**, read back from the ACS.
