@@ -282,11 +282,13 @@ export default function SettlementPage() {
                     {LIVE && (
                       <>
                         <p className="mt-1.5 max-w-md text-[11px] font-light leading-relaxed text-frost/40">
-                          This is a real transaction id from Canton&apos;s Ledger
-                          API, not a mock. Canton keeps sub-transaction contents
-                          private to the parties involved, so even a public
-                          explorer cannot display it, by design. Re-verify
-                          re-fetches this id live from the validator.
+                          A real transaction id from Canton&apos;s Ledger API, not
+                          a mock. The Canton block explorers (Cantonscan, Lighthouse)
+                          index network and Canton Coin activity, but this is a
+                          private application transaction, Canton keeps its contents
+                          scoped to the parties, so it will not appear on any public
+                          explorer, by design. The strongest independent check today
+                          is to re-fetch this exact id from the validator yourself.
                         </p>
 
                         <div className="mt-3 space-y-2">
@@ -318,6 +320,16 @@ export default function SettlementPage() {
                                 Could not re-verify (live ledger unreachable)
                               </p>
                             ))}
+
+                          <a
+                            href={`/api/ledger/verify?updateId=${encodeURIComponent(txHash)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-frost/45 underline decoration-frost/20 underline-offset-2 transition-colors hover:text-frost/70"
+                          >
+                            Verify it yourself: open the raw validator response
+                            <ExternalLink size={11} aria-hidden="true" />
+                          </a>
                         </div>
                       </>
                     )}
@@ -340,13 +352,14 @@ export default function SettlementPage() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] text-frost/45 underline decoration-frost/20 underline-offset-2 transition-colors hover:text-frost/70"
                         >
-                          See the live Canton network
+                          Canton block explorer for this devnet (Lighthouse)
                           <ExternalLink size={11} aria-hidden="true" />
                         </a>
                         <p className="mt-1 text-[11px] text-frost/35">
-                          Public activity on the Five North devnet (Canton Coin
-                          transfers only; NetChain&apos;s records are private by
-                          design).
+                          Shows public network activity, Canton Coin transfers only.
+                          NetChain&apos;s records are private by design and never
+                          appear here, so the raw-validator re-fetch above is the id
+                          you verify against.
                         </p>
                       </div>
                     )}
