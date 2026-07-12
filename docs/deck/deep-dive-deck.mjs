@@ -267,7 +267,7 @@ function chip(s, x, y, w, text, col = C.green) {
     "Settle returns a real updateId from the validator's submit-and-wait, not a client-side hash.",
     "'Re-verify live' re-fetches that exact id via /v2/updates/update-by-id: confirmed = true + effectiveAt.",
     "A bogus/forged id returns confirmed = false.",
-    "No public explorer can show it, sub-transaction contents are private by design; the operator-scoped verify IS the explorer.",
+    "Look it up on Lighthouse (a public Canton explorer): the updateId resolves to its envelope, verdict ACCEPTED, round, acting parties; only the amounts stay private.",
   ], MX + 0.3, 2.55, 5.0, { fontSize: 12.5, h: 3.2 });
   card(s, 6.6, 1.8, 6.03, 4.2, "0E1620");
   s.addText([
