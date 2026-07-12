@@ -352,6 +352,10 @@ export async function runCycleLive(): Promise<{
 }
 
 /** Run + Settle the current cycle on-ledger. Returns update id + net positions. */
+/** A real on-ledger rejection (e.g. a TreasuryPolicy cap breach), as opposed to
+ *  a not-live/network fallback. The UI must surface this, never show success. */
+export class LedgerRejection extends Error {}
+
 export async function settleLive(): Promise<{
   updateId: string | null;
   netPositions: NetPosition[];
@@ -359,14 +363,22 @@ export async function settleLive(): Promise<{
   if (!live()) return null;
   try {
     const r = await fetch("/api/ledger/settle", { method: "POST" });
-    if (!r.ok) {
+    if (r.ok) {
+      const j = (await r.json()) as { updateId?: string; netPositions: NetPosition[] };
+      return { updateId: j.updateId ?? null, netPositions: j.netPositions ?? [] };
+    }
+    // 503 = ledger not configured -> genuine mock fallback. Any other non-ok
+    // (502 = the Daml Settle rejected it, e.g. a policy-cap breach) is a REAL
+    // failure the UI must show, not silently swallow into a mock "success".
+    if (r.status === 503) {
       warnFallback("settleLive", "null");
       return null;
     }
-    const j = (await r.json()) as { updateId?: string; netPositions: NetPosition[] };
-    return { updateId: j.updateId ?? null, netPositions: j.netPositions ?? [] };
-  } catch {
-    warnFallback("settleLive", "null");
+    const body = (await r.json().catch(() => null)) as { error?: string } | null;
+    throw new LedgerRejection(body?.error || `settle failed (HTTP ${r.status})`);
+  } catch (e) {
+    if (e instanceof LedgerRejection) throw e; // real rejection, propagate
+    warnFallback("settleLive", "null"); // network error -> mock fallback
     return null;
   }
 }
