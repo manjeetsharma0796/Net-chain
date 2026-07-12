@@ -148,11 +148,11 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
         );
       }
       case "accept": {
-        const obligee = asParty(String(body.obligee ?? ""));
+        const obligor = asParty(String(body.obligor ?? ""));
         const contractId = String(body.contractId ?? "");
-        if (!obligee || !contractId)
+        if (!obligor || !contractId)
           return NextResponse.json({ error: "bad accept args" }, { status: 400 });
-        return NextResponse.json(await acceptObligation({ obligee, contractId }));
+        return NextResponse.json(await acceptObligation({ obligor, contractId }));
       }
       case "policy-check": {
         const party = asParty(String(body.party ?? ""));

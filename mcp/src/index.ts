@@ -151,16 +151,16 @@ server.registerTool(
 server.registerTool(
   "accept_obligation",
   {
-    title: "Accept an obligation (bilateral consent)",
+    title: "Accept an obligation (payer's consent)",
     description:
-      "As the `obligee`, confirm a pending obligation identified by `contractId`, exercising " +
-      "the on-ledger `Accept` choice. Only accepted obligations net, so this is the required " +
-      "second signature: an obligor records a debt with `create_obligation` and the obligee " +
-      "affirms it here before it can ever settle. Use `list_obligations` (as the obligee) to " +
-      "find pending obligations, they read back with `accepted: false` until this succeeds. " +
-      "Controlled on-ledger by the obligee, no other party (or the operator) can accept for them.",
+      "As the `obligor` (the PAYER who owes), confirm a pending obligation identified by " +
+      "`contractId`, exercising the on-ledger `Accept` choice. Only accepted obligations net, so " +
+      "this is the required consent: the party who OWES must affirm the debt before it can settle, " +
+      "which stops a payee from invoicing a counterparty and self-approving it. Use " +
+      "`list_obligations` (as the obligor) to find pending obligations, they read back with " +
+      "`accepted: false` until this succeeds. Controlled on-ledger by the obligor.",
     inputSchema: {
-      obligee: PartyId,
+      obligor: PartyId,
       contractId: z.string().min(1).describe("The obligation's ledger contract id"),
     },
   },

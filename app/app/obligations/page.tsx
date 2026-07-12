@@ -240,7 +240,7 @@ export default function ObligationsPage() {
   // (mock/not-live returns null and simply has no pending state).
   const onAccept = async (o: Obligation) => {
     setAcceptingId(o.contractId);
-    await acceptObligationLive({ obligee: o.obligee, contractId: o.contractId });
+    await acceptObligationLive({ obligor: o.obligor, contractId: o.contractId });
     setRefreshTick((t) => t + 1);
     setAcceptingId(null);
   };
@@ -333,17 +333,18 @@ export default function ObligationsPage() {
       key: "status",
       header: "Status",
       render: (o) => {
-        // Pending the obligee's bilateral consent (v1.0.3): excluded from netting
-        // until accepted. `true`/`undefined` render as the normal status below.
+        // Pending the OBLIGOR's (payer's) acceptance (v1.0.5): excluded from
+        // netting until the party who owes accepts. `true`/`undefined` render as
+        // the normal status below.
         if (o.accepted === false) {
-          const isObligee = o.obligee === currentPartyId;
+          const isObligor = o.obligor === currentPartyId;
           return (
             <div className="flex items-center gap-2">
               <StatusPill
                 status="pending"
-                label={isObligee ? "Pending your acceptance" : "Awaiting counterparty acceptance"}
+                label={isObligor ? "Pending your acceptance (you owe this)" : "Awaiting payer acceptance"}
               />
-              {isObligee && (
+              {isObligor && (
                 <GhostButton
                   onClick={() => onAccept(o)}
                   disabled={acceptingId === o.contractId}

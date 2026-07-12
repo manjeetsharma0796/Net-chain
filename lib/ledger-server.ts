@@ -552,11 +552,12 @@ export async function createObligation(input: {
  * the choice's controller. Returns the update id. Only accepted obligations net.
  */
 export async function acceptObligation(input: {
-  obligee: PartyId;
+  obligor: PartyId;
   contractId: string;
 }): Promise<{ updateId?: string }> {
+  // The obligor (payer) accepts, so a payee cannot self-approve an invoice (WR5).
   return exercise(
-    ledgerId(input.obligee),
+    ledgerId(input.obligor),
     "Obligation",
     input.contractId,
     "Accept",

@@ -46,8 +46,12 @@ template Obligation
     -- The obligee confirms the obligation on-ledger. Bilateral consent: neither a
     -- rogue party nor a fake invoice can unilaterally fabricate a debt that settles,
     -- an unaccepted obligation is excluded from netting (see ComputeNetPositions).
+    -- The OBLIGOR (the payer, who actually owes) must confirm the debt before it
+    -- can net. If the obligee (payee) could accept, anyone could invoice a
+    -- counterparty and self-approve it; requiring the payer's acceptance is the
+    -- real anti-fraud check. (v1.0.5: controller flipped obligee -> obligor.)
     choice Accept : ContractId Obligation
-      controller obligee
+      controller obligor
       do create this with accepted = Some True
 
     -- Operator marks a netted obligation settled at settlement time. As a choice

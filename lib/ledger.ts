@@ -320,7 +320,7 @@ export async function createObligationLive(input: {
 /** The obligee accepts a pending obligation (bilateral consent). Returns the
  *  update id, or null when not live / on failure. Only accepted obligations net. */
 export async function acceptObligationLive(input: {
-  obligee: PartyId;
+  obligor: PartyId;
   contractId: string;
 }): Promise<string | null> {
   if (!live()) return null;
