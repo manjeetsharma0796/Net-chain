@@ -250,6 +250,57 @@ export async function checkPolicy(
   return api.checkPolicy(policy, amount, counterparty);
 }
 
+/* ---- maker-checker cap governance (T65), live-only ---------------------- */
+
+/** All pending cap-change proposals, or null when not live. */
+export async function getCapProposalsLive(): Promise<
+  { proposalCid: string; party: PartyId; newCap: number }[] | null
+> {
+  if (!live()) return null;
+  try {
+    const r = await fetch("/api/ledger/cap-proposals");
+    if (r.ok) return (await r.json()) as { proposalCid: string; party: PartyId; newCap: number }[];
+  } catch {
+    /* fall through */
+  }
+  warnFallback("getCapProposalsLive", "null");
+  return null;
+}
+
+/** Maker: the party proposes a new cap. Returns the update id, or null. */
+export async function proposeCapLive(input: {
+  party: PartyId;
+  newCap: number;
+}): Promise<string | null> {
+  return postCap("propose-cap", input);
+}
+
+/** Checker: the operator approves a pending proposal. Returns the update id, or null. */
+export async function approveCapLive(proposalCid: string): Promise<string | null> {
+  return postCap("approve-cap", { proposalCid });
+}
+
+/** Checker: the operator rejects a pending proposal. Returns the update id, or null. */
+export async function rejectCapLive(proposalCid: string): Promise<string | null> {
+  return postCap("reject-cap", { proposalCid });
+}
+
+async function postCap(op: string, body: unknown): Promise<string | null> {
+  if (!live()) return null;
+  try {
+    const r = await fetch(`/api/ledger/${op}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) return ((await r.json()) as { updateId?: string }).updateId ?? null;
+  } catch {
+    /* fall through */
+  }
+  warnFallback(op, "null");
+  return null;
+}
+
 /* ---- writes (T14), return the real update id, or null when not live ----- */
 
 /** Create an Obligation on-ledger. Returns the update id, or null if not live. */

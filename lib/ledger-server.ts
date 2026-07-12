@@ -529,6 +529,51 @@ export async function acceptObligation(input: {
   );
 }
 
+/* ---- maker-checker treasury cap governance (T65) ------------------------- */
+
+/** Maker step: the party proposes a new cap on its own TreasuryPolicy. Creates a
+ *  TreasuryPolicyProposal the operator must approve; the cap does not change yet. */
+export async function proposeCapChange(input: {
+  party: PartyId;
+  newCap: number;
+}): Promise<{ updateId?: string }> {
+  const op = ledgerId("operator");
+  const pol = (await queryAcs(op, "TreasuryPolicy"))
+    .filter((c) => c.payload.party === ledgerId(input.party))
+    .at(-1);
+  if (!pol) throw new LedgerError(`no TreasuryPolicy on-ledger for ${input.party}`);
+  return create(ledgerId(input.party), "TreasuryPolicyProposal", {
+    operator: op,
+    party: ledgerId(input.party),
+    currentPolicyCid: pol.contractId,
+    newCap: input.newCap.toFixed(1),
+  });
+}
+
+/** Checker step: the operator approves a pending proposal, atomically retiring the
+ *  old policy and issuing the new cap. */
+export async function approveCapChange(input: { proposalCid: string }): Promise<{ updateId?: string }> {
+  return exercise(ledgerId("operator"), "TreasuryPolicyProposal", input.proposalCid, "ApproveCapChange", {});
+}
+
+/** Checker declines a pending proposal; the current cap stands. */
+export async function rejectCapChange(input: { proposalCid: string }): Promise<{ updateId?: string }> {
+  return exercise(ledgerId("operator"), "TreasuryPolicyProposal", input.proposalCid, "RejectCapChange", {});
+}
+
+/** All pending cap-change proposals (operator-scoped ACS). */
+export async function listCapProposals(): Promise<
+  Array<{ proposalCid: string; party: PartyId; newCap: number }>
+> {
+  const rows = await queryAcs(ledgerId("operator"), "TreasuryPolicyProposal");
+  return rows
+    .map((c) => {
+      const party = toPartyId(String(c.payload.party ?? ""));
+      return party ? { proposalCid: c.contractId, party, newCap: Number(c.payload.newCap ?? 0) } : null;
+    })
+    .filter((x): x is { proposalCid: string; party: PartyId; newCap: number } => x !== null);
+}
+
 /** The on-ledger TreasuryPolicy cap for `party` (operator-scoped ACS), or null if absent. */
 export async function getPolicy(
   party: PartyId,

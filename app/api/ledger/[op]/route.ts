@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   acceptObligation,
+  approveCapChange,
   checkPolicy,
   computeNetPositionsOnLedger,
   createObligation,
+  listCapProposals,
+  proposeCapChange,
+  rejectCapChange,
   getAccountBalance,
   getActivityLive,
   getAllAccountBalances,
@@ -80,6 +84,13 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
       return fail(e);
     }
   }
+  if (params.op === "cap-proposals") {
+    try {
+      return NextResponse.json(await listCapProposals());
+    } catch (e) {
+      return fail(e);
+    }
+  }
 
   const q = req.nextUrl.searchParams;
   const party = asParty(q.get("party"));
@@ -148,6 +159,17 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
         if (!party) return NextResponse.json({ error: "bad party" }, { status: 400 });
         return NextResponse.json(await checkPolicy(party, Number(body.amount ?? 0)));
       }
+      case "propose-cap": {
+        const party = asParty(String(body.party ?? ""));
+        const newCap = Number(body.newCap ?? 0);
+        if (!party || !(newCap > 0))
+          return NextResponse.json({ error: "bad propose-cap args" }, { status: 400 });
+        return NextResponse.json(await proposeCapChange({ party, newCap }));
+      }
+      case "approve-cap":
+        return NextResponse.json(await approveCapChange({ proposalCid: String(body.proposalCid ?? "") }));
+      case "reject-cap":
+        return NextResponse.json(await rejectCapChange({ proposalCid: String(body.proposalCid ?? "") }));
       case "run-cycle":
         return NextResponse.json(await computeNetPositionsOnLedger());
       case "settle":
