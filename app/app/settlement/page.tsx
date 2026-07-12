@@ -31,7 +31,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Judge-facing proof is only meaningful against the real devnet, a mock
 // txHash re-verified against nothing would be theater.
 const LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
-const LIGHTHOUSE_URL = "https://lighthouse.devnet.cantonloop.com/blockchain";
+// Lighthouse resolves an updateId to its on-chain transaction envelope (update
+// id, synchronizer, round, ACCEPTED verdict, acting parties) on a public,
+// third-party explorer, the private contents stay scoped to the parties.
+const LIGHTHOUSE_TX = "https://lighthouse.devnet.cantonloop.com/transactions/";
 
 type VerifyResult = { confirmed: boolean; effectiveAt: string | null; validator: string } | null;
 
@@ -334,14 +337,19 @@ export default function SettlementPage() {
                     {LIVE && (
                       <div className="mt-3">
                         <a
-                          href={LIGHTHOUSE_URL}
+                          href={`${LIGHTHOUSE_TX}${txHash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-frost/45 underline decoration-frost/20 underline-offset-2 transition-colors hover:text-frost/70"
+                          className="inline-flex items-center gap-1 text-[11px] text-frost/60 underline decoration-frost/25 underline-offset-2 transition-colors hover:text-frost/85"
                         >
-                          Canton block explorer (Lighthouse)
+                          View this transaction on Lighthouse
                           <ExternalLink size={11} aria-hidden="true" />
                         </a>
+                        <p className="mt-1 text-[11px] text-frost/40">
+                          Public Canton explorer, verdict{" "}
+                          <span className="text-settled">ACCEPTED</span>. Amounts
+                          stay private to the parties.
+                        </p>
                       </div>
                     )}
                   </div>
