@@ -595,6 +595,64 @@ export async function runAndSettle(): Promise<{
   return { updateId: settle.updateId, netPositions };
 }
 
+/**
+ * Force the clean, re-runnable OPEN demo state: archive stale cycle state and
+ * all obligations, reset the three accounts to 100k, ensure policies, and seed
+ * the 6 canonical accepted obligations (gross 460k). The TS twin of
+ * `daml/reseed.sh`, used by the auto-net cron to self-heal so the public demo
+ * is never left settled after an automated cycle.
+ */
+export async function reseedOpenLedger(): Promise<{ accounts: number; obligations: number }> {
+  const op = ledgerId("operator");
+  // Archive stale netting artifacts (operator is signatory).
+  for (const t of ["NetPosition", "NettingCycle"] as const)
+    for (const c of await queryAcs(op, t)) await exercise(op, t, c.contractId, "Archive", {});
+  // Archive every obligation as its obligor (the signatory).
+  for (const c of await queryAcs(op, "Obligation"))
+    await exercise(String(c.payload.obligor ?? ""), "Obligation", c.contractId, "Archive", {});
+  // Reset accounts to 100k.
+  for (const c of await queryAcs(op, "Account")) await exercise(op, "Account", c.contractId, "Archive", {});
+  for (const pid of PARTY_IDS)
+    await create(op, "Account", { operator: op, owner: ledgerId(pid), balance: "100000.0" });
+  // Ensure the three treasury policies exist.
+  if ((await queryAcs(op, "TreasuryPolicy")).length < 3) {
+    const caps: Record<PartyId, string> = {
+      "company-a": "200000.0",
+      "company-b": "500000.0",
+      "company-c": "350000.0",
+    };
+    for (const pid of PARTY_IDS)
+      await create(ledgerId(pid), "TreasuryPolicy", {
+        operator: op,
+        party: ledgerId(pid),
+        maxSettlementPerCycle: caps[pid],
+      });
+  }
+  // Seed the 6 canonical obligations, accepted so they net.
+  const OBS: [PartyId, PartyId, string, string][] = [
+    ["company-a", "company-b", "120000.0", "AB"],
+    ["company-b", "company-c", "95000.0", "BC"],
+    ["company-c", "company-a", "150000.0", "CA"],
+    ["company-a", "company-c", "40000.0", "AC"],
+    ["company-b", "company-a", "25000.0", "BA"],
+    ["company-c", "company-b", "30000.0", "CB"],
+  ];
+  for (const [o, e, amt, ref] of OBS)
+    await create(ledgerId(o), "Obligation", {
+      operator: op,
+      obligor: ledgerId(o),
+      obligee: ledgerId(e),
+      amount: amt,
+      reference: ref,
+      dueDate: "2026-07-20",
+      settled: false,
+      source: null,
+      uetr: crypto.randomUUID(),
+      accepted: true,
+    });
+  return { accounts: PARTY_IDS.length, obligations: OBS.length };
+}
+
 function latestUnsettled(rows: LedgerContract[]): string | null {
   const open = rows.filter((c) => c.payload.settled !== true);
   return open.length ? open[open.length - 1].contractId : null;
