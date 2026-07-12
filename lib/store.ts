@@ -61,6 +61,10 @@ interface NetChainState {
   setCycleStatus: (s: CycleStatus) => void;
   netPositions: NetPosition[] | null;
   setNetPositions: (p: NetPosition[] | null) => void;
+  /* the obligation contract ids the operator scoped this cycle to (WR4): the
+     settlement page settles exactly these on-ledger, not everything. */
+  cycleObligationCids: string[];
+  setCycleObligationCids: (c: string[]) => void;
 
   /* settlement */
   legs: SettlementLeg[];
@@ -190,6 +194,8 @@ export const useNetChain = create<NetChainState>((set, get) => ({
   setCycleStatus: (cycleStatus) => set({ cycleStatus }),
   netPositions: null,
   setNetPositions: (netPositions) => set({ netPositions }),
+  cycleObligationCids: [],
+  setCycleObligationCids: (cycleObligationCids) => set({ cycleObligationCids }),
 
   legs: [],
   setLegs: (legs) => set({ legs }),

@@ -21,6 +21,7 @@ import {
   runAndSettle,
   verifyUpdate,
 } from "@/lib/ledger-server";
+import { buildSettlementLegs } from "@/lib/api";
 import { PARTY_IDS } from "@/lib/ledger-map";
 import { PartyId } from "@/lib/types";
 
@@ -29,6 +30,10 @@ export const dynamic = "force-dynamic";
 
 const asParty = (v: string | null): PartyId | null =>
   PARTY_IDS.includes(v as PartyId) ? (v as PartyId) : null;
+
+/** The operator's selected obligation contract ids, or undefined for "all open". */
+const asCids = (v: unknown): string[] | undefined =>
+  Array.isArray(v) && v.length ? v.map(String) : undefined;
 
 function guard(): NextResponse | null {
   // 503 → the client shim falls back to the mock (lib/api.ts).
@@ -171,9 +176,14 @@ export async function POST(req: NextRequest, { params }: { params: { op: string 
       case "reject-cap":
         return NextResponse.json(await rejectCapChange({ proposalCid: String(body.proposalCid ?? "") }));
       case "run-cycle":
-        return NextResponse.json(await computeNetPositionsOnLedger());
-      case "settle":
-        return NextResponse.json(await runAndSettle());
+        return NextResponse.json(await computeNetPositionsOnLedger(asCids(body.obligationCids)));
+      case "settle": {
+        // WR4: settle only the operator's in-scope selection, and derive the
+        // displayed legs from the REAL on-ledger NetPositions this Settle moved,
+        // so the shown payer provably equals the on-ledger net payer.
+        const res = await runAndSettle(asCids(body.obligationCids));
+        return NextResponse.json({ ...res, legs: buildSettlementLegs(res.netPositions) });
+      }
       default:
         return NextResponse.json({ error: "unknown op" }, { status: 404 });
     }

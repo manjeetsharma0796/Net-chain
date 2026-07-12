@@ -479,8 +479,12 @@ export async function getLastCycleNetPositionsLive(): Promise<NetPosition[]> {
  * create a NettingCycle over the current open obligations, find its contract
  * id via ACS, and exercise ComputeNetPositions. ComputeNetPositions is a
  * non-consuming choice, so the cycle contract stays active for a subsequent Settle.
+ *
+ * `selectedCids` scopes the cycle to exactly the obligations the operator picked
+ * (WR4: the ledger must net only the in-scope set, not everything, or a party
+ * outside the selection is mis-attributed as paying). Default: all open.
  */
-async function openCycleAndCompute(): Promise<{
+async function openCycleAndCompute(selectedCids?: string[]): Promise<{
   op: string;
   cycleId: string;
   cycleCid: string;
@@ -490,8 +494,11 @@ async function openCycleAndCompute(): Promise<{
   const cycleId = `cyc-${Date.now()}`;
 
   const open = (await queryAcs(op, "Obligation")).filter((c) => c.payload.settled !== true);
-  if (open.length < 2) throw new LedgerError("need at least two open obligations to net");
-  const obligationCids = open.map((c) => c.contractId);
+  const scoped = selectedCids?.length
+    ? open.filter((c) => selectedCids.includes(c.contractId))
+    : open;
+  if (scoped.length < 2) throw new LedgerError("need at least two open obligations to net");
+  const obligationCids = scoped.map((c) => c.contractId);
 
   await create(op, "NettingCycle", { operator: op, participants: parties, obligationCids, settled: false });
   const cycleCid = latestUnsettled(await queryAcs(op, "NettingCycle"));
@@ -507,11 +514,11 @@ async function openCycleAndCompute(): Promise<{
  * the resulting NetPositions. Non-consuming choice, the cycle contract stays
  * active so T29's Settle can use the same contractId.
  */
-export async function computeNetPositionsOnLedger(): Promise<{
+export async function computeNetPositionsOnLedger(obligationCids?: string[]): Promise<{
   cycleId: string;
   netPositions: NetPosition[];
 }> {
-  const { op, cycleId } = await openCycleAndCompute();
+  const { op, cycleId } = await openCycleAndCompute(obligationCids);
 
   const npRows = await queryAcs(op, "NetPosition");
   const netPositions = npRows
@@ -653,11 +660,11 @@ export async function checkPolicy(
  * obligations, ComputeNetPositions, Settle. Returns the real Settle update id
  * and the resulting net positions. Mirrors daml/deploy.sh's cid-via-ACS flow.
  */
-export async function runAndSettle(): Promise<{
+export async function runAndSettle(obligationCids?: string[]): Promise<{
   updateId?: string;
   netPositions: NetPosition[];
 }> {
-  const { op, cycleId, cycleCid } = await openCycleAndCompute();
+  const { op, cycleId, cycleCid } = await openCycleAndCompute(obligationCids);
 
   // Same filter as computeNetPositionsOnLedger: NetPositions accumulate across
   // cycles, so scope strictly to this cycle's, not "the last 3" (H1/H3).

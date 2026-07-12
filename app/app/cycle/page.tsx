@@ -33,6 +33,7 @@ export default function CyclePage() {
   const netPositions = useNetChain((s) => s.netPositions);
   const setCycleStatus = useNetChain((s) => s.setCycleStatus);
   const setNetPositions = useNetChain((s) => s.setNetPositions);
+  const setCycleObligationCids = useNetChain((s) => s.setCycleObligationCids);
   const setLegs = useNetChain((s) => s.setLegs);
   const markObligations = useNetChain((s) => s.markObligations);
   const logActivity = useNetChain((s) => s.logActivity);
@@ -96,9 +97,13 @@ export default function CyclePage() {
     }
     setCycleStatus("computing");
     setLiveMyPosition(null);
+    // Carry the operator's exact selection to Settle (WR4): the on-ledger cycle
+    // must net only these, so the settled payer matches the computed payer.
+    const inScopeCids = inScope.map((o) => o.contractId);
+    setCycleObligationCids(inScopeCids);
 
     try {
-      const liveResult = await runCycleLive();
+      const liveResult = await runCycleLive(inScopeCids);
 
       let positions;
       let usedCycleId = cycleId;

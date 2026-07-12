@@ -13,7 +13,7 @@
 import * as api from "@/lib/api";
 import { OBLIGATIONS } from "@/lib/mock/data";
 import { isSandbox } from "@/lib/sandbox";
-import { ActivityEvent, NetPosition, Obligation, PartyId, PrivacyError, TreasuryPolicy } from "@/lib/types";
+import { ActivityEvent, NetPosition, Obligation, PartyId, PrivacyError, SettlementLeg, TreasuryPolicy } from "@/lib/types";
 
 const LEDGER_LIVE = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 /** Live only when the build flag is on AND this session is not a client-side
@@ -341,14 +341,19 @@ export async function acceptObligationLive(input: {
   }
 }
 
-/** Create a NettingCycle + ComputeNetPositions on-ledger. Returns cycleId + positions. */
-export async function runCycleLive(): Promise<{
+/** Create a NettingCycle + ComputeNetPositions on-ledger over the operator's
+ *  selected obligations (WR4). Returns cycleId + positions. */
+export async function runCycleLive(obligationCids?: string[]): Promise<{
   cycleId: string;
   netPositions: NetPosition[];
 } | null> {
   if (!live()) return null;
   try {
-    const r = await fetch("/api/ledger/run-cycle", { method: "POST" });
+    const r = await fetch("/api/ledger/run-cycle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ obligationCids }),
+    });
     if (r.ok) return (await r.json()) as { cycleId: string; netPositions: NetPosition[] };
   } catch {
     /* fall through to mock */
@@ -362,16 +367,25 @@ export async function runCycleLive(): Promise<{
  *  a not-live/network fallback. The UI must surface this, never show success. */
 export class LedgerRejection extends Error {}
 
-export async function settleLive(): Promise<{
+export async function settleLive(obligationCids?: string[]): Promise<{
   updateId: string | null;
   netPositions: NetPosition[];
+  legs: SettlementLeg[];
 } | null> {
   if (!live()) return null;
   try {
-    const r = await fetch("/api/ledger/settle", { method: "POST" });
+    const r = await fetch("/api/ledger/settle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ obligationCids }),
+    });
     if (r.ok) {
-      const j = (await r.json()) as { updateId?: string; netPositions: NetPosition[] };
-      return { updateId: j.updateId ?? null, netPositions: j.netPositions ?? [] };
+      const j = (await r.json()) as {
+        updateId?: string;
+        netPositions: NetPosition[];
+        legs?: SettlementLeg[];
+      };
+      return { updateId: j.updateId ?? null, netPositions: j.netPositions ?? [], legs: j.legs ?? [] };
     }
     // 503 = ledger not configured -> genuine mock fallback. Any other non-ok
     // (502 = the Daml Settle rejected it, e.g. a policy-cap breach) is a REAL

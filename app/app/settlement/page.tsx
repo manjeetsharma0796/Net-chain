@@ -51,7 +51,9 @@ export default function SettlementPage() {
   const legs = useNetChain((s) => s.legs);
   const cycleId = useNetChain((s) => s.cycleId);
   const cycleStatus = useNetChain((s) => s.cycleStatus);
+  const cycleObligationCids = useNetChain((s) => s.cycleObligationCids);
   const txHash = useNetChain((s) => s.txHash);
+  const setLegs = useNetChain((s) => s.setLegs);
   const setLegStatus = useNetChain((s) => s.setLegStatus);
   const setCycleStatus = useNetChain((s) => s.setCycleStatus);
   const setTxHash = useNetChain((s) => s.setTxHash);
@@ -103,8 +105,9 @@ export default function SettlementPage() {
     setErrorMsg(null);
     setCycleStatus("settling");
     try {
-      if (forceFail) {
-        // Client-only atomic-abort demo: nothing settled, everything reverts.
+      if (forceFail && !LIVE) {
+        // Client-only atomic-abort demo (mock mode only): nothing settled,
+        // everything reverts. This is animation, not a real on-ledger reject.
         await sleep(1600);
         setLegStatus("all", "reverted");
         await sleep(900);
@@ -121,11 +124,12 @@ export default function SettlementPage() {
         return;
       }
 
-      // Attempt the REAL on-ledger settle first, before any success UI.
-      // settleLive throws a LedgerRejection on a real failure (e.g. a
-      // TreasuryPolicy cap breach); returns {updateId} on live success; returns
-      // null only when not live / sandbox / network (-> demo simulation).
-      const res = await settleLive();
+      // Attempt the REAL on-ledger settle first, before any success UI. Settle
+      // exactly the operator's in-scope selection (WR4), so the ledger nets only
+      // those parties. settleLive throws a LedgerRejection on a real failure
+      // (e.g. a TreasuryPolicy cap breach); returns {updateId, legs} on live
+      // success; returns null only when not live / sandbox / network.
+      const res = await settleLive(cycleObligationCids);
       const liveUpdateId =
         res?.updateId && !res.updateId.startsWith("0x") ? res.updateId : null;
 
@@ -137,6 +141,10 @@ export default function SettlementPage() {
         }
         const liveBalances = await getBalancesLive();
         if (liveBalances) setBalances(liveBalances);
+        // Show the legs the ledger actually moved (derived server-side from the
+        // real NetPositions this Settle consumed), so the displayed payer
+        // provably equals the on-ledger net payer, not a client guess.
+        if (res?.legs?.length) setLegs(res.legs);
         setLegStatus("all", "settled");
         markObligations(
           obligations.filter((o) => o.status === "netted").map((o) => o.id),
@@ -147,7 +155,7 @@ export default function SettlementPage() {
         logActivity({
           actor: "operator",
           kind: "settlement",
-          message: `Cycle ${cycleId} settled atomically on-ledger, ${legs.length} legs, tx ${liveUpdateId.slice(0, 12)}…`,
+          message: `Cycle ${cycleId} settled atomically on-ledger, ${res?.legs?.length ?? legs.length} legs, tx ${liveUpdateId.slice(0, 12)}…`,
         });
         pushToast("success", "Settled. Every leg cleared in one on-ledger transaction.");
       } else {
@@ -372,17 +380,22 @@ export default function SettlementPage() {
                   One transaction clears every leg, or none.
                 </p>
 
-                <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-xs text-frost/70">
-                  <input
-                    type="checkbox"
-                    checked={forceFail}
-                    onChange={(e) => setForceFail(e.target.checked)}
-                    disabled={settled}
-                    className="h-4 w-4 accent-[#FF5C5C]"
-                  />
-                  <FlaskConical size={13} className="text-rejected" aria-hidden="true" />
-                  Inject a leg failure
-                </label>
+                {/* Mock-only demo of atomic abort. Hidden in LIVE mode: it is a
+                    client-side animation, NOT a real on-ledger rejection, so it
+                    must never be presented as one against the devnet. */}
+                {!LIVE && (
+                  <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-xs text-frost/70">
+                    <input
+                      type="checkbox"
+                      checked={forceFail}
+                      onChange={(e) => setForceFail(e.target.checked)}
+                      disabled={settled}
+                      className="h-4 w-4 accent-[#FF5C5C]"
+                    />
+                    <FlaskConical size={13} className="text-rejected" aria-hidden="true" />
+                    Inject a leg failure (demo)
+                  </label>
+                )}
 
                 <div className="mt-4">
                   <PrimaryCTAButton
