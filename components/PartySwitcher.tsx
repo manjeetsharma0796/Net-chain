@@ -95,7 +95,7 @@ export default function PartySwitcher({
                   <span className="flex-1">
                     <span className="block text-sm font-medium">{partyById(p.id).name}</span>
                     <span className="figures block text-[11px] text-frost/40">
-                      {shortHash(p.ledgerId, 14, 4)}
+                      {shortHash(partyById(p.id).ledgerId, 14, 4)}
                     </span>
                   </span>
                   {p.id === currentPartyId && (

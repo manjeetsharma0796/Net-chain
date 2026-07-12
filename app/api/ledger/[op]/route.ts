@@ -15,6 +15,7 @@ import {
   getCycleStatusLive,
   getLastCycleNetPositionsLive,
   getNetPosition,
+  getPartiesLive,
   getPolicy,
   isLive,
   listObligations,
@@ -89,6 +90,11 @@ export async function GET(req: NextRequest, { params }: { params: { op: string }
     } catch (e) {
       return fail(e);
     }
+  }
+  if (params.op === "parties") {
+    // Live party identities (WR8). guard() already 503s when not live, so the
+    // client falls back to the hardcoded mock names.
+    return NextResponse.json(getPartiesLive());
   }
   if (params.op === "cap-proposals") {
     try {

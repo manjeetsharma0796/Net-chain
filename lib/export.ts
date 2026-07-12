@@ -13,7 +13,10 @@ export interface ExportMeta {
   txHash: string;
 }
 
-const HEADER = ["cycleId", "from", "to", "amount", "currency", "status", "settlementRef"];
+// WR10: the last column carries meta.txHash, which in live mode IS the on-ledger
+// Settle updateId. Label it `updateId` so auditors can tie each row back to the
+// real transaction in the validator's update stream.
+const HEADER = ["cycleId", "from", "to", "amount", "currency", "status", "updateId"];
 
 function csvCell(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
@@ -71,6 +74,10 @@ export function toIso20022Xml(legs: SettlementLeg[], meta: ExportMeta): string {
     byDebtor.set(l.from, arr);
   }
 
+  // WR10: carry the on-ledger Settle updateId (meta.txHash) into each leg's
+  // remittance info, the standard free-text slot for a transaction reference.
+  const txRef = meta.txHash ? `, tx ${xmlEscape(meta.txHash)}` : "";
+
   const pmtInfs = [...byDebtor.entries()]
     .map(([from, group], i) => {
       const dbtrName = xmlEscape(partyById(from).name);
@@ -84,7 +91,7 @@ export function toIso20022Xml(legs: SettlementLeg[], meta: ExportMeta): string {
           <CdtrAgt>${AGENT}</CdtrAgt>
           <Cdtr><Nm>${xmlEscape(partyById(l.to).name)}</Nm></Cdtr>
           <CdtrAcct>${acctId(l.to)}</CdtrAcct>
-          <RmtInf><Ustrd>NetChain cycle ${xmlEscape(meta.cycleId)} settled net leg</Ustrd></RmtInf>
+          <RmtInf><Ustrd>NetChain cycle ${xmlEscape(meta.cycleId)} settled net leg${txRef}</Ustrd></RmtInf>
         </CdtTrfTxInf>`;
         })
         .join("\n");

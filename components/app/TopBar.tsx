@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { LogOut, Wallet } from "lucide-react";
 import PartySwitcher from "@/components/PartySwitcher";
 import MoneyValue from "@/components/ui/MoneyValue";
-import { getBalanceLive } from "@/lib/ledger";
+import { getBalanceLive, getPartiesLive } from "@/lib/ledger";
+import { PartyId } from "@/lib/types";
 import { useNetChain } from "@/lib/store";
 
 export default function TopBar() {
@@ -14,6 +15,7 @@ export default function TopBar() {
   const balance = useNetChain((s) => s.balances[currentPartyId]);
   const sandboxMode = useNetChain((s) => s.sandboxMode);
   const exitSandbox = useNetChain((s) => s.exitSandbox);
+  const setPartyLabels = useNetChain((s) => s.setPartyLabels);
   const router = useRouter();
   const isLive = process.env.NEXT_PUBLIC_LEDGER_LIVE === "1";
 
@@ -24,6 +26,22 @@ export default function TopBar() {
     getBalanceLive(currentPartyId).then((b) => live && b !== null && setLiveBalance(b));
     return () => { live = false; };
   }, [currentPartyId]);
+
+  // WR8: relabel the a/b/c slots with the REAL on-ledger parties once, in live
+  // mode. Keeps ONE identity source (partyById honors partyLabels everywhere).
+  useEffect(() => {
+    let live = true;
+    getPartiesLive().then((parties) => {
+      if (!live || !parties) return;
+      const labels = {} as NonNullable<ReturnType<typeof useNetChain.getState>["partyLabels"]>;
+      for (const p of parties) {
+        if (p.id === "operator") continue;
+        labels[p.id as PartyId] = { name: p.baseName, shortName: p.baseName, ledgerId: p.ledgerId };
+      }
+      setPartyLabels(labels);
+    });
+    return () => { live = false; };
+  }, [setPartyLabels]);
 
   return (
     <header className="flex items-center justify-between gap-3 border-b border-frost/10 px-4 py-3 md:px-6">

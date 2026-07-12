@@ -13,6 +13,7 @@ import {
   CycleStatus,
   NetPosition,
   Obligation,
+  Party,
   PartyId,
   PolicyEvent,
   SettlementLeg,
@@ -40,7 +41,8 @@ interface NetChainState {
 
   /* sandbox tenant (self-serve "try it yourself", client-side only) */
   sandboxMode: boolean;
-  partyLabels: Record<PartyId, { name: string; shortName: string }> | null;
+  partyLabels: Record<PartyId, { name: string; shortName: string; ledgerId?: string }> | null;
+  setPartyLabels: (labels: NetChainState["partyLabels"]) => void;
   initSandbox: (input: { companyName: string; counterparties: [string, string] }) => void;
   exitSandbox: () => void;
 
@@ -99,6 +101,9 @@ export const useNetChain = create<NetChainState>((set, get) => ({
 
   sandboxMode: false,
   partyLabels: null,
+  // WR8: in live mode, relabel the a/b/c slots with the real on-ledger parties.
+  // Skipped in a sandbox session (which owns partyLabels for its tenant names).
+  setPartyLabels: (labels) => set((s) => (s.sandboxMode ? s : { partyLabels: labels })),
   initSandbox: ({ companyName, counterparties }) => {
     setSandbox(true); // lib/ledger.ts now skips the live ledger for this session
     const labels = {
@@ -246,10 +251,18 @@ export const useNetChain = create<NetChainState>((set, get) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
-/** Convenience lookup used across the app screens. In a sandbox session the
- *  display name/shortName are overridden with the tenant's chosen labels. */
-export function partyById(id: PartyId) {
+/** Convenience lookup used across the app screens. When present, partyLabels is
+ *  the single source of truth for a party's identity: a sandbox tenant's chosen
+ *  labels, or (live mode, WR8) the REAL on-ledger party name + id. Falls back to
+ *  the mock PARTIES row otherwise. */
+export function partyById(id: PartyId): Party {
   const base = PARTIES.find((p) => p.id === id)!;
   const label = useNetChain.getState().partyLabels?.[id];
-  return label ? { ...base, name: label.name, shortName: label.shortName } : base;
+  if (!label) return base;
+  return {
+    ...base,
+    name: label.name,
+    shortName: label.shortName,
+    ledgerId: label.ledgerId ?? base.ledgerId,
+  };
 }

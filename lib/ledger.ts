@@ -403,3 +403,18 @@ export async function settleLive(obligationCids?: string[]): Promise<{
     return null;
   }
 }
+
+/* ---- live party identities (WR8) ---------------------------------------- */
+
+export interface LivePartyIdentity {
+  id: PartyId | "operator";
+  ledgerId: string;
+  baseName: string;
+}
+
+/** Real on-ledger party identities (id + base name) in live mode, or null. Lets
+ *  the frontend relabel the company-a/b/c slots with the ACTUAL parties this
+ *  deployment points at, instead of the hardcoded mock names. */
+export async function getPartiesLive(): Promise<LivePartyIdentity[] | null> {
+  return liveGet<LivePartyIdentity[]>("parties", "getPartiesLive");
+}

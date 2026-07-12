@@ -52,6 +52,18 @@ export function isLive(): boolean {
   );
 }
 
+/** Real ledger party identities (WR8): the allocated party id + its base name
+ *  (the substring before '::') for a/b/c + operator. Lets the frontend label the
+ *  slots with the ACTUAL on-ledger parties in live mode, not the mock names.
+ *  Callers gate on isLive(); the route returns 503 when not live. */
+export function getPartiesLive(): Array<{ id: PartyId | "operator"; ledgerId: string; baseName: string }> {
+  const ids: Array<PartyId | "operator"> = ["company-a", "company-b", "company-c", "operator"];
+  return ids.map((id) => {
+    const lid = ledgerId(id);
+    return { id, ledgerId: lid, baseName: lid.split("::")[0] ?? "" };
+  });
+}
+
 const tid = (t: string) => `${PKG}:NetChain:${t}`; // command form (G1)
 const fid = (t: string) => `#netchain:NetChain:${t}`; // filter form (G1)
 
