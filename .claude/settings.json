@@ -13,6 +13,26 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Users\\apbar\\.local\\bin\\graphify.EXE hook-guard search"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Users\\apbar\\.local\\bin\\graphify.EXE hook-guard read"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

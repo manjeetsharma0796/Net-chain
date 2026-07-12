@@ -8,6 +8,34 @@ before the deadline. Two of us, flat task pool, claim and update as you go.
 
 ---
 
+## WIRING REWIRE task board (2026-07-12, from an 8-subagent root-cause investigation)
+
+**One root cause behind most of it:** the app keeps a *parallel client-side mock ledger* in the
+Zustand store (seeded from `lib/mock/data.ts`), and pages read/act on that simulation instead of the
+live ledger; the client also **swallows real ledger failures** (`settleLive` collapses a 502 policy
+breach to `null`, the same as "not live") and **fabricates success** (`newTxHash` `0x…` hash, legs
+flipped to Settled unconditionally). The ledger itself is correct (6 obligations, caps enforced in the
+Daml `Settle`). Full diagnoses: workflow `wf_99d293a7-7e2` journal. Fix live, verify with Playwright.
+
+| ID | Pri | Area | Root cause (file:line) | Fix | Daml | Effort | Status |
+|----|-----|------|------------------------|-----|------|--------|--------|
+| WR1 | P0 | Phantom obligations (netting/obligations show INV-2026-* the user never created) | Store seeds `obligations: OBLIGATIONS` from mock (`lib/store.ts:169`, exitSandbox `:153`); cycle paints from store first (`cycle/page.tsx:31,61,63-69`); obligations form does optimistic `addObligation` before `createObligationLive` (`obligations/page.tsx:78`) | Seed store `obligations:[]`; cycle sources `liveObligations ?? []` only; remove optimistic write, refetch after create; dedupe strictly by ledger `contractId`; move mock fallback into the api path not the store | No | M | todo |
+| WR2 | P0 | Client swallows ledger failure | `settleLive` returns `null` on a real 502 policy breach, same sentinel as not-live (`lib/ledger.ts:362-365`) | In LIVE mode THROW the server error (parse `j.error`) on non-ok; return `null` only for 503/network | No | S | todo |
+| WR3 | P0 | Fail shows green + fake tx + Lighthouse | `settle()` flips legs→settled, sets `txHash = live?.updateId ?? newTxHash()` unconditionally (`settlement/page.tsx:138-153`) | Gate ALL success UI on a REAL `1220…` updateId (not null, not `0x`), verify it, THEN flip legs/balances; on failure revert + show cap-breach message; render Lighthouse/verify only for a real id | No | M | todo |
+| WR4 | P0 | Wrong party pays + settlement is client theater | Legs from client greedy `buildSettlementLegs` (`lib/api.ts:112`) over net positions, not the real Daml `Settle` (moves each account by its own net); operator selection not threaded to the on-ledger cycle; settle opens a NEW cycle | Thread selected `obligationCids` to `computeNetPositionsOnLedger`; settle the SAME cycle; derive legs/movements from the ledger `NetPosition`s (server payload), not the client matcher | No | L | todo |
+| WR5 | P0 | Acceptance backwards (payee accepts → self-invoice fraud) | `Obligation.Accept` controller is `obligee` (`NetChain.daml:50`); server can forge obligor signature (M2M); receivable maps obligor=counterparty/obligee=self (`obligations/page.tsx:74`) | Payee-raises / payer-accepts: add `ObligationProposal` (signatory obligee) + `AcceptProposal` (controller obligor) → creates the accepted Obligation; server blocks self-dealing; UI shows Accept to the obligor. SCU redeploy | **Yes** | L | todo |
+| WR6 | P1 | Privacy-check always "not disclosed" | Page joins store obligations (mock ids `ob-00X`) against the live projection (real ids) → never matches (`privacy-check/page.tsx`) | Add operator-scoped `getAllObligationsLive` (real ids), render that; `canSee` = live projection contractIds; foreign target = a real foreign contractId → real 404 | No | M | todo |
+| WR7 | P1 | Audit not real / no updateId tracking | Audit prints store `txHash` (session mockHash, null on load); never calls `getActivityLive`; `updateHistory` broken past 200 updates (`ledger-server.ts:270`) | Fix `updateHistory` (bounded recent window); add a "Recent on-ledger activity" table with a real **updateId** column (+ verify + Lighthouse link); real settle updateId in leg ref | No | L | todo |
+| WR8 | P1 | Company names mis-mapped (A/B involved, UI showed C paying) | Display identity hardcoded in mock `PARTIES`, only positionally bound to real parties via `.env`; UI relabels Aurora/Borealis/Cirrus vs ledger Carol/Investor/SME | Add `/api/ledger/parties` (live ledgerId+baseName), one naming source of truth, settlement payer named from live `NetPosition`s | No | M | todo |
+| WR9 | P2 | Too many verify links | 3 proof affordances (Re-verify, verify-yourself, Lighthouse) | Keep only the Lighthouse tx link (gated on a real id) | No | S | todo |
+| WR10 | P2 | updateId missing from CSV | `toSettledLegsCsv` lacks the tx updateId column | Add `updateId` column to the audit CSV/ISO export where applicable | No | S | todo |
+
+**Fix order (loop):** WR2+WR3 (fail-not-green, small+critical) → WR1 (kill store mock ledger) → WR4
+(real on-ledger settlement) → WR6/WR7/WR8 (privacy/audit/names, parallelizable once live reads exist)
+→ WR5 (Daml SCU acceptance flip + redeploy) → WR9/WR10 (cleanup). Reseed demo clean at the end.
+
+---
+
 ## How this task system works
 
 1. **Claim** a task by putting your name in **Owner** and setting **Status → 🟡**.
