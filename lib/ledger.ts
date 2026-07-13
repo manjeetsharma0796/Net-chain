@@ -27,6 +27,42 @@ function warnFallback(name: string, fellBackTo: "mock" | "null"): void {
   console.warn(`[ledger] live ${name} fell back to ${fellBackTo}`);
 }
 
+/** A real on-ledger rejection (an authorization failure, or a Daml assertion
+ *  such as a TreasuryPolicy cap breach), as opposed to a not-live / network
+ *  fallback. Every write path throws this so the UI surfaces it, never shows a
+ *  fake success. */
+export class LedgerRejection extends Error {}
+
+/** POST a write op to /api/ledger/<op>. Returns the updateId, or null ONLY when
+ *  the write is benign-inapplicable: mock mode / not-live (503) / validator
+ *  unreachable. When the live validator REJECTS the command (any other non-ok,
+ *  typically 502) it throws LedgerRejection carrying the ledger's reason, so
+ *  callers surface the failure instead of silently pretending it worked. */
+async function postWrite(op: string, body: unknown): Promise<string | null> {
+  if (!live()) return null;
+  try {
+    const r = await fetch(`/api/ledger/${op}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) return ((await r.json()) as { updateId?: string }).updateId ?? null;
+    // 503 = ledger not configured -> genuine mock fallback (benign null).
+    if (r.status === 503) {
+      warnFallback(op, "null");
+      return null;
+    }
+    // Any other non-ok (502 = the validator rejected the command) is REAL.
+    const b = (await r.json().catch(() => null)) as { error?: string } | null;
+    throw new LedgerRejection(b?.error || `${op} failed (HTTP ${r.status})`);
+  } catch (e) {
+    if (e instanceof LedgerRejection) throw e;
+    // Network error -> validator unreachable -> mock fallback, never hard-break.
+    warnFallback(op, "null");
+    return null;
+  }
+}
+
 /** Shared body for the live-only GET wrappers: null when not live, parsed JSON
  *  when the `/api/ledger/<path>` route answers ok, else a logged null fallback. */
 async function liveGet<T>(path: string, name: string): Promise<T | null> {
@@ -261,43 +297,30 @@ export async function getCapProposalsLive(): Promise<
   );
 }
 
-/** Maker: the party proposes a new cap. Returns the update id, or null. */
+/** Maker: the party proposes a new cap. Throws LedgerRejection if the validator
+ *  refuses the write (e.g. this deployment cannot act as the party). */
 export async function proposeCapLive(input: {
   party: PartyId;
   newCap: number;
 }): Promise<string | null> {
-  return postCap("propose-cap", input);
+  return postWrite("propose-cap", input);
 }
 
-/** Checker: the operator approves a pending proposal. Returns the update id, or null. */
+/** Checker: the operator approves a pending proposal. Throws on live rejection. */
 export async function approveCapLive(proposalCid: string): Promise<string | null> {
-  return postCap("approve-cap", { proposalCid });
+  return postWrite("approve-cap", { proposalCid });
 }
 
-/** Checker: the operator rejects a pending proposal. Returns the update id, or null. */
+/** Checker: the operator rejects a pending proposal. Throws on live rejection. */
 export async function rejectCapLive(proposalCid: string): Promise<string | null> {
-  return postCap("reject-cap", { proposalCid });
-}
-
-async function postCap(op: string, body: unknown): Promise<string | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch(`/api/ledger/${op}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (r.ok) return ((await r.json()) as { updateId?: string }).updateId ?? null;
-  } catch {
-    /* fall through */
-  }
-  warnFallback(op, "null");
-  return null;
+  return postWrite("reject-cap", { proposalCid });
 }
 
 /* ---- writes (T14), return the real update id, or null when not live ----- */
 
-/** Create an Obligation on-ledger. Returns the update id, or null if not live. */
+/** Create an Obligation on-ledger. Returns the update id (null in mock mode).
+ *  Throws LedgerRejection when the validator rejects the write, so the caller
+ *  surfaces the failure instead of showing a fake success. */
 export async function createObligationLive(input: {
   obligor: PartyId;
   obligee: PartyId;
@@ -306,46 +329,17 @@ export async function createObligationLive(input: {
   dueDate: string;
   source?: "agent" | "manual";
 }): Promise<string | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch("/api/ledger/obligation", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    if (!r.ok) {
-      warnFallback("createObligationLive", "null");
-      return null;
-    }
-    return ((await r.json()) as { updateId?: string }).updateId ?? null;
-  } catch {
-    warnFallback("createObligationLive", "null");
-    return null;
-  }
+  return postWrite("obligation", input);
 }
 
-/** The obligee accepts a pending obligation (bilateral consent). Returns the
- *  update id, or null when not live / on failure. Only accepted obligations net. */
+/** The obligor (payer) accepts a pending obligation (bilateral consent). Returns
+ *  the update id (null in mock mode); throws LedgerRejection on a live rejection.
+ *  Only accepted obligations net. */
 export async function acceptObligationLive(input: {
   obligor: PartyId;
   contractId: string;
 }): Promise<string | null> {
-  if (!live()) return null;
-  try {
-    const r = await fetch("/api/ledger/accept", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    if (!r.ok) {
-      warnFallback("acceptObligationLive", "null");
-      return null;
-    }
-    return ((await r.json()) as { updateId?: string }).updateId ?? null;
-  } catch {
-    warnFallback("acceptObligationLive", "null");
-    return null;
-  }
+  return postWrite("accept", input);
 }
 
 /** Create a NettingCycle + ComputeNetPositions on-ledger over the operator's
@@ -370,9 +364,6 @@ export async function runCycleLive(obligationCids?: string[]): Promise<{
 }
 
 /** Run + Settle the current cycle on-ledger. Returns update id + net positions. */
-/** A real on-ledger rejection (e.g. a TreasuryPolicy cap breach), as opposed to
- *  a not-live/network fallback. The UI must surface this, never show success. */
-export class LedgerRejection extends Error {}
 
 export async function settleLive(obligationCids?: string[]): Promise<{
   updateId: string | null;

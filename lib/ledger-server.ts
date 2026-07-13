@@ -802,14 +802,16 @@ export async function reseedOpenLedger(): Promise<{ accounts: number; obligation
   ]);
 
   // Archive stale state concurrently (each contract is independent). Obligations
-  // are archived as their obligor (the signatory); the rest as operator.
-  await Promise.all([
+  // and policies are archived as their signatory (obligor / party); the rest as
+  // operator. Best-effort (allSettled): a contract this deployment can't act as
+  // the signatory of (e.g. a party user 6 lost actAs for) is left in place rather
+  // than aborting the whole reseed. Such leftovers are already settled/orphaned
+  // and are excluded from new cycles anyway.
+  await Promise.allSettled([
     ...nps.map((c) => exercise(op, "NetPosition", c.contractId, "Archive", {})),
     ...cycles.map((c) => exercise(op, "NettingCycle", c.contractId, "Archive", {})),
     ...accs.map((c) => exercise(op, "Account", c.contractId, "Archive", {})),
     ...obls.map((c) => exercise(String(c.payload.obligor ?? ""), "Obligation", c.contractId, "Archive", {})),
-    // Archive ALL policies too (party is signatory), so reseed collapses any
-    // accumulated duplicates back to exactly one policy per party below.
     ...pols.map((c) => exercise(String(c.payload.party ?? ""), "TreasuryPolicy", c.contractId, "Archive", {})),
   ]);
 

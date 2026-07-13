@@ -12,7 +12,7 @@ import MoneyValue from "@/components/ui/MoneyValue";
 import PrimaryCTAButton from "@/components/ui/PrimaryCTAButton";
 import StatusPill from "@/components/ui/StatusPill";
 import { ExtractedInvoice, getObligationsFor } from "@/lib/ledger";
-import { acceptObligationLive, createObligationLive } from "@/lib/ledger";
+import { acceptObligationLive, createObligationLive, LedgerRejection } from "@/lib/ledger";
 import { formatDate, shortHash } from "@/lib/format";
 import { partyById, useNetChain } from "@/lib/store";
 import { Obligation, PartyId } from "@/lib/types";
@@ -74,29 +74,39 @@ function ObligationForm({
       fields.direction === "payable" ? currentPartyId : fields.counterparty;
     const obligee =
       fields.direction === "payable" ? fields.counterparty : currentPartyId;
-    logActivity({
-      actor: source === "agent" ? "agent" : currentPartyId,
-      kind: "obligation",
-      message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${amount.toLocaleString("en-US")} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
-    });
-    // Create the Obligation on-ledger only. No optimistic store row, the table
-    // refetches from the ledger (onDone) so the row carries its REAL contractId
-    // and ledger-reported status, never a fabricated twin.
-    const updateId = await createObligationLive({
-      obligor,
-      obligee,
-      amount,
-      reference: fields.reference.trim(),
-      dueDate: fields.dueDate,
-      source,
-    });
-    pushToast(
-      "success",
-      updateId
-        ? `Obligation created on-ledger · tx ${shortHash(updateId, 10, 4)}`
-        : "Obligation created.",
-    );
-    onDone();
+    try {
+      // Create the Obligation on-ledger FIRST. Only log + close once it actually
+      // committed, so a rejected write never leaves a lying activity row or a
+      // fake success toast. No optimistic store row: the table refetches from the
+      // ledger (onDone) so the row carries its REAL contractId and status.
+      const updateId = await createObligationLive({
+        obligor,
+        obligee,
+        amount,
+        reference: fields.reference.trim(),
+        dueDate: fields.dueDate,
+        source,
+      });
+      logActivity({
+        actor: source === "agent" ? "agent" : currentPartyId,
+        kind: "obligation",
+        message: `${source === "agent" ? "Agent extracted invoice and created" : "Manual entry created"} Obligation ${amount.toLocaleString("en-US")} USDCx (${partyById(obligor).shortName} → ${partyById(obligee).shortName})`,
+      });
+      pushToast(
+        "success",
+        updateId
+          ? `Obligation created on-ledger · tx ${shortHash(updateId, 10, 4)}`
+          : "Obligation created.",
+      );
+      onDone();
+    } catch (err) {
+      // A real on-ledger rejection (e.g. this deployment cannot write as the
+      // selected party). Surface it and keep the form open; nothing was created.
+      const msg =
+        err instanceof LedgerRejection ? err.message : "Could not reach the ledger.";
+      setError(`On-ledger create rejected: ${msg}`);
+      pushToast("error", "On-ledger create was rejected. Nothing was created.");
+    }
   };
 
   const inputClasses =
@@ -219,6 +229,7 @@ function dedupeObligations(list: Obligation[]): Obligation[] {
 export default function ObligationsPage() {
   const currentPartyId = useNetChain((s) => s.currentPartyId);
   const ledger = useNetChain((s) => s.obligations);
+  const pushToast = useNetChain((s) => s.pushToast);
   const party = partyById(currentPartyId);
 
   const [rows, setRows] = useState<Obligation[]>([]);
@@ -240,9 +251,16 @@ export default function ObligationsPage() {
   // (mock/not-live returns null and simply has no pending state).
   const onAccept = async (o: Obligation) => {
     setAcceptingId(o.contractId);
-    await acceptObligationLive({ obligor: o.obligor, contractId: o.contractId });
-    setRefreshTick((t) => t + 1);
-    setAcceptingId(null);
+    try {
+      await acceptObligationLive({ obligor: o.obligor, contractId: o.contractId });
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      const msg =
+        err instanceof LedgerRejection ? err.message : "Could not reach the ledger.";
+      pushToast("error", `Accept rejected: ${msg}`);
+    } finally {
+      setAcceptingId(null);
+    }
   };
 
   // Party-scoped read, the filter happens in lib/api, not here.

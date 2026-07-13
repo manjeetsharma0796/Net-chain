@@ -23,6 +23,7 @@ import {
   checkPolicy,
   getCapProposalsLive,
   getPolicyLive,
+  LedgerRejection,
   proposeCapLive,
   rejectCapLive,
 } from "@/lib/ledger";
@@ -96,24 +97,51 @@ export default function PolicyPage() {
     const cap = Number(capInput);
     if (!cap || cap <= 0) return;
     setProposing(true);
-    await proposeCapLive({ party: currentPartyId, newCap: cap });
-    setCapInput("");
-    setProposing(false);
-    setRefreshTick((t) => t + 1);
+    try {
+      await proposeCapLive({ party: currentPartyId, newCap: cap });
+      setCapInput("");
+      pushToast(
+        "success",
+        `Cap change to ${cap.toLocaleString("en-US")} USDCx proposed · awaiting operator approval`,
+      );
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      const msg =
+        err instanceof LedgerRejection ? err.message : "Could not reach the ledger.";
+      pushToast("error", `Cap proposal rejected: ${msg}`);
+    } finally {
+      setProposing(false);
+    }
   };
 
   const onApprove = async (cid: string) => {
     setActingCid(cid);
-    await approveCapLive(cid);
-    setActingCid(null);
-    setRefreshTick((t) => t + 1);
+    try {
+      await approveCapLive(cid);
+      pushToast("success", "Cap change approved · new cap is live on-ledger.");
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      const msg =
+        err instanceof LedgerRejection ? err.message : "Could not reach the ledger.";
+      pushToast("error", `Approve rejected: ${msg}`);
+    } finally {
+      setActingCid(null);
+    }
   };
 
   const onReject = async (cid: string) => {
     setActingCid(cid);
-    await rejectCapLive(cid);
-    setActingCid(null);
-    setRefreshTick((t) => t + 1);
+    try {
+      await rejectCapLive(cid);
+      pushToast("success", "Cap proposal rejected · current cap stands.");
+      setRefreshTick((t) => t + 1);
+    } catch (err) {
+      const msg =
+        err instanceof LedgerRejection ? err.message : "Could not reach the ledger.";
+      pushToast("error", `Reject failed: ${msg}`);
+    } finally {
+      setActingCid(null);
+    }
   };
 
   const maxSettlementPerCycle = liveCap ?? policy.maxSettlementPerCycle;
