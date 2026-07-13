@@ -1,5 +1,11 @@
 # NetChain: Confidential Treasury Settlement
 
+> ✅ **Deployed LIVE on the Canton Devnet** (Five North Sandbox validator, Canton Protocol Version 35).
+> This is **not** LocalNet and **not** a local sandbox mock: the Daml contracts run on-ledger and are
+> verifiable via the JSON Ledger API and the public Lighthouse explorer.
+>
+> **Live app:** [netchain.vercel.app](https://netchain.vercel.app)
+
 Confidential multilateral netting and atomic settlement on the Canton Network. AI proposes,
 the ledger disposes. The Daml contracts are **deployed live on the Canton Devnet** (5N Sandbox
 validator) and the Next.js app reads and writes them through the JSON Ledger API v2. Atomicity
